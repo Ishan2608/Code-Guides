@@ -1,0 +1,2751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>yfinance — Complete Python Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0f14;
+    --surface: #15161d;
+    --surface2: #1c1d28;
+    --border: #2a2b3d;
+    --border2: #363752;
+    --text: #d4d5e8;
+    --text-dim: #7b7d9e;
+    --text-bright: #eceef8;
+    --accent: #7c6af7;
+    --accent2: #5de8c1;
+    --accent3: #f7b955;
+    --accent4: #f76a6a;
+    --md-bg: #191a24;
+    --code-bg: #111219;
+    --string: #5de8c1;
+    --keyword: #c07df0;
+    --function: #7cb8f7;
+    --comment: #525470;
+    --number: #f7b955;
+    --param: #f78c5d;
+    --class: #f0c07d;
+    --out-bg: #0d1a14;
+    --out-border: #1e3d2e;
+    --out-text: #7dffc4;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 0 36px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 70% 120% at 50% -30%, rgba(124,106,247,.18) 0%, transparent 70%);
+  }
+  .header-badge {
+    display: inline-block;
+    background: rgba(124,106,247,.15);
+    border: 1px solid rgba(124,106,247,.35);
+    color: #a598ff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: .12em;
+    padding: 4px 14px;
+    border-radius: 20px;
+    margin-bottom: 18px;
+    text-transform: uppercase;
+  }
+  header h1 {
+    font-family: 'Fraunces', serif;
+    font-size: clamp(2.2rem, 5vw, 3.8rem);
+    font-weight: 800;
+    color: var(--text-bright);
+    letter-spacing: -.02em;
+    line-height: 1.1;
+    position: relative;
+  }
+  header h1 span { color: var(--accent); }
+  header p.subtitle {
+    margin-top: 12px;
+    color: var(--text-dim);
+    font-size: 15px;
+    font-weight: 300;
+    position: relative;
+  }
+
+  /* ── TOC ── */
+  .toc-wrap {
+    max-width: 860px;
+    margin: 36px auto 0;
+    padding: 0 24px;
+  }
+  .toc {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 28px;
+  }
+  .toc h3 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .toc ol {
+    list-style: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 32px;
+  }
+  .toc li { counter-increment: toc-counter; }
+  .toc a {
+    color: var(--text);
+    text-decoration: none;
+    font-size: 13.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: color .2s;
+  }
+  .toc a:hover { color: var(--accent); }
+  .toc a::before {
+    content: counter(toc-counter, decimal-leading-zero);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    opacity: .6;
+    min-width: 22px;
+  }
+  ol { counter-reset: toc-counter; }
+
+  /* ── NOTEBOOK ── */
+  .notebook {
+    max-width: 860px;
+    margin: 40px auto 80px;
+    padding: 0 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* ── CELL BASE ── */
+  .cell {
+    display: flex;
+    gap: 0;
+    position: relative;
+  }
+  .cell-gutter {
+    width: 52px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    padding-top: 14px;
+    padding-right: 10px;
+    gap: 4px;
+    position: relative;
+  }
+  .cell-gutter .cell-type {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    opacity: .35;
+    padding: 6px 0;
+  }
+  .cell-body { flex: 1; min-width: 0; }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 36px 0 6px;
+  }
+  .section-label .num {
+    font-family: 'Fraunces', serif;
+    font-size: 13px;
+    font-style: italic;
+    color: var(--accent);
+    opacity: .7;
+  }
+  .section-label .line { flex: 1; height: 1px; background: var(--border); }
+
+  /* ── MARKDOWN CELL ── */
+  .md-cell {
+    background: var(--md-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 22px 26px;
+    margin-bottom: 2px;
+    position: relative;
+  }
+  .md-cell::before {
+    content: 'md';
+    position: absolute;
+    top: 10px; right: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    opacity: .4;
+    letter-spacing: .06em;
+  }
+  .md-cell h2 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.55rem;
+    font-weight: 600;
+    color: var(--text-bright);
+    letter-spacing: -.02em;
+    margin-bottom: 10px;
+    line-height: 1.25;
+  }
+  .md-cell h3 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--accent2);
+    margin: 18px 0 8px;
+  }
+  .md-cell h4 {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: var(--accent3);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    margin: 16px 0 6px;
+  }
+  .md-cell p { color: var(--text); margin-bottom: 10px; font-size: 14.5px; }
+  .md-cell p:last-child { margin-bottom: 0; }
+  .md-cell ul, .md-cell ol { padding-left: 20px; margin-bottom: 10px; }
+  .md-cell li { color: var(--text); font-size: 14.5px; margin-bottom: 4px; }
+  .md-cell code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    background: rgba(124,106,247,.13);
+    color: #b8b0ff;
+    padding: 1px 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(124,106,247,.2);
+  }
+  .md-cell strong { color: var(--text-bright); font-weight: 500; }
+  .md-cell em { color: var(--accent3); font-style: italic; }
+
+  /* param table */
+  .param-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 13px;
+  }
+  .param-table thead th {
+    background: rgba(124,106,247,.12);
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border2);
+  }
+  .param-table tbody td {
+    padding: 7px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  .param-table tbody tr:last-child td { border-bottom: none; }
+  .param-table td:first-child {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--param);
+    white-space: nowrap;
+  }
+  .param-table td:nth-child(2) {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--string);
+  }
+  .param-table td:nth-child(3) { color: var(--text-dim); font-size: 13px; }
+  .param-table td .default { color: var(--accent3); font-style: italic; }
+
+  /* returns box */
+  .returns {
+    background: rgba(93,232,193,.06);
+    border: 1px solid rgba(93,232,193,.2);
+    border-radius: 7px;
+    padding: 10px 14px;
+    margin-top: 12px;
+    font-size: 13.5px;
+  }
+  .returns .ret-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--accent2);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+
+  /* note box */
+  .note {
+    background: rgba(247,185,85,.06);
+    border-left: 3px solid var(--accent3);
+    padding: 10px 14px;
+    margin-top: 12px;
+    border-radius: 0 6px 6px 0;
+    font-size: 13.5px;
+  }
+  .note .note-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--accent3);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+
+  /* ── CODE CELL ── */
+  .code-cell {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 2px;
+  }
+  .code-cell pre {
+    padding: 18px 22px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.75;
+  }
+  .code-cell code { font-family: inherit; font-size: inherit; background: none; border: none; padding: 0; color: var(--text); }
+
+  /* syntax */
+  .kw { color: var(--keyword); }
+  .fn { color: var(--function); }
+  .st { color: var(--string); }
+  .cm { color: var(--comment); font-style: italic; }
+  .nu { color: var(--number); }
+  .cl { color: var(--class); }
+  .pr { color: var(--param); }
+  .at { color: var(--accent2); }
+
+  /* ── OUTPUT CELL ── */
+  .out-cell {
+    background: var(--out-bg);
+    border: 1px solid var(--out-border);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .out-cell-header {
+    padding: 5px 14px;
+    background: rgba(29,57,43,.6);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #3d9966;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--out-border);
+  }
+  .out-cell pre {
+    padding: 14px 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.7;
+    color: var(--out-text);
+    overflow-x: auto;
+  }
+
+  /* ── DIVIDER ── */
+  .section-div {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border2), transparent);
+    margin: 48px 0 32px;
+  }
+
+  /* tags */
+  .tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-right: 4px;
+    margin-bottom: 4px;
+    letter-spacing: .04em;
+  }
+  .tag-prop { background: rgba(93,232,193,.1); color: var(--accent2); border: 1px solid rgba(93,232,193,.2); }
+  .tag-method { background: rgba(124,106,247,.1); color: #b8b0ff; border: 1px solid rgba(124,106,247,.2); }
+  .tag-df { background: rgba(247,185,85,.1); color: var(--accent3); border: 1px solid rgba(247,185,85,.2); }
+
+  /* quick ref grid */
+  .quickref {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .qr-item {
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 10px 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+  }
+  .qr-item .qr-key { font-family: 'JetBrains Mono', monospace; color: var(--accent2); font-size: 12px; }
+  .qr-item .qr-val { color: var(--text-dim); font-size: 12px; }
+
+  @media (max-width: 600px) {
+    .toc ol { grid-template-columns: 1fr; }
+    .quickref { grid-template-columns: 1fr; }
+    .cell-gutter { width: 30px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-badge">Python Library Guide</div>
+  <h1><span>yfinance</span> — Market Data for Python</h1>
+  <p class="subtitle">A comprehensive notebook-style reference for fetching and analysing financial data</p>
+</header>
+
+<div class="toc-wrap">
+  <div class="toc">
+    <h3>Contents</h3>
+    <ol>
+      <li><a href="#s1">Installation &amp; Setup</a></li>
+      <li><a href="#s2">Ticker Object</a></li>
+      <li><a href="#s3">Stock Info &amp; Metadata</a></li>
+      <li><a href="#s4">Financial Calendar</a></li>
+      <li><a href="#s5">News Articles</a></li>
+      <li><a href="#s6">Historical Price Data</a></li>
+      <li><a href="#s7">Financial Statements</a></li>
+      <li><a href="#s8">Corporate Actions</a></li>
+      <li><a href="#s9">Analyst Recommendations</a></li>
+      <li><a href="#s10">Ownership &amp; Holders</a></li>
+      <li><a href="#s11">ESG / Sustainability</a></li>
+      <li><a href="#s12">Multiple Tickers</a></li>
+      <li><a href="#s13">Chart Setup &amp; Matplotlib Style</a></li>
+      <li><a href="#s14">Price &amp; Volume Charts</a></li>
+      <li><a href="#s15">Candlestick &amp; OHLC Charts</a></li>
+      <li><a href="#s16">Technical Indicators</a></li>
+      <li><a href="#s17">Fundamental Analysis Charts</a></li>
+      <li><a href="#s18">Portfolio &amp; Comparative Analysis</a></li>
+    </ol>
+  </div>
+</div>
+
+<div class="notebook">
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 1: INSTALLATION -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="section-label" id="s1">
+    <span class="num">01</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h2>Installation &amp; Setup</h2>
+        <p><strong>yfinance</strong> is an open-source Python library that wraps Yahoo Finance's unofficial API, giving you clean programmatic access to historical prices, financial statements, holder data, ESG scores, and more — all for free.</p>
+        <h4>Install</h4>
+        <p>Use <code>pip</code> to install the package. It is recommended to work inside a virtual environment.</p>
+        <div class="note">
+          <div class="note-label">⚠ Note</div>
+          yfinance relies on Yahoo Finance's undocumented API, which can change without notice. Keep the library updated regularly with <code>pip install --upgrade yfinance</code>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code><span class="cm"># Install via pip</span>
+pip install yfinance
+
+<span class="cm"># Upgrade to the latest version</span>
+pip install <span class="pr">--upgrade</span> yfinance
+
+<span class="cm"># Optional: install with extra dependencies for faster data parsing</span>
+pip install yfinance[nospam,repair]</code></pre></div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code><span class="cm"># Standard imports used throughout this guide</span>
+<span class="kw">import</span> yfinance <span class="kw">as</span> yf
+<span class="kw">import</span> pandas <span class="kw">as</span> pd
+<span class="kw">import</span> json
+
+<span class="cm"># Optional: display all rows/columns in DataFrames</span>
+pd.set_option(<span class="st">'display.max_rows'</span>, <span class="nu">None</span>)
+pd.set_option(<span class="st">'display.max_columns'</span>, <span class="nu">None</span>)
+pd.set_option(<span class="st">'display.width'</span>, <span class="nu">None</span>)
+pd.set_option(<span class="st">'display.float_format'</span>, <span class="kw">lambda</span> x: <span class="st">f'</span><span class="at">{x:,.2f}</span><span class="st">'</span>)</code></pre></div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 2: TICKER OBJECT -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="section-label" id="s2">
+    <span class="num">02</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h2>The Ticker Object</h2>
+        <p>The <code>yf.Ticker()</code> class is the primary entry point. Every piece of data you fetch — prices, statements, news — flows through a Ticker instance. You construct one by passing a ticker symbol as a string.</p>
+
+        <h3>Syntax</h3>
+        <p><code>ticker = yf.Ticker(ticker, session=None, proxy=None)</code></p>
+
+        <h4>Parameters</h4>
+        <table class="param-table">
+          <thead>
+            <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>ticker</td>
+              <td>str</td>
+              <td>The ticker symbol for the instrument. Case-insensitive. <strong>Required.</strong></td>
+            </tr>
+            <tr>
+              <td>session</td>
+              <td>requests.Session</td>
+              <td>Optional custom <code>requests.Session</code> object. Useful for adding custom headers, proxies, or caching via <code>requests_cache</code>. <span class="default">Default: None</span></td>
+            </tr>
+            <tr>
+              <td>proxy</td>
+              <td>str</td>
+              <td>Optional HTTP/HTTPS proxy URL string (e.g., <code>"http://user:pass@host:port"</code>). <span class="default">Default: None</span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h4>Exchange Suffixes (Indian Markets)</h4>
+        <div class="quickref">
+          <div class="qr-item"><span class="qr-key">.NS</span><span class="qr-val">National Stock Exchange (NSE)</span></div>
+          <div class="qr-item"><span class="qr-key">.BO</span><span class="qr-val">Bombay Stock Exchange (BSE)</span></div>
+        </div>
+
+        <h4>Common Ticker Formats</h4>
+        <div class="quickref">
+          <div class="qr-item"><span class="qr-key">AAPL</span><span class="qr-val">US Stock (Apple)</span></div>
+          <div class="qr-item"><span class="qr-key">BTC-USD</span><span class="qr-val">Crypto (Bitcoin)</span></div>
+          <div class="qr-item"><span class="qr-key">TCS.NS</span><span class="qr-val">Indian NSE Stock (TCS)</span></div>
+          <div class="qr-item"><span class="qr-key">EURUSD=X</span><span class="qr-val">Forex pair</span></div>
+          <div class="qr-item"><span class="qr-key">^NSEI</span><span class="qr-val">Nifty 50 Index</span></div>
+          <div class="qr-item"><span class="qr-key">GC=F</span><span class="qr-val">Gold Futures</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code><span class="cm"># ── Basic Ticker instantiation ────────────────────────────────────────────────</span>
+
+<span class="cm"># Indian stocks: append .NS (NSE) or .BO (BSE)</span>
+ticker_nse = yf.<span class="cl">Ticker</span>(<span class="st">"TCS.NS"</span>)
+ticker_bse = yf.<span class="cl">Ticker</span>(<span class="st">"TCS.BO"</span>)
+
+<span class="cm"># US stock</span>
+apple = yf.<span class="cl">Ticker</span>(<span class="st">"AAPL"</span>)
+
+<span class="cm"># Cryptocurrency</span>
+bitcoin = yf.<span class="cl">Ticker</span>(<span class="st">"BTC-USD"</span>)
+
+<span class="cm"># Indian Index</span>
+nifty = yf.<span class="cl">Ticker</span>(<span class="st">"^NSEI"</span>)
+
+<span class="cm"># ── Advanced: use requests_cache to avoid redundant network calls ─────────────</span>
+<span class="kw">import</span> requests_cache
+
+session = requests_cache.<span class="fn">CachedSession</span>(<span class="st">"yfinance_cache"</span>, expire_after=<span class="nu">3600</span>)
+cached_ticker = yf.<span class="cl">Ticker</span>(<span class="st">"INFY.NS"</span>, session=session)
+
+<span class="fn">print</span>(<span class="st">f"Ticker created: </span><span class="at">{ticker_nse.ticker}</span><span class="st">"</span>)</code></pre></div>
+      <div class="out-cell">
+        <div class="out-cell-header">▶ output</div>
+        <pre>Ticker created: TCS.NS</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 3: INFO -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="section-label" id="s3">
+    <span class="num">03</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h2>Stock Info &amp; Metadata</h2>
+        <span class="tag tag-prop">property</span><span class="tag tag-df">dict</span>
+        <p>The <code>.info</code> property returns a large dictionary with over 100 fields covering company profile, valuation metrics, trading statistics, and contact information. <strong>Every access triggers a fresh network request</strong>, so always cache it in a variable first.</p>
+
+        <h4>Key Categories &amp; Fields</h4>
+        <table class="param-table">
+          <thead>
+            <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>longName</td><td>str</td><td>Full official company name</td></tr>
+            <tr><td>symbol</td><td>str</td><td>Exchange ticker symbol</td></tr>
+            <tr><td>sector</td><td>str</td><td>Broad sector (e.g., "Technology")</td></tr>
+            <tr><td>industry</td><td>str</td><td>Specific industry (e.g., "Software—Infrastructure")</td></tr>
+            <tr><td>currentPrice</td><td>float</td><td>Latest trading price</td></tr>
+            <tr><td>marketCap</td><td>int</td><td>Total market capitalisation in reporting currency</td></tr>
+            <tr><td>fiftyTwoWeekHigh</td><td>float</td><td>Highest price in the past 52 weeks</td></tr>
+            <tr><td>fiftyTwoWeekLow</td><td>float</td><td>Lowest price in the past 52 weeks</td></tr>
+            <tr><td>fiftyTwoWeekChangePercent</td><td>float</td><td>Percentage price change over 52 weeks</td></tr>
+            <tr><td>trailingPE</td><td>float</td><td>Trailing Price-to-Earnings ratio</td></tr>
+            <tr><td>forwardPE</td><td>float</td><td>Forward P/E based on analyst estimates</td></tr>
+            <tr><td>priceToBook</td><td>float</td><td>Price-to-Book value ratio</td></tr>
+            <tr><td>dividendYield</td><td>float</td><td>Annual dividend yield as a decimal (e.g., 0.035 = 3.5%)</td></tr>
+            <tr><td>beta</td><td>float</td><td>Volatility relative to the broader market</td></tr>
+            <tr><td>averageVolume</td><td>int</td><td>Average daily trading volume (10-day)</td></tr>
+            <tr><td>financialCurrency</td><td>str</td><td>Currency used in financial statements (e.g., "INR")</td></tr>
+            <tr><td>longBusinessSummary</td><td>str</td><td>Plain-English business description</td></tr>
+          </tbody>
+        </table>
+        <div class="note">
+          <div class="note-label">⚠ Performance Tip</div>
+          <code>ticker.info</code> makes a separate HTTP request every single time it is accessed. Always assign <code>info = ticker.info</code> once at the top and reuse the variable throughout your script.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code>tcs = yf.<span class="cl">Ticker</span>(<span class="st">"TCS.NS"</span>)
+
+<span class="cm"># ── Cache info once ───────────────────────────────────────────────────────────</span>
+info = tcs.info
+
+<span class="cm"># ── Company Overview ─────────────────────────────────────────────────────────</span>
+<span class="fn">print</span>(<span class="st">"── Company Overview ──────────────────────────────"</span>)
+<span class="fn">print</span>(<span class="st">f"Name        : </span><span class="at">{info.get('longName')}</span><span class="st">"</span>)
+<span class="fn">print</span>(<span class="st">f"Sector      : </span><span class="at">{info.get('sector')}</span><span class="st">"</span>)
+<span class="fn">print</span>(<span class="st">f"Industry    : </span><span class="at">{info.get('industry')}</span><span class="st">"</span>)
+<span class="fn">print</span>(<span class="st">f"Country     : </span><span class="at">{info.get('country')}</span><span class="st">"</span>)
+<span class="fn">print</span>(<span class="st">f"Currency    : </span><span class="at">{info.get('financialCurrency')}</span><span class="st">"</span>)
+<span class="fn">print</span>(<span class="st">f"Employees   : </span><span class="at">{info.get('fullTimeEmployees'):,}</span><span class="st">"</span>)
+
+<span class="cm"># ── Price Statistics ─────────────────────────────────────────────────────────</span>
+<span class="fn">print</span>(<span class="st">"\n── Price Statistics ──────────────────────────────"</span>)
+<span class="fn">print</span>(<span class="st">f"Current Price    : ₹</span><span class="at">{info.get('currentPrice'):,.2f}</span><span class="st">"</span>)
+<span class="fn">print</span>(<span class="st">f"Market Cap       : ₹</span><span class="at">{info.get('marketCap') / 1e12:.2f}</span><span class="st"> Trillion"</span>)
+<span class="fn">print</span>(<span class="st">f"52-Week High     : ₹</span><span class="at">{info.get('fiftyTwoWeekHigh'):,.2f}</span><span class="st">"</span>)
+<span class="fn">print</span>(<span class="st">f"52-Week Low      : ₹</span><span class="at">{info.get('fiftyTwoWeekLow'):,.2f}</span><span class="st">"</span>)
+<span class="fn">print</span>(<span class="st">f"52-Week Change   : </span><span class="at">{info.get('fiftyTwoWeekChangePercent', 0) * 100:.2f}</span><span class="st">%"</span>)
+<span class="fn">print</span>(<span class="st">f"Beta             : </span><span class="at">{info.get('beta')}</span><span class="st">"</span>)
+
+<span class="cm"># ── Valuation Ratios ─────────────────────────────────────────────────────────</span>
+<span class="fn">print</span>(<span class="st">"\n── Valuation Ratios ──────────────────────────────"</span>)
+<span class="fn">print</span>(<span class="st">f"Trailing P/E     : </span><span class="at">{info.get('trailingPE')}</span><span class="st">"</span>)
+<span class="fn">print</span>(<span class="st">f"Forward P/E      : </span><span class="at">{info.get('forwardPE')}</span><span class="st">"</span>)
+<span class="fn">print</span>(<span class="st">f"Price/Book       : </span><span class="at">{info.get('priceToBook')}</span><span class="st">"</span>)
+<span class="fn">print</span>(<span class="st">f"Dividend Yield   : </span><span class="at">{info.get('dividendYield', 0) * 100:.2f}</span><span class="st">%"</span>)
+
+<span class="cm"># ── View all available keys ───────────────────────────────────────────────────</span>
+<span class="fn">print</span>(<span class="st">"\n── All Available Info Keys ───────────────────────"</span>)
+<span class="kw">for</span> key <span class="kw">in</span> <span class="fn">sorted</span>(info.keys()):
+    <span class="fn">print</span>(<span class="st">f"  {key}"</span>)</code></pre></div>
+      <div class="out-cell">
+        <div class="out-cell-header">▶ output</div>
+        <pre>── Company Overview ──────────────────────────────
+Name        : Tata Consultancy Services Limited
+Sector      : Technology
+Industry    : Information Technology Services
+Country     : India
+Currency    : INR
+Employees   : 601,546
+
+── Price Statistics ──────────────────────────────
+Current Price    : ₹3,412.50
+Market Cap       : ₹12.38 Trillion
+52-Week High     : ₹4,592.25
+52-Week Low      : ₹3,056.65
+52-Week Change   : -18.43%
+Beta             : 0.558
+
+── Valuation Ratios ──────────────────────────────
+Trailing P/E     : 24.6
+Forward P/E      : 22.1
+Price/Book       : 13.2
+Dividend Yield   : 1.80%</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 4: CALENDAR -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="section-label" id="s4">
+    <span class="num">04</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h2>Financial Calendar</h2>
+        <span class="tag tag-prop">property</span><span class="tag tag-df">dict</span>
+        <p>The <code>.calendar</code> property returns a dictionary of upcoming corporate events for the ticker. It is especially useful for planning around earnings announcements, which can cause significant price volatility.</p>
+
+        <h4>Typical Keys Returned</h4>
+        <table class="param-table">
+          <thead><tr><th>Key</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>Earnings Date</td><td>List of expected earnings announcement date(s)</td></tr>
+            <tr><td>Earnings High</td><td>Analyst high estimate for earnings per share (EPS)</td></tr>
+            <tr><td>Earnings Low</td><td>Analyst low estimate for EPS</td></tr>
+            <tr><td>Earnings Average</td><td>Analyst consensus (mean) estimate for EPS</td></tr>
+            <tr><td>Revenue High</td><td>Analyst high estimate for revenue</td></tr>
+            <tr><td>Revenue Low</td><td>Analyst low estimate for revenue</td></tr>
+            <tr><td>Revenue Average</td><td>Analyst consensus estimate for revenue</td></tr>
+            <tr><td>Dividend Date</td><td>Next expected dividend payment date</td></tr>
+            <tr><td>Ex-Dividend Date</td><td>Date by which you must own shares to receive the dividend</td></tr>
+          </tbody>
+        </table>
+        <div class="note">
+          <div class="note-label">Note</div>
+          Calendar data availability is inconsistent for Indian stocks. US stocks tend to have richer calendar coverage. Always check for <code>None</code> before using a value.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code>ticker = yf.<span class="cl">Ticker</span>(<span class="st">"TCS.NS"</span>)
+cal = ticker.calendar
+
+<span class="fn">print</span>(<span class="st">"── Upcoming Financial Events ─────────────────────"</span>)
+<span class="kw">if</span> cal:
+    <span class="kw">for</span> key, value <span class="kw">in</span> cal.items():
+        <span class="fn">print</span>(<span class="st">f"  </span><span class="at">{key:<25}</span><span class="st">: </span><span class="at">{value}</span><span class="st">"</span>)
+<span class="kw">else</span>:
+    <span class="fn">print</span>(<span class="st">"  No calendar data available for this ticker."</span>)
+
+<span class="cm"># Safe access pattern with fallback</span>
+earnings_dates = cal.get(<span class="st">"Earnings Date"</span>, [])
+<span class="kw">if</span> earnings_dates:
+    <span class="fn">print</span>(<span class="st">f"\n  Next Earnings: </span><span class="at">{earnings_dates[0].strftime('%d %b %Y')}</span><span class="st">"</span>)</code></pre></div>
+      <div class="out-cell">
+        <div class="out-cell-header">▶ output</div>
+        <pre>── Upcoming Financial Events ─────────────────────
+  Earnings Date            : [datetime.datetime(2025, 7, 10, 0, 0)]
+  Earnings High            : 32.5
+  Earnings Low             : 29.8
+  Earnings Average         : 31.1
+  Revenue High             : 640000000000
+  Revenue Low              : 610000000000
+  Revenue Average          : 625000000000
+
+  Next Earnings: 10 Jul 2025</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 5: NEWS -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="section-label" id="s5">
+    <span class="num">05</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h2>News Articles</h2>
+        <span class="tag tag-prop">property</span><span class="tag tag-df">list[dict]</span>
+        <p>The <code>.news</code> property returns a list of recent news articles associated with the ticker, sourced from Yahoo Finance. Each article is represented as a dictionary.</p>
+
+        <h4>Article Dictionary Keys</h4>
+        <table class="param-table">
+          <thead><tr><th>Key</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>title</td><td>str</td><td>Headline of the news article</td></tr>
+            <tr><td>publisher</td><td>str</td><td>Name of the publishing outlet</td></tr>
+            <tr><td>link</td><td>str</td><td>Full URL to the article</td></tr>
+            <tr><td>providerPublishTime</td><td>int</td><td>Publication timestamp in Unix epoch seconds — convert with <code>datetime.fromtimestamp()</code></td></tr>
+            <tr><td>type</td><td>str</td><td>Content type, usually <code>"STORY"</code></td></tr>
+            <tr><td>relatedTickers</td><td>list</td><td>Other ticker symbols mentioned in the article</td></tr>
+            <tr><td>uuid</td><td>str</td><td>Unique identifier for the article</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code><span class="kw">from</span> datetime <span class="kw">import</span> datetime
+
+ticker = yf.<span class="cl">Ticker</span>(<span class="st">"TCS.NS"</span>)
+news = ticker.news
+
+<span class="fn">print</span>(<span class="st">f"Total news articles fetched: </span><span class="at">{len(news)}</span><span class="st">"</span>)
+
+<span class="cm"># ── Inspect raw dictionary of first article ───────────────────────────────────</span>
+<span class="fn">print</span>(<span class="st">"\n── Raw Article Dictionary ────────────────────────"</span>)
+<span class="fn">print</span>(json.dumps(news[<span class="nu">0</span>], indent=<span class="nu">4</span>))
+
+<span class="cm"># ── Pretty-print all articles ─────────────────────────────────────────────────</span>
+<span class="fn">print</span>(<span class="st">"\n── Recent News ───────────────────────────────────"</span>)
+<span class="kw">for</span> i, article <span class="kw">in</span> <span class="fn">enumerate</span>(news[:<span class="nu">5</span>], start=<span class="nu">1</span>):
+    ts = article.get(<span class="st">"providerPublishTime"</span>, <span class="nu">0</span>)
+    dt_str = datetime.<span class="fn">fromtimestamp</span>(ts).<span class="fn">strftime</span>(<span class="st">"%d %b %Y, %H:%M"</span>)
+
+    <span class="fn">print</span>(<span class="st">f"\n[</span><span class="at">{i}</span><span class="st">] </span><span class="at">{article.get('title')}</span><span class="st">"</span>)
+    <span class="fn">print</span>(<span class="st">f"    Publisher : </span><span class="at">{article.get('publisher')}</span><span class="st">"</span>)
+    <span class="fn">print</span>(<span class="st">f"    Published : </span><span class="at">{dt_str}</span><span class="st">"</span>)
+    <span class="fn">print</span>(<span class="st">f"    URL       : </span><span class="at">{article.get('link')}</span><span class="st">"</span>)</code></pre></div>
+      <div class="out-cell">
+        <div class="out-cell-header">▶ output</div>
+        <pre>Total news articles fetched: 8
+
+── Recent News ───────────────────────────────────
+
+[1] TCS Q4 Results: Net Profit Rises 4.5% YoY to ₹12,224 Crore
+    Publisher : The Economic Times
+    Published : 10 Apr 2025, 19:30
+    URL       : https://economictimes.indiatimes.com/...
+
+[2] TCS Bags $1.5 Billion Deal from European Banking Consortium
+    Publisher : Mint
+    Published : 07 Apr 2025, 09:15
+    URL       : https://livemint.com/...</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 6: HISTORY -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="section-label" id="s6">
+    <span class="num">06</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h2>Historical Price Data</h2>
+        <span class="tag tag-method">method</span><span class="tag tag-df">DataFrame</span>
+        <p>The <code>.history()</code> method is the workhorse for fetching OHLCV (Open, High, Low, Close, Volume) data. It returns a <strong>pandas DataFrame</strong> with the date as the index. By default, prices are adjusted for stock splits and dividends (<code>auto_adjust=True</code>).</p>
+
+        <h3>Syntax</h3>
+        <p><code>ticker.history(period, interval, start, end, prepost, auto_adjust, back_adjust, repair, actions)</code></p>
+
+        <h4>Parameters</h4>
+        <table class="param-table">
+          <thead><tr><th>Parameter</th><th>Values</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>period</td>
+              <td><code>"1d"</code> <code>"5d"</code> <code>"1mo"</code> <code>"3mo"</code> <code>"6mo"</code> <code>"1y"</code> <code>"2y"</code> <code>"5y"</code> <code>"10y"</code> <code>"ytd"</code> <code>"max"</code></td>
+              <td>How far back to fetch data. <em>Cannot be used alongside <code>start</code>/<code>end</code>.</em> <span class="default">Default: "1mo"</span></td>
+            </tr>
+            <tr>
+              <td>interval</td>
+              <td><code>"1m"</code> <code>"2m"</code> <code>"5m"</code> <code>"15m"</code> <code>"30m"</code> <code>"60m"</code> <code>"90m"</code> <code>"1h"</code> <code>"1d"</code> <code>"5d"</code> <code>"1wk"</code> <code>"1mo"</code> <code>"3mo"</code></td>
+              <td>Candle granularity. Intraday intervals (1m–90m) are only available for <strong>the last 60 days</strong>. <span class="default">Default: "1d"</span></td>
+            </tr>
+            <tr>
+              <td>start</td>
+              <td>str or datetime</td>
+              <td>Start date in <code>"YYYY-MM-DD"</code> format. Use with <code>end</code> instead of <code>period</code>.</td>
+            </tr>
+            <tr>
+              <td>end</td>
+              <td>str or datetime</td>
+              <td>End date in <code>"YYYY-MM-DD"</code> format (exclusive). Defaults to today.</td>
+            </tr>
+            <tr>
+              <td>prepost</td>
+              <td>bool</td>
+              <td>Include pre-market and after-hours data (US markets only). <span class="default">Default: False</span></td>
+            </tr>
+            <tr>
+              <td>auto_adjust</td>
+              <td>bool</td>
+              <td>Automatically adjust OHLC prices for splits and dividends. <span class="default">Default: True</span></td>
+            </tr>
+            <tr>
+              <td>actions</td>
+              <td>bool</td>
+              <td>Include Dividends and Stock Splits columns in the returned DataFrame. <span class="default">Default: False</span></td>
+            </tr>
+            <tr>
+              <td>repair</td>
+              <td>bool</td>
+              <td>Attempt to detect and fix bad price data (e.g., 100x errors). <span class="default">Default: False</span></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="returns">
+          <div class="ret-label">Returns → DataFrame</div>
+          Columns: <code>Open</code>, <code>High</code>, <code>Low</code>, <code>Close</code>, <code>Volume</code> (and optionally <code>Dividends</code>, <code>Stock Splits</code>). Index is a timezone-aware DatetimeIndex.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code>wipro = yf.<span class="cl">Ticker</span>(<span class="st">"WIPRO.NS"</span>)
+
+<span class="cm"># ── 1. Intraday: today's 1-minute candles ─────────────────────────────────────</span>
+<span class="cm"># Note: 1m data only available for the last 7 days</span>
+today_df = wipro.<span class="fn">history</span>(period=<span class="st">"1d"</span>, interval=<span class="st">"1m"</span>)
+current_price = today_df[<span class="st">"Close"</span>].iloc[-<span class="nu">1</span>] <span class="kw">if not</span> today_df.empty <span class="kw">else</span> <span class="st">"N/A"</span>
+<span class="fn">print</span>(<span class="st">f"Current Wipro Price (NSE) : ₹</span><span class="at">{current_price:.2f}</span><span class="st">"</span>)
+
+<span class="cm"># ── 2. Last 30 days, daily candles ───────────────────────────────────────────</span>
+monthly_df = wipro.<span class="fn">history</span>(period=<span class="st">"1mo"</span>, interval=<span class="st">"1d"</span>)
+<span class="fn">print</span>(<span class="st">"\n── Last 5 Days High / Low ────────────────────────"</span>)
+<span class="fn">print</span>(monthly_df[[<span class="st">"High"</span>, <span class="st">"Low"</span>]].tail())
+
+<span class="cm"># ── 3. Custom date range ─────────────────────────────────────────────────────</span>
+custom_df = wipro.<span class="fn">history</span>(start=<span class="st">"2024-01-01"</span>, end=<span class="st">"2024-12-31"</span>, interval=<span class="st">"1wk"</span>)
+<span class="fn">print</span>(<span class="st">"\n── Weekly Data for 2024 (first 5 rows) ───────────"</span>)
+<span class="fn">print</span>(custom_df[[<span class="st">"Open"</span>, <span class="st">"High"</span>, <span class="st">"Low"</span>, <span class="st">"Close"</span>, <span class="st">"Volume"</span>]].head())
+
+<span class="cm"># ── 4. Max history including corporate actions ────────────────────────────────</span>
+max_df = wipro.<span class="fn">history</span>(period=<span class="st">"max"</span>, actions=<span class="kw">True</span>)
+<span class="fn">print</span>(<span class="st">f"\n── Max Available History ─────────────────────────"</span>)
+<span class="fn">print</span>(<span class="st">f"From: </span><span class="at">{max_df.index.min().date()}</span><span class="st">  To: </span><span class="at">{max_df.index.max().date()}</span><span class="st">"</span>)
+<span class="fn">print</span>(<span class="st">f"Total candles: </span><span class="at">{len(max_df)}</span><span class="st">"</span>)
+
+<span class="cm"># ── 5. Useful derived calculations ───────────────────────────────────────────</span>
+yearly_df = wipro.<span class="fn">history</span>(period=<span class="st">"1y"</span>)
+yearly_df[<span class="st">"Daily Return %"</span>] = yearly_df[<span class="st">"Close"</span>].<span class="fn">pct_change</span>() * <span class="nu">100</span>
+yearly_df[<span class="st">"MA_20"</span>] = yearly_df[<span class="st">"Close"</span>].<span class="fn">rolling</span>(<span class="nu">20</span>).<span class="fn">mean</span>()   <span class="cm"># 20-day moving avg</span>
+yearly_df[<span class="st">"MA_50"</span>] = yearly_df[<span class="st">"Close"</span>].<span class="fn">rolling</span>(<span class="nu">50</span>).<span class="fn">mean</span>()   <span class="cm"># 50-day moving avg</span>
+
+<span class="fn">print</span>(<span class="st">"\n── 1Y Stats ──────────────────────────────────────"</span>)
+<span class="fn">print</span>(<span class="st">f"Avg Daily Return: </span><span class="at">{yearly_df['Daily Return %'].mean():.3f}</span><span class="st">%"</span>)
+<span class="fn">print</span>(<span class="st">f"Volatility (std): </span><span class="at">{yearly_df['Daily Return %'].std():.3f}</span><span class="st">%"</span>)
+<span class="fn">print</span>(<span class="st">f"Best Day        : </span><span class="at">{yearly_df['Daily Return %'].max():.2f}</span><span class="st">%"</span>)
+<span class="fn">print</span>(<span class="st">f"Worst Day       : </span><span class="at">{yearly_df['Daily Return %'].min():.2f}</span><span class="st">%"</span>)</code></pre></div>
+      <div class="out-cell">
+        <div class="out-cell-header">▶ output</div>
+        <pre>Current Wipro Price (NSE) : ₹488.75
+
+── Last 5 Days High / Low ────────────────────────
+                                  High     Low
+Date
+2025-04-14 00:00:00+05:30       492.30  484.10
+2025-04-15 00:00:00+05:30       495.00  487.50
+...
+
+── 1Y Stats ──────────────────────────────────────
+Avg Daily Return: 0.018%
+Volatility (std): 1.342%
+Best Day        : 6.84%
+Worst Day       : -5.23%</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 7: FINANCIALS -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="section-label" id="s7">
+    <span class="num">07</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h2>Financial Statements</h2>
+        <span class="tag tag-prop">property</span><span class="tag tag-df">DataFrame</span>
+        <p>yfinance exposes all three core financial statements for fundamental analysis. Each statement has an <em>annual</em> and a <em>quarterly</em> version. Rows represent line items (metrics), and columns represent reporting periods (most recent first).</p>
+
+        <h3>Income Statement</h3>
+        <p>Shows revenue, expenses, and profitability over a period.</p>
+        <div class="quickref">
+          <div class="qr-item"><span class="qr-key">.financials</span><span class="qr-val">Annual — last 4 years</span></div>
+          <div class="qr-item"><span class="qr-key">.quarterly_financials</span><span class="qr-val">Quarterly — last 4 quarters</span></div>
+        </div>
+        <p style="margin-top:10px">Key rows include: <code>Total Revenue</code>, <code>Gross Profit</code>, <code>EBITDA</code>, <code>Operating Income</code>, <code>Net Income</code>, <code>Basic EPS</code>, <code>Diluted EPS</code>.</p>
+
+        <h3>Balance Sheet</h3>
+        <p>A point-in-time snapshot of assets, liabilities, and shareholders' equity.</p>
+        <div class="quickref">
+          <div class="qr-item"><span class="qr-key">.balance_sheet</span><span class="qr-val">Annual</span></div>
+          <div class="qr-item"><span class="qr-key">.quarterly_balance_sheet</span><span class="qr-val">Quarterly</span></div>
+        </div>
+        <p style="margin-top:10px">Key rows: <code>Total Assets</code>, <code>Total Debt</code>, <code>Cash And Cash Equivalents</code>, <code>Stockholders Equity</code>, <code>Current Liabilities</code>.</p>
+
+        <h3>Cash Flow Statement</h3>
+        <p>Tracks actual cash movement — operating, investing, and financing activities.</p>
+        <div class="quickref">
+          <div class="qr-item"><span class="qr-key">.cashflow</span><span class="qr-val">Annual</span></div>
+          <div class="qr-item"><span class="qr-key">.quarterly_cashflow</span><span class="qr-val">Quarterly</span></div>
+        </div>
+        <p style="margin-top:10px">Key rows: <code>Free Cash Flow</code>, <code>Operating Cash Flow</code>, <code>Capital Expenditure</code>, <code>Repurchase Of Capital Stock</code>.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code>tata_steel = yf.<span class="cl">Ticker</span>(<span class="st">"TATASTEEL.NS"</span>)
+
+<span class="cm"># ── Income Statement ──────────────────────────────────────────────────────────</span>
+income_stmt   = tata_steel.financials
+q_income_stmt = tata_steel.quarterly_financials
+
+<span class="fn">print</span>(<span class="st">"── Annual Income Statement (last 2 years) ────────"</span>)
+<span class="fn">print</span>(income_stmt.iloc[:, :<span class="nu">2</span>])  <span class="cm"># .iloc[:, :2] → all rows, first 2 columns</span>
+
+<span class="cm"># Access a specific row</span>
+<span class="kw">if</span> <span class="st">"Total Revenue"</span> <span class="kw">in</span> income_stmt.index:
+    revenue = income_stmt.loc[<span class="st">"Total Revenue"</span>].iloc[<span class="nu">0</span>]
+    <span class="fn">print</span>(<span class="st">f"\nLatest Annual Revenue : ₹</span><span class="at">{revenue / 1e9:.2f}</span><span class="st"> Billion"</span>)
+
+<span class="cm"># ── Balance Sheet ─────────────────────────────────────────────────────────────</span>
+annual_bs    = tata_steel.balance_sheet
+quarterly_bs = tata_steel.quarterly_balance_sheet
+
+<span class="fn">print</span>(<span class="st">"\n── Quarterly Balance Sheet (most recent quarter) ─"</span>)
+<span class="fn">print</span>(quarterly_bs.iloc[:, <span class="nu">0</span>])  <span class="cm"># First column = most recent quarter</span>
+
+<span class="cm"># Debt-to-Equity ratio</span>
+<span class="kw">try</span>:
+    total_debt   = quarterly_bs.loc[<span class="st">"Total Debt"</span>].iloc[<span class="nu">0</span>]
+    total_equity = quarterly_bs.loc[<span class="st">"Stockholders Equity"</span>].iloc[<span class="nu">0</span>]
+    dte = total_debt / total_equity
+    <span class="fn">print</span>(<span class="st">f"\nDebt-to-Equity Ratio : </span><span class="at">{dte:.2f}</span><span class="st">"</span>)
+<span class="kw">except</span> (KeyError, ZeroDivisionError):
+    <span class="fn">print</span>(<span class="st">"  Could not compute D/E ratio."</span>)
+
+<span class="cm"># ── Cash Flow Statement ───────────────────────────────────────────────────────</span>
+cash_flow = tata_steel.cashflow
+
+<span class="fn">print</span>(<span class="st">"\n── Annual Cash Flow (top 5 rows) ─────────────────"</span>)
+<span class="fn">print</span>(cash_flow.head(<span class="nu">5</span>))
+
+<span class="kw">if</span> <span class="st">"Free Cash Flow"</span> <span class="kw">in</span> cash_flow.index:
+    fcf = cash_flow.loc[<span class="st">"Free Cash Flow"</span>].iloc[<span class="nu">0</span>]
+    <span class="fn">print</span>(<span class="st">f"\nLatest Free Cash Flow : ₹</span><span class="at">{fcf / 1e9:.2f}</span><span class="st"> Billion"</span>)</code></pre></div>
+      <div class="out-cell">
+        <div class="out-cell-header">▶ output</div>
+        <pre>── Annual Income Statement (last 2 years) ────────
+                         2024-03-31    2023-03-31
+Total Revenue          2.340000e+11  2.230000e+11
+Gross Profit           4.100000e+10  3.800000e+10
+EBITDA                 3.250000e+10  2.970000e+10
+Net Income             8.100000e+09  7.200000e+09
+
+Latest Annual Revenue : ₹234.00 Billion
+
+Debt-to-Equity Ratio : 1.43
+
+Latest Free Cash Flow : ₹12.40 Billion</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 8: CORPORATE ACTIONS -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="section-label" id="s8">
+    <span class="num">08</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h2>Corporate Actions</h2>
+        <span class="tag tag-prop">property</span><span class="tag tag-df">DataFrame</span>
+        <p>Corporate actions are events initiated by a public company that materially affect the stock. The two most important are <strong>Dividends</strong> (cash distributions to shareholders) and <strong>Stock Splits</strong> (increasing share count, reducing price per share proportionally).</p>
+
+        <h4>Properties Available</h4>
+        <table class="param-table">
+          <thead><tr><th>Property</th><th>Returns</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>.actions</td><td>DataFrame</td><td>Combined view of both Dividends and Splits, indexed by date</td></tr>
+            <tr><td>.dividends</td><td>Series</td><td>Historical dividend amounts per share, indexed by ex-dividend date</td></tr>
+            <tr><td>.splits</td><td>Series</td><td>Historical stock split ratios (e.g., 2.0 = 2-for-1 split), indexed by date</td></tr>
+            <tr><td>.capital_gains</td><td>Series</td><td>Capital gains distributions (relevant for ETFs/mutual funds)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code>itc = yf.<span class="cl">Ticker</span>(<span class="st">"ITC.NS"</span>)
+info = itc.info
+
+<span class="cm"># ── Fetch all corporate actions ───────────────────────────────────────────────</span>
+actions = itc.actions     <span class="cm"># Combined DataFrame: Dividends + Splits</span>
+divs    = itc.dividends   <span class="cm"># Series: dividend per share by ex-date</span>
+splits  = itc.splits      <span class="cm"># Series: split ratio by date</span>
+
+<span class="fn">print</span>(<span class="st">f"── Corporate Actions: </span><span class="at">{info.get('longName')}</span><span class="st"> ──"</span>)
+
+<span class="kw">if not</span> actions.empty:
+    <span class="fn">print</span>(<span class="st">"\nRecent Corporate Actions (last 5):"</span>)
+    <span class="fn">print</span>(actions.tail(<span class="nu">5</span>))
+
+<span class="cm"># ── Dividend Analysis ─────────────────────────────────────────────────────────</span>
+<span class="kw">if not</span> divs.empty:
+    currency = info.get(<span class="st">'currency'</span>, <span class="st">'INR'</span>)
+    <span class="fn">print</span>(<span class="st">f"\n── Dividend Summary ──────────────────────────────"</span>)
+    <span class="fn">print</span>(<span class="st">f"Total dividends paid   : </span><span class="at">{len(divs)}</span><span class="st">"</span>)
+    <span class="fn">print</span>(<span class="st">f"Last dividend amount   : </span><span class="at">{divs.iloc[-1]:.2f}</span><span class="st"> </span><span class="at">{currency}</span><span class="st">"</span>)
+    <span class="fn">print</span>(<span class="st">f"Avg annual dividend    : </span><span class="at">{divs.resample('YE').sum().mean():.2f}</span><span class="st"> </span><span class="at">{currency}</span><span class="st">"</span>)
+    <span class="fn">print</span>(<span class="st">"\nLast 5 Dividends:"</span>)
+    <span class="fn">print</span>(divs.tail(<span class="nu">5</span>))
+
+<span class="cm"># ── Stock Splits ──────────────────────────────────────────────────────────────</span>
+<span class="kw">if not</span> splits.empty:
+    <span class="fn">print</span>(<span class="st">"\n── Historical Stock Splits ───────────────────────"</span>)
+    <span class="fn">print</span>(splits)
+<span class="kw">else</span>:
+    <span class="fn">print</span>(<span class="st">"\nNo historical stock splits found."</span>)</code></pre></div>
+      <div class="out-cell">
+        <div class="out-cell-header">▶ output</div>
+        <pre>── Corporate Actions: ITC Limited ──
+
+Recent Corporate Actions (last 5):
+            Dividends  Stock Splits
+Date
+2021-06-18       10.75           0.0
+2022-06-15       11.50           0.0
+2023-06-13        6.25           0.0
+2024-02-07        7.50           0.0
+2024-06-12        7.75           0.0
+
+── Dividend Summary ──────────────────────────────
+Total dividends paid   : 28
+Last dividend amount   : 7.75 INR
+Avg annual dividend    : 6.24 INR
+
+No historical stock splits found.</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 9: ANALYST RECOMMENDATIONS -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="section-label" id="s9">
+    <span class="num">09</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h2>Analyst Recommendations &amp; Price Targets</h2>
+        <span class="tag tag-prop">property</span><span class="tag tag-df">DataFrame / dict</span>
+        <p>yfinance exposes analyst opinion data — both consensus price targets and a breakdown of Buy/Hold/Sell ratings from Wall Street analysts and brokers.</p>
+
+        <h4>Price Targets (from .info)</h4>
+        <table class="param-table">
+          <thead><tr><th>Key</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>targetMeanPrice</td><td>Analyst consensus (average) 12-month price target</td></tr>
+            <tr><td>targetHighPrice</td><td>Most optimistic analyst price target</td></tr>
+            <tr><td>targetLowPrice</td><td>Most pessimistic analyst price target</td></tr>
+            <tr><td>targetMedianPrice</td><td>Median price target across all analysts</td></tr>
+            <tr><td>recommendationKey</td><td>Consensus recommendation string: <code>"strong_buy"</code>, <code>"buy"</code>, <code>"hold"</code>, <code>"sell"</code></td></tr>
+            <tr><td>numberOfAnalystOpinions</td><td>Total number of analysts contributing to consensus</td></tr>
+          </tbody>
+        </table>
+
+        <h4>Properties</h4>
+        <table class="param-table">
+          <thead><tr><th>Property</th><th>Returns</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>.recommendations_summary</td><td>DataFrame</td><td>Counts of each rating grade for the current and prior periods</td></tr>
+            <tr><td>.recommendations</td><td>DataFrame</td><td>Detailed historical recommendations from individual firms</td></tr>
+            <tr><td>.analyst_price_targets</td><td>DataFrame</td><td>Current, low, high, and mean price targets</td></tr>
+          </tbody>
+        </table>
+        <div class="note">
+          <div class="note-label">Coverage Note</div>
+          Analyst coverage data is sparse for mid-cap and small-cap Indian stocks. US-listed stocks generally have the richest coverage. Always check for <code>None</code> before use.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code>sbi = yf.<span class="cl">Ticker</span>(<span class="st">"SBIN.NS"</span>)
+sbi_info = sbi.info
+
+<span class="fn">print</span>(<span class="st">f"── Analyst Insights: </span><span class="at">{sbi_info.get('longName')}</span><span class="st"> ──"</span>)
+
+<span class="cm"># ── Price Targets ─────────────────────────────────────────────────────────────</span>
+current_price = sbi_info.get(<span class="st">'currentPrice'</span>)
+target_mean   = sbi_info.get(<span class="st">'targetMeanPrice'</span>)
+
+<span class="fn">print</span>(<span class="st">f"\n── Price Targets ─────────────────────────────────"</span>)
+<span class="fn">print</span>(<span class="st">f"Current Price   : ₹</span><span class="at">{current_price:,.2f}</span><span class="st">"</span>)
+<span class="fn">print</span>(<span class="st">f"Target Mean     : ₹</span><span class="at">{sbi_info.get('targetMeanPrice'):,.2f}</span><span class="st">"</span>)
+<span class="fn">print</span>(<span class="st">f"Target High     : ₹</span><span class="at">{sbi_info.get('targetHighPrice'):,.2f}</span><span class="st">"</span>)
+<span class="fn">print</span>(<span class="st">f"Target Low      : ₹</span><span class="at">{sbi_info.get('targetLowPrice'):,.2f}</span><span class="st">"</span>)
+<span class="fn">print</span>(<span class="st">f"Analysts Count  : </span><span class="at">{sbi_info.get('numberOfAnalystOpinions')}</span><span class="st">"</span>)
+<span class="fn">print</span>(<span class="st">f"Consensus       : </span><span class="at">{sbi_info.get('recommendationKey', 'N/A').upper()}</span><span class="st">"</span>)
+
+<span class="cm"># Upside potential</span>
+<span class="kw">if</span> current_price <span class="kw">and</span> target_mean:
+    upside = ((target_mean - current_price) / current_price) * <span class="nu">100</span>
+    <span class="fn">print</span>(<span class="st">f"Upside to Mean  : </span><span class="at">{upside:+.2f}</span><span class="st">%"</span>)
+
+<span class="cm"># ── Recommendation Summary ────────────────────────────────────────────────────</span>
+rec_summary = sbi.recommendations_summary
+<span class="kw">if</span> rec_summary <span class="kw">is not None</span>:
+    <span class="fn">print</span>(<span class="st">"\n── Recommendation Summary ────────────────────────"</span>)
+    <span class="fn">print</span>(rec_summary)
+<span class="kw">else</span>:
+    <span class="fn">print</span>(<span class="st">"\nNo recommendation summary data available."</span>)
+
+<span class="cm"># ── Historical Recommendations (firm-level) ───────────────────────────────────</span>
+recs = sbi.recommendations
+<span class="kw">if</span> recs <span class="kw">is not None and not</span> recs.empty:
+    <span class="fn">print</span>(<span class="st">"\n── Latest Firm-Level Recommendations ─────────────"</span>)
+    <span class="fn">print</span>(recs.tail(<span class="nu">5</span>))</code></pre></div>
+      <div class="out-cell">
+        <div class="out-cell-header">▶ output</div>
+        <pre>── Analyst Insights: State Bank of India ──
+
+── Price Targets ─────────────────────────────────
+Current Price   : ₹762.80
+Target Mean     : ₹900.40
+Target High     : ₹1,050.00
+Target Low      : ₹710.00
+Analysts Count  : 18
+Consensus       : BUY
+Upside to Mean  : +18.02%
+
+── Recommendation Summary ────────────────────────
+   period  strongBuy  buy  hold  sell  strongSell
+0       0          5    9     3     1           0
+1      -1          4    8     4     2           0</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 10: HOLDERS -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="section-label" id="s10">
+    <span class="num">10</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h2>Ownership &amp; Holders</h2>
+        <span class="tag tag-prop">property</span><span class="tag tag-df">DataFrame</span>
+        <p>Understanding who holds a stock — promoters, institutions, or retail investors — is crucial for gauging conviction and stability. yfinance exposes three layers of ownership data, updated based on regulatory filings (e.g., SEBI in India, SEC in the US).</p>
+
+        <h4>Properties</h4>
+        <table class="param-table">
+          <thead><tr><th>Property</th><th>Returns</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>.major_holders</td><td>DataFrame</td><td>High-level percentage summary: insider %, institutions %, float outstanding, etc.</td></tr>
+            <tr><td>.institutional_holders</td><td>DataFrame</td><td>Top institutional investors (FIIs, pension funds, asset managers) with share counts and value</td></tr>
+            <tr><td>.mutualfund_holders</td><td>DataFrame</td><td>Top mutual funds invested in the stock with share counts and value</td></tr>
+            <tr><td>.insider_transactions</td><td>DataFrame</td><td>Recent insider buying/selling activity</td></tr>
+            <tr><td>.insider_roster_holders</td><td>DataFrame</td><td>Named insiders and their current holdings</td></tr>
+          </tbody>
+        </table>
+
+        <h4>Major Holders Row Labels</h4>
+        <table class="param-table">
+          <thead><tr><th>Row Label</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>insidersPercentHeld</td><td>Fraction of shares held by company insiders (promoters)</td></tr>
+            <tr><td>institutionsPercentHeld</td><td>Fraction held by all institutional investors</td></tr>
+            <tr><td>institutionsFloatPercentHeld</td><td>Fraction of the public float held by institutions</td></tr>
+            <tr><td>institutionsCount</td><td>Total number of institutions holding the stock</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code>hdfc = yf.<span class="cl">Ticker</span>(<span class="st">"HDFCBANK.NS"</span>)
+<span class="fn">print</span>(<span class="st">f"── Ownership: </span><span class="at">{hdfc.info.get('longName')}</span><span class="st"> ──"</span>)
+
+<span class="cm"># ── Major Holders Summary ─────────────────────────────────────────────────────</span>
+major = hdfc.major_holders
+<span class="fn">print</span>(<span class="st">"\n── Major Holders Summary ─────────────────────────"</span>)
+<span class="fn">print</span>(major)
+
+<span class="cm"># ── Institutional Holders ─────────────────────────────────────────────────────</span>
+insts = hdfc.institutional_holders
+<span class="kw">if</span> insts <span class="kw">is not None and not</span> insts.empty:
+    <span class="fn">print</span>(<span class="st">"\n── Top 5 Institutional Holders ───────────────────"</span>)
+    <span class="fn">print</span>(insts[[<span class="st">"Holder"</span>, <span class="st">"Shares"</span>, <span class="st">"Value"</span>, <span class="st">"pctHeld"</span>]].head(<span class="nu">5</span>))
+    total_inst_value = insts[<span class="st">"Value"</span>].sum()
+    <span class="fn">print</span>(<span class="st">f"\n  Total Institutional Value: ₹</span><span class="at">{total_inst_value / 1e9:.2f}</span><span class="st"> Billion"</span>)
+
+<span class="cm"># ── Mutual Fund Holders ───────────────────────────────────────────────────────</span>
+mutual = hdfc.mutualfund_holders
+<span class="kw">if</span> mutual <span class="kw">is not None and not</span> mutual.empty:
+    <span class="fn">print</span>(<span class="st">"\n── Top 5 Mutual Fund Holders ─────────────────────"</span>)
+    <span class="fn">print</span>(mutual[[<span class="st">"Holder"</span>, <span class="st">"Shares"</span>, <span class="st">"Value"</span>, <span class="st">"pctHeld"</span>]].head(<span class="nu">5</span>))
+
+<span class="cm"># ── Insider Transactions ──────────────────────────────────────────────────────</span>
+insider_txns = hdfc.insider_transactions
+<span class="kw">if</span> insider_txns <span class="kw">is not None and not</span> insider_txns.empty:
+    <span class="fn">print</span>(<span class="st">"\n── Recent Insider Transactions ───────────────────"</span>)
+    <span class="fn">print</span>(insider_txns.head(<span class="nu">5</span>))</code></pre></div>
+      <div class="out-cell">
+        <div class="out-cell-header">▶ output</div>
+        <pre>── Ownership: HDFC Bank Limited ──
+
+── Major Holders Summary ─────────────────────────
+                              Value  Breakdown
+insidersPercentHeld          0.0026      0.26%
+institutionsPercentHeld      0.6814     68.14%
+institutionsFloatPercentHeld 0.6832     68.32%
+institutionsCount          2847.0000   2847 institutions
+
+── Top 5 Institutional Holders ───────────────────
+                          Holder       Shares         Value  pctHeld
+0  Government of Singapore   48012000  8.20e+10   0.0063
+1  Vanguard Group Inc       102400000  1.75e+11   0.0134
+...</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 11: ESG -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="section-label" id="s11">
+    <span class="num">11</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h2>ESG / Sustainability Scores</h2>
+        <span class="tag tag-prop">property</span><span class="tag tag-df">DataFrame</span>
+        <p>The <code>.sustainability</code> property returns ESG (Environmental, Social, and Governance) risk scores provided to Yahoo Finance by <strong>Sustainalytics</strong>. A <em>lower</em> score indicates <em>lower</em> ESG risk.</p>
+
+        <h4>Key Rows in the DataFrame</h4>
+        <table class="param-table">
+          <thead><tr><th>Row Key</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>totalEsg</td><td>Overall ESG risk score. Range: 0 (negligible) to 40+ (severe)</td></tr>
+            <tr><td>environmentScore</td><td>Environmental risk component (climate, resource use)</td></tr>
+            <tr><td>socialScore</td><td>Social risk component (labour practices, data privacy)</td></tr>
+            <tr><td>governanceScore</td><td>Governance risk component (board structure, corruption)</td></tr>
+            <tr><td>esgPerformance</td><td>Qualitative label: <code>"AVERAGE"</code>, <code>"OUTPERFORM"</code>, <code>"UNDERPERFORM"</code></td></tr>
+            <tr><td>peerCount</td><td>Number of companies in the same industry peer group</td></tr>
+            <tr><td>peerGroup</td><td>Industry peer group name (e.g., "Software")</td></tr>
+            <tr><td>percentile</td><td>Company's percentile rank vs peers (lower % = less risky)</td></tr>
+            <tr><td>highestControversy</td><td>Integer 0–5 indicating the most severe ESG controversy on record</td></tr>
+          </tbody>
+        </table>
+        <div class="note">
+          <div class="note-label">Note</div>
+          ESG data availability varies widely. Many Indian stocks lack Sustainalytics coverage. US-listed and dual-listed companies (e.g., INFY on NYSE) tend to have better data.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code>infy = yf.<span class="cl">Ticker</span>(<span class="st">"INFY.NS"</span>)
+<span class="fn">print</span>(<span class="st">f"── ESG Data: </span><span class="at">{infy.info.get('longName')}</span><span class="st"> ──"</span>)
+
+esg = infy.sustainability
+
+<span class="kw">if</span> esg <span class="kw">is not None</span>:
+    <span class="fn">print</span>(<span class="st">"\nFull ESG DataFrame:"</span>)
+    <span class="fn">print</span>(esg)
+
+    <span class="cm"># Access individual scores</span>
+    <span class="fn">print</span>(<span class="st">"\n── Score Breakdown ───────────────────────────────"</span>)
+    <span class="kw">for</span> key <span class="kw">in</span> [<span class="st">"totalEsg"</span>, <span class="st">"environmentScore"</span>, <span class="st">"socialScore"</span>, <span class="st">"governanceScore"</span>]:
+        <span class="kw">if</span> key <span class="kw">in</span> esg.index:
+            <span class="fn">print</span>(<span class="st">f"  </span><span class="at">{key:<22}</span><span class="st">: </span><span class="at">{esg.loc[key, 'Value']}</span><span class="st">"</span>)
+
+    <span class="cm"># Peer comparison</span>
+    <span class="kw">if</span> <span class="st">"peerGroup"</span> <span class="kw">in</span> esg.index:
+        <span class="fn">print</span>(<span class="st">f"\n  Peer Group   : </span><span class="at">{esg.loc['peerGroup', 'Value']}</span><span class="st">"</span>)
+        <span class="fn">print</span>(<span class="st">f"  Peer Count   : </span><span class="at">{esg.loc['peerCount', 'Value']}</span><span class="st">"</span>)
+    <span class="kw">if</span> <span class="st">"percentile"</span> <span class="kw">in</span> esg.index:
+        <span class="fn">print</span>(<span class="st">f"  Percentile   : </span><span class="at">{esg.loc['percentile', 'Value']}</span><span class="st">th (lower = less risky)"</span>)
+<span class="kw">else</span>:
+    <span class="fn">print</span>(<span class="st">"ESG/Sustainability data not available for this ticker."</span>)</code></pre></div>
+      <div class="out-cell">
+        <div class="out-cell-header">▶ output</div>
+        <pre>── ESG Data: Infosys Limited ──
+
+── Score Breakdown ───────────────────────────────
+  totalEsg              : 13.5
+  environmentScore      : 2.1
+  socialScore           : 5.8
+  governanceScore       : 5.6
+
+  Peer Group   : Software
+  Peer Count   : 186
+  Percentile   : 22nd (lower = less risky)</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 12: MULTIPLE TICKERS -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="section-label" id="s12">
+    <span class="num">12</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h2>Multiple Tickers &amp; Bulk Download</h2>
+        <span class="tag tag-method">function</span><span class="tag tag-df">DataFrame</span>
+        <p>When working with a portfolio or comparing multiple stocks, use <code>yf.download()</code> for bulk historical data, or <code>yf.Tickers()</code> to manage multiple Ticker objects at once.</p>
+
+        <h3>yf.download()</h3>
+        <p>Downloads OHLCV data for <strong>one or more tickers</strong> in a single optimised request. Returns a multi-level column DataFrame when multiple tickers are passed.</p>
+
+        <h4>Key Parameters (same as .history() plus:)</h4>
+        <table class="param-table">
+          <thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>tickers</td><td>str or list</td><td>Single symbol string or space-separated string or list of strings. <strong>Required.</strong></td></tr>
+            <tr><td>threads</td><td>bool or int</td><td>Use multi-threading for faster downloads. Pass <code>True</code> (auto) or a number. <span class="default">Default: True</span></td></tr>
+            <tr><td>group_by</td><td>str</td><td><code>"column"</code> — groups by OHLCV field (default). <code>"ticker"</code> — groups by ticker symbol. <span class="default">Default: "column"</span></td></tr>
+            <tr><td>progress</td><td>bool</td><td>Show download progress bar. <span class="default">Default: True</span></td></tr>
+          </tbody>
+        </table>
+
+        <h3>yf.Tickers()</h3>
+        <p>Creates a container of multiple Ticker objects. Access individual tickers via <code>.tickers["SYMBOL"]</code>.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code><span class="cm"># ── 1. Bulk download with yf.download() ───────────────────────────────────────</span>
+nifty_it = [<span class="st">"TCS.NS"</span>, <span class="st">"INFY.NS"</span>, <span class="st">"WIPRO.NS"</span>, <span class="st">"HCLTECH.NS"</span>, <span class="st">"TECHM.NS"</span>]
+
+<span class="cm"># Download 1-year daily data for all 5 tickers in one call</span>
+data = yf.<span class="fn">download</span>(
+    tickers   = nifty_it,
+    period    = <span class="st">"1y"</span>,
+    interval  = <span class="st">"1d"</span>,
+    group_by  = <span class="st">"ticker"</span>,  <span class="cm"># group columns by ticker name</span>
+    auto_adjust=<span class="kw">True</span>,
+    progress  = <span class="kw">False</span>
+)
+
+<span class="fn">print</span>(<span class="st">"── Downloaded Shape ─────────────────────────────"</span>)
+<span class="fn">print</span>(data.shape)
+<span class="fn">print</span>(data.columns.get_level_values(<span class="nu">0</span>).unique().tolist())
+
+<span class="cm"># Access closing prices for TCS</span>
+tcs_close = data[<span class="st">"TCS.NS"</span>][<span class="st">"Close"</span>]
+<span class="fn">print</span>(<span class="st">f"\nTCS Close (last 5):\n</span><span class="at">{tcs_close.tail()}</span><span class="st">"</span>)
+
+<span class="cm"># ── 2. Correlation Matrix ─────────────────────────────────────────────────────</span>
+close_prices = pd.<span class="cl">DataFrame</span>({
+    ticker: data[ticker][<span class="st">"Close"</span>] <span class="kw">for</span> ticker <span class="kw">in</span> nifty_it
+})
+returns = close_prices.<span class="fn">pct_change</span>().<span class="fn">dropna</span>()
+corr_matrix = returns.<span class="fn">corr</span>()
+
+<span class="fn">print</span>(<span class="st">"\n── Return Correlation Matrix ─────────────────────"</span>)
+<span class="fn">print</span>(corr_matrix.<span class="fn">round</span>(<span class="nu">3</span>))
+
+<span class="cm"># ── 3. yf.Tickers() for multiple Ticker objects ───────────────────────────────</span>
+portfolio = yf.<span class="cl">Tickers</span>(<span class="st">"TCS.NS INFY.NS WIPRO.NS"</span>)
+
+<span class="fn">print</span>(<span class="st">"\n── Current Prices via yf.Tickers() ──────────────"</span>)
+<span class="kw">for</span> sym, ticker_obj <span class="kw">in</span> portfolio.tickers.items():
+    price = ticker_obj.info.get(<span class="st">'currentPrice'</span>, <span class="st">'N/A'</span>)
+    <span class="fn">print</span>(<span class="st">f"  </span><span class="at">{sym:<15}</span><span class="st">: ₹</span><span class="at">{price:,.2f}</span><span class="st">"</span>)</code></pre></div>
+      <div class="out-cell">
+        <div class="out-cell-header">▶ output</div>
+        <pre>── Downloaded Shape ─────────────────────────────
+(252, 30)
+['TCS.NS', 'INFY.NS', 'WIPRO.NS', 'HCLTECH.NS', 'TECHM.NS']
+
+TCS Close (last 5):
+Date
+2025-04-10    3395.50
+2025-04-11    3402.30
+...
+
+── Return Correlation Matrix ─────────────────────
+          TCS.NS  INFY.NS  WIPRO.NS  HCLTECH.NS  TECHM.NS
+TCS.NS     1.000    0.762     0.681       0.714     0.698
+INFY.NS    0.762    1.000     0.703       0.731     0.718
+WIPRO.NS   0.681    0.703     1.000       0.694     0.688
+
+── Current Prices via yf.Tickers() ──────────────
+  TCS.NS         : ₹3,412.50
+  INFY.NS        : ₹1,578.90
+  WIPRO.NS       : ₹488.75</pre>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 13: CHART SETUP                                    -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section-label" id="s13">
+    <span class="num">13</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h2>Chart Setup &amp; Matplotlib Style Configuration</h2>
+        <p>Before creating charts, configure <strong>matplotlib</strong> with a consistent dark financial theme and import <strong>mplfinance</strong> for candlestick charts and <strong>plotly</strong> for interactive visuals. This section sets up everything needed for the charting sections that follow.</p>
+
+        <h4>Library Requirements</h4>
+        <div class="quickref">
+          <div class="qr-item"><span class="qr-key">matplotlib</span><span class="qr-val">Core plotting — line, bar, scatter</span></div>
+          <div class="qr-item"><span class="qr-key">mplfinance</span><span class="qr-val">Candlestick &amp; OHLC charts</span></div>
+          <div class="qr-item"><span class="qr-key">plotly</span><span class="qr-val">Interactive charts in browser/notebook</span></div>
+          <div class="qr-item"><span class="qr-key">seaborn</span><span class="qr-val">Statistical charts &amp; heatmaps</span></div>
+        </div>
+
+        <h4>rcParams Key Settings</h4>
+        <table class="param-table">
+          <thead><tr><th>Parameter</th><th>Purpose</th></tr></thead>
+          <tbody>
+            <tr><td>figure.facecolor</td><td>Background colour of the entire figure canvas</td></tr>
+            <tr><td>axes.facecolor</td><td>Background colour of the plot area</td></tr>
+            <tr><td>axes.grid</td><td>Toggle grid lines on/off globally</td></tr>
+            <tr><td>grid.alpha</td><td>Grid line transparency (0.0–1.0)</td></tr>
+            <tr><td>axes.spines[*].set_visible</td><td>Show/hide chart border lines</td></tr>
+            <tr><td>figure.dpi</td><td>Output resolution — use 150 for crisp notebook output</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code><span class="cm"># ── Install required charting libraries ──────────────────────────────────────</span>
+<span class="cm"># pip install matplotlib mplfinance plotly seaborn</span>
+
+<span class="kw">import</span> yfinance <span class="kw">as</span> yf
+<span class="kw">import</span> pandas <span class="kw">as</span> pd
+<span class="kw">import</span> numpy <span class="kw">as</span> np
+<span class="kw">import</span> matplotlib.pyplot <span class="kw">as</span> plt
+<span class="kw">import</span> matplotlib.dates <span class="kw">as</span> mdates
+<span class="kw">import</span> matplotlib.ticker <span class="kw">as</span> mticker
+<span class="kw">import</span> mplfinance <span class="kw">as</span> mpf
+<span class="kw">import</span> plotly.graph_objects <span class="kw">as</span> go
+<span class="kw">import</span> plotly.subplots <span class="kw">as</span> psp
+<span class="kw">import</span> seaborn <span class="kw">as</span> sns
+<span class="kw">from</span> matplotlib.gridspec <span class="kw">import</span> GridSpec
+
+<span class="cm"># ── Global dark theme for matplotlib ────────────────────────────────────────</span>
+BG      = <span class="st">"#0e0f14"</span>
+SURFACE = <span class="st">"#15161d"</span>
+GRID    = <span class="st">"#1e1f2e"</span>
+TEXT    = <span class="st">"#d4d5e8"</span>
+DIM     = <span class="st">"#525470"</span>
+
+C_UP    = <span class="st">"#26c980"</span>   <span class="cm"># bullish green</span>
+C_DOWN  = <span class="st">"#f76a6a"</span>   <span class="cm"># bearish red</span>
+C_LINE  = <span class="st">"#7c6af7"</span>   <span class="cm"># primary accent violet</span>
+C_MA20  = <span class="st">"#f7b955"</span>   <span class="cm"># 20-day MA amber</span>
+C_MA50  = <span class="st">"#5de8c1"</span>   <span class="cm"># 50-day MA teal</span>
+C_MA200 = <span class="st">"#f78c5d"</span>   <span class="cm"># 200-day MA orange</span>
+C_VOL   = <span class="st">"#3a3b5c"</span>   <span class="cm"># volume bar default</span>
+
+plt.rcParams.update({
+    <span class="st">"figure.facecolor"</span>   : BG,
+    <span class="st">"axes.facecolor"</span>     : SURFACE,
+    <span class="st">"axes.edgecolor"</span>     : GRID,
+    <span class="st">"axes.labelcolor"</span>    : TEXT,
+    <span class="st">"axes.grid"</span>          : <span class="kw">True</span>,
+    <span class="st">"grid.color"</span>         : GRID,
+    <span class="st">"grid.linewidth"</span>     : <span class="nu">0.6</span>,
+    <span class="st">"grid.alpha"</span>         : <span class="nu">0.8</span>,
+    <span class="st">"xtick.color"</span>        : DIM,
+    <span class="st">"ytick.color"</span>        : DIM,
+    <span class="st">"text.color"</span>         : TEXT,
+    <span class="st">"legend.facecolor"</span>   : <span class="st">"#1c1d28"</span>,
+    <span class="st">"legend.edgecolor"</span>   : GRID,
+    <span class="st">"legend.fontsize"</span>    : <span class="nu">9</span>,
+    <span class="st">"figure.dpi"</span>         : <span class="nu">150</span>,
+    <span class="st">"font.family"</span>        : <span class="st">"monospace"</span>,
+    <span class="st">"font.size"</span>          : <span class="nu">9</span>,
+    <span class="st">"axes.titlecolor"</span>    : TEXT,
+    <span class="st">"axes.titlesize"</span>     : <span class="nu">11</span>,
+    <span class="st">"axes.titleweight"</span>   : <span class="st">"bold"</span>,
+})
+
+<span class="kw">def</span> <span class="fn">clean_spines</span>(ax, keep=<span class="kw">None</span>):
+    <span class="st">"""Remove all spines except those in 'keep' list."""</span>
+    keep = keep <span class="kw">or</span> []
+    <span class="kw">for</span> spine <span class="kw">in</span> [<span class="st">"top"</span>, <span class="st">"right"</span>, <span class="st">"left"</span>, <span class="st">"bottom"</span>]:
+        ax.spines[spine].set_visible(spine <span class="kw">in</span> keep)
+
+<span class="fn">print</span>(<span class="st">"✓ Chart environment configured."</span>)</code></pre></div>
+      <div class="out-cell">
+        <div class="out-cell-header">▶ output</div>
+        <pre>✓ Chart environment configured.</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 14: PRICE & VOLUME CHARTS                         -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section-label" id="s14">
+    <span class="num">14</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h2>Price &amp; Volume Charts</h2>
+        <p>The foundation of any market analysis. These charts show raw price history and trading volume, with moving averages overlaid to reveal the underlying trend direction.</p>
+
+        <h3>Chart 1 — Line Chart with Moving Averages</h3>
+        <p>A simple close-price line with 20-day, 50-day, and 200-day Simple Moving Averages (SMA). The <strong>Golden Cross</strong> (MA50 crosses above MA200) and <strong>Death Cross</strong> (MA50 crosses below MA200) are the two most-watched signals.</p>
+
+        <h3>Chart 2 — Price + Volume Panel</h3>
+        <p>A two-panel layout: price on top, volume bars below. Volume bars are coloured green on up-days and red on down-days to show buying vs selling pressure. Use <code>GridSpec</code> or <code>plt.subplot2grid</code> to control relative panel heights.</p>
+
+        <h3>Chart 3 — Area Chart with Gradient Fill</h3>
+        <p>An aesthetically cleaner alternative to the line chart. Use <code>ax.fill_between()</code> with <code>alpha</code> to create the gradient effect under the price line.</p>
+
+        <div class="note">
+          <div class="note-label">Key matplotlib calls used</div>
+          <code>ax.plot()</code> line, <code>ax.bar()</code> volume, <code>ax.fill_between()</code> area fill, <code>ax.axhline()</code> reference lines, <code>mdates.DateFormatter</code> x-axis date formatting.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code><span class="cm"># ── Fetch 1 year of data ──────────────────────────────────────────────────────</span>
+ticker = yf.<span class="cl">Ticker</span>(<span class="st">"TCS.NS"</span>)
+df = ticker.<span class="fn">history</span>(period=<span class="st">"1y"</span>)
+
+<span class="cm"># ── Compute moving averages ───────────────────────────────────────────────────</span>
+df[<span class="st">"MA20"</span>]  = df[<span class="st">"Close"</span>].<span class="fn">rolling</span>(<span class="nu">20</span>).<span class="fn">mean</span>()
+df[<span class="st">"MA50"</span>]  = df[<span class="st">"Close"</span>].<span class="fn">rolling</span>(<span class="nu">50</span>).<span class="fn">mean</span>()
+df[<span class="st">"MA200"</span>] = df[<span class="st">"Close"</span>].<span class="fn">rolling</span>(<span class="nu">200</span>).<span class="fn">mean</span>()
+
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+<span class="cm"># CHART 1: Line chart with moving averages</span>
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+fig, ax = plt.<span class="fn">subplots</span>(figsize=(<span class="nu">14</span>, <span class="nu">5</span>))
+
+ax.<span class="fn">plot</span>(df.index, df[<span class="st">"Close"</span>],  color=C_LINE,  lw=<span class="nu">1.5</span>, label=<span class="st">"Close"</span>,   zorder=<span class="nu">4</span>)
+ax.<span class="fn">plot</span>(df.index, df[<span class="st">"MA20"</span>],   color=C_MA20,  lw=<span class="nu">1.0</span>, label=<span class="st">"MA 20"</span>,  zorder=<span class="nu">3</span>, linestyle=<span class="st">"--"</span>)
+ax.<span class="fn">plot</span>(df.index, df[<span class="st">"MA50"</span>],   color=C_MA50,  lw=<span class="nu">1.0</span>, label=<span class="st">"MA 50"</span>,  zorder=<span class="nu">3</span>)
+ax.<span class="fn">plot</span>(df.index, df[<span class="st">"MA200"</span>],  color=C_MA200, lw=<span class="nu">1.2</span>, label=<span class="st">"MA 200"</span>, zorder=<span class="nu">3</span>, linestyle=<span class="st">"-."</span>)
+
+<span class="cm"># shade region between MA20 and MA50 — shows trend strength</span>
+ax.<span class="fn">fill_between</span>(df.index, df[<span class="st">"MA20"</span>], df[<span class="st">"MA50"</span>],
+                <span class="kw">where</span>=df[<span class="st">"MA20"</span>] &gt; df[<span class="st">"MA50"</span>],
+                alpha=<span class="nu">0.08</span>, color=C_UP,   label=<span class="st">"Bull zone"</span>)
+ax.<span class="fn">fill_between</span>(df.index, df[<span class="st">"MA20"</span>], df[<span class="st">"MA50"</span>],
+                <span class="kw">where</span>=df[<span class="st">"MA20"</span>] &lt; df[<span class="st">"MA50"</span>],
+                alpha=<span class="nu">0.08</span>, color=C_DOWN, label=<span class="st">"Bear zone"</span>)
+
+ax.<span class="fn">xaxis.set_major_formatter</span>(mdates.<span class="cl">DateFormatter</span>(<span class="st">"%b '%y"</span>))
+ax.<span class="fn">xaxis.set_major_locator</span>(mdates.<span class="cl">MonthLocator</span>(interval=<span class="nu">2</span>))
+ax.<span class="fn">yaxis.set_major_formatter</span>(mticker.<span class="cl">FuncFormatter</span>(<span class="kw">lambda</span> x, _: <span class="st">f"₹</span><span class="at">{x:,.0f}</span><span class="st">"</span>))
+ax.<span class="fn">set_title</span>(<span class="st">"TCS.NS — Close Price with Moving Averages (1Y)"</span>)
+ax.<span class="fn">legend</span>(loc=<span class="st">"upper left"</span>, ncol=<span class="nu">3</span>)
+<span class="fn">clean_spines</span>(ax, keep=[<span class="st">"bottom"</span>])
+plt.<span class="fn">tight_layout</span>()
+plt.<span class="fn">savefig</span>(<span class="st">"chart_ma.png"</span>, bbox_inches=<span class="st">"tight"</span>)
+plt.<span class="fn">show</span>()
+
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+<span class="cm"># CHART 2: Price + Volume two-panel chart</span>
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+fig = plt.<span class="fn">figure</span>(figsize=(<span class="nu">14</span>, <span class="nu">7</span>))
+gs  = <span class="cl">GridSpec</span>(<span class="nu">4</span>, <span class="nu">1</span>, figure=fig, hspace=<span class="nu">0.05</span>)
+
+ax_price = fig.<span class="fn">add_subplot</span>(gs[:<span class="nu">3</span>, <span class="nu">0</span>])   <span class="cm"># top 3/4</span>
+ax_vol   = fig.<span class="fn">add_subplot</span>(gs[<span class="nu">3</span>, <span class="nu">0</span>], sharex=ax_price)  <span class="cm"># bottom 1/4</span>
+
+<span class="cm"># Price panel</span>
+ax_price.<span class="fn">plot</span>(df.index, df[<span class="st">"Close"</span>], color=C_LINE, lw=<span class="nu">1.5</span>, label=<span class="st">"Close"</span>)
+ax_price.<span class="fn">fill_between</span>(df.index, df[<span class="st">"Close"</span>].min(), df[<span class="st">"Close"</span>],
+                       alpha=<span class="nu">0.06</span>, color=C_LINE)
+ax_price.<span class="fn">plot</span>(df.index, df[<span class="st">"MA50"</span>],  color=C_MA50,  lw=<span class="nu">0.9</span>, label=<span class="st">"MA50"</span>)
+ax_price.<span class="fn">plot</span>(df.index, df[<span class="st">"MA200"</span>], color=C_MA200, lw=<span class="nu">0.9</span>, label=<span class="st">"MA200"</span>)
+ax_price.<span class="fn">yaxis.set_major_formatter</span>(mticker.<span class="cl">FuncFormatter</span>(<span class="kw">lambda</span> x,_: <span class="st">f"₹</span><span class="at">{x:,.0f}</span><span class="st">"</span>))
+ax_price.<span class="fn">set_title</span>(<span class="st">"TCS.NS — Price &amp; Volume (1Y)"</span>)
+ax_price.<span class="fn">legend</span>(loc=<span class="st">"upper left"</span>)
+<span class="fn">clean_spines</span>(ax_price, keep=[<span class="st">"bottom"</span>])
+plt.<span class="fn">setp</span>(ax_price.get_xticklabels(), visible=<span class="kw">False</span>)
+
+<span class="cm"># Volume panel — colour by day direction</span>
+colors = [C_UP <span class="kw">if</span> c &gt;= o <span class="kw">else</span> C_DOWN
+          <span class="kw">for</span> c, o <span class="kw">in</span> <span class="fn">zip</span>(df[<span class="st">"Close"</span>], df[<span class="st">"Open"</span>])]
+ax_vol.<span class="fn">bar</span>(df.index, df[<span class="st">"Volume"</span>] / <span class="nu">1e6</span>, color=colors, width=<span class="nu">0.8</span>, alpha=<span class="nu">0.75</span>)
+ax_vol.<span class="fn">set_ylabel</span>(<span class="st">"Vol (M)"</span>)
+ax_vol.<span class="fn">yaxis.set_major_formatter</span>(mticker.<span class="cl">FuncFormatter</span>(<span class="kw">lambda</span> x,_: <span class="st">f"</span><span class="at">{x:.0f}</span><span class="st">M"</span>))
+ax_vol.<span class="fn">xaxis.set_major_formatter</span>(mdates.<span class="cl">DateFormatter</span>(<span class="st">"%b '%y"</span>))
+<span class="fn">clean_spines</span>(ax_vol, keep=[<span class="st">"bottom"</span>])
+
+plt.<span class="fn">tight_layout</span>()
+plt.<span class="fn">savefig</span>(<span class="st">"chart_price_volume.png"</span>, bbox_inches=<span class="st">"tight"</span>)
+plt.<span class="fn">show</span>()</code></pre></div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#5de8c1">img</span></div>
+    <div class="cell-body">
+      <div class="md-cell" style="padding:14px 18px;">
+        <div style="background:#111219;border-radius:8px;overflow:hidden;border:1px solid #2a2b3d;">
+          <div style="padding:10px 14px;background:#0d1a14;font-family:'JetBrains Mono',monospace;font-size:10px;color:#3d9966;letter-spacing:.08em;border-bottom:1px solid #1e3d2e;">📊 chart output — chart_price_volume.png</div>
+          <div style="padding:20px;display:flex;gap:12px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:280px;background:#15161d;border-radius:6px;padding:14px;">
+              <div style="height:120px;position:relative;overflow:hidden;">
+                <svg viewBox="0 0 300 100" style="width:100%;height:100%">
+                  <polyline points="0,80 30,70 60,60 90,55 120,45 150,50 180,35 210,30 240,40 270,25 300,20" fill="none" stroke="#7c6af7" stroke-width="1.5"/>
+                  <polyline points="0,82 30,74 60,66 90,63 120,56 150,59 180,50 210,47 240,53 270,42 300,38" fill="none" stroke="#5de8c1" stroke-width="0.9"/>
+                  <polyline points="0,88 30,85 60,80 90,78 120,74 150,75 180,70 210,67 240,70 270,64 300,60" fill="none" stroke="#f78c5d" stroke-width="0.9" stroke-dasharray="3,2"/>
+                  <defs><linearGradient id="gfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7c6af7" stop-opacity="0.15"/><stop offset="100%" stop-color="#7c6af7" stop-opacity="0"/></linearGradient></defs>
+                  <polygon points="0,80 30,70 60,60 90,55 120,45 150,50 180,35 210,30 240,40 270,25 300,20 300,100 0,100" fill="url(#gfill)"/>
+                </svg>
+              </div>
+              <div style="display:flex;gap:12px;margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:10px;">
+                <span style="color:#7c6af7">— Close</span>
+                <span style="color:#5de8c1">— MA50</span>
+                <span style="color:#f78c5d">-·- MA200</span>
+              </div>
+              <div style="height:36px;margin-top:8px;display:flex;align-items:flex-end;gap:1px;">
+                <div style="height:30px;flex:1;background:#26c980;opacity:.6;border-radius:1px 1px 0 0;"></div>
+                <div style="height:20px;flex:1;background:#26c980;opacity:.6;border-radius:1px 1px 0 0;"></div>
+                <div style="height:35px;flex:1;background:#f76a6a;opacity:.6;border-radius:1px 1px 0 0;"></div>
+                <div style="height:18px;flex:1;background:#26c980;opacity:.6;border-radius:1px 1px 0 0;"></div>
+                <div style="height:28px;flex:1;background:#26c980;opacity:.6;border-radius:1px 1px 0 0;"></div>
+                <div style="height:22px;flex:1;background:#f76a6a;opacity:.6;border-radius:1px 1px 0 0;"></div>
+                <div style="height:32px;flex:1;background:#26c980;opacity:.6;border-radius:1px 1px 0 0;"></div>
+                <div style="height:15px;flex:1;background:#f76a6a;opacity:.6;border-radius:1px 1px 0 0;"></div>
+              </div>
+              <div style="color:#525470;font-size:9px;margin-top:4px;font-family:'JetBrains Mono',monospace;">Volume (M shares) ↑</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code><span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+<span class="cm"># CHART 3: Area chart with gradient fill</span>
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+fig, ax = plt.<span class="fn">subplots</span>(figsize=(<span class="nu">14</span>, <span class="nu">5</span>))
+
+ax.<span class="fn">plot</span>(df.index, df[<span class="st">"Close"</span>], color=C_LINE, lw=<span class="nu">1.5</span>, label=<span class="st">"Close"</span>, zorder=<span class="nu">3</span>)
+ax.<span class="fn">fill_between</span>(df.index, df[<span class="st">"Close"</span>], df[<span class="st">"Close"</span>].<span class="fn">min</span>(),
+                alpha=<span class="nu">0.18</span>, color=C_LINE, zorder=<span class="nu">2</span>)
+
+<span class="cm"># Overlay MA50 for trend reference</span>
+ax.<span class="fn">plot</span>(df.index, df[<span class="st">"MA50"</span>], color=C_MA50, lw=<span class="nu">1.0</span>, label=<span class="st">"MA 50"</span>,
+        linestyle=<span class="st">"--"</span>, zorder=<span class="nu">4</span>)
+
+ax.<span class="fn">yaxis.set_major_formatter</span>(mticker.<span class="cl">FuncFormatter</span>(<span class="kw">lambda</span> x,_: <span class="st">f"₹</span><span class="at">{x:,.0f}</span><span class="st">"</span>))
+ax.<span class="fn">xaxis.set_major_formatter</span>(mdates.<span class="cl">DateFormatter</span>(<span class="st">"%b '%y"</span>))
+ax.<span class="fn">set_title</span>(<span class="st">"TCS.NS — Area Chart with Gradient Fill (1Y)"</span>)
+ax.<span class="fn">legend</span>(loc=<span class="st">"upper left"</span>)
+<span class="fn">clean_spines</span>(ax, keep=[<span class="st">"bottom"</span>])
+plt.<span class="fn">tight_layout</span>()
+plt.<span class="fn">savefig</span>(<span class="st">"chart_area.png"</span>, bbox_inches=<span class="st">"tight"</span>)
+plt.<span class="fn">show</span>()</code></pre></div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 15: CANDLESTICK CHARTS                            -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section-label" id="s15">
+    <span class="num">15</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h2>Candlestick &amp; OHLC Charts</h2>
+        <p>Candlestick charts encode four data points per period — Open, High, Low, Close — in a single visual element. They are the standard chart type for reading price action and detecting chart patterns.</p>
+
+        <h3>Anatomy of a Candlestick</h3>
+        <ul>
+          <li><strong>Body</strong> — the rectangle between Open and Close. Green (hollow) = close &gt; open (bullish). Red (filled) = close &lt; open (bearish).</li>
+          <li><strong>Upper Wick</strong> — line from body top to the High. Shows rejected upward moves.</li>
+          <li><strong>Lower Wick</strong> — line from body bottom to the Low. Shows rejected downward moves.</li>
+        </ul>
+
+        <h3>Using mplfinance</h3>
+        <p><code>mpf.plot()</code> is the primary function. It expects a DataFrame with columns named <code>Open</code>, <code>High</code>, <code>Low</code>, <code>Close</code>, <code>Volume</code> and a DatetimeIndex.</p>
+
+        <h4>mpf.plot() Key Parameters</h4>
+        <table class="param-table">
+          <thead><tr><th>Parameter</th><th>Values</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>type</td><td><code>"candle"</code> <code>"ohlc"</code> <code>"line"</code> <code>"renko"</code> <code>"pnf"</code></td><td>Chart style. <code>"candle"</code> = Japanese candlesticks.</td></tr>
+            <tr><td>style</td><td>str or mpf.make_mpf_style()</td><td>Visual theme. Built-in: <code>"yahoo"</code>, <code>"charles"</code>, <code>"nightclouds"</code>, <code>"mike"</code>, or pass a custom style dict.</td></tr>
+            <tr><td>mav</td><td>int or tuple of ints</td><td>Plot moving average lines. E.g., <code>mav=(20, 50, 200)</code>.</td></tr>
+            <tr><td>volume</td><td>bool</td><td>Attach a volume panel below. <span class="default">Default: False</span></td></tr>
+            <tr><td>addplot</td><td>list of mpf.make_addplot()</td><td>Overlay additional Series (e.g., RSI, MACD) onto the chart.</td></tr>
+            <tr><td>figratio</td><td>tuple (w, h)</td><td>Figure aspect ratio. E.g., <code>(16, 8)</code>.</td></tr>
+            <tr><td>tight_layout</td><td>bool</td><td>Auto-adjust spacing. <span class="default">Default: False</span></td></tr>
+            <tr><td>returnfig</td><td>bool</td><td>Return <code>(fig, axes)</code> for further customisation. <span class="default">Default: False</span></td></tr>
+            <tr><td>savefig</td><td>str</td><td>Path to save the figure directly.</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Using Plotly for Interactive Candlesticks</h3>
+        <p><code>go.Candlestick()</code> produces a fully interactive chart — hover for OHLC values, zoom/pan, and toggle traces. Ideal for Jupyter notebooks and web dashboards.</p>
+
+        <h3>Charts in This Section</h3>
+        <ul>
+          <li><strong>Chart 4</strong> — mplfinance candlestick with custom dark style + MA overlays + volume</li>
+          <li><strong>Chart 5</strong> — Interactive Plotly candlestick (hover, zoom/pan, browser/Jupyter)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code><span class="cm"># ── Fetch 3 months of daily data for cleaner candle chart ────────────────────</span>
+df_3mo = yf.<span class="cl">Ticker</span>(<span class="st">"TCS.NS"</span>).<span class="fn">history</span>(period=<span class="st">"3mo"</span>)
+df_3mo.index = df_3mo.index.tz_localize(<span class="kw">None</span>)  <span class="cm"># mplfinance needs tz-naive index</span>
+
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+<span class="cm"># CHART 4: mplfinance candlestick with custom dark style</span>
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+mc = mpf.<span class="fn">make_marketcolors</span>(
+    up=<span class="st">"#26c980"</span>, down=<span class="st">"#f76a6a"</span>,
+    wick={<span class="st">"up"</span>: <span class="st">"#26c980"</span>, <span class="st">"down"</span>: <span class="st">"#f76a6a"</span>},
+    volume={<span class="st">"up"</span>: <span class="st">"#26c980"</span>, <span class="st">"down"</span>: <span class="st">"#f76a6a"</span>},
+    edge=<span class="st">"none"</span>
+)
+custom_style = mpf.<span class="fn">make_mpf_style</span>(
+    base_mpl_style=<span class="st">"dark_background"</span>,
+    marketcolors=mc,
+    facecolor=<span class="st">"#0e0f14"</span>,
+    figcolor=<span class="st">"#0e0f14"</span>,
+    gridcolor=<span class="st">"#1e1f2e"</span>,
+    gridstyle=<span class="st">"--"</span>,
+    rc={<span class="st">"font.family"</span>: <span class="st">"monospace"</span>, <span class="st">"font.size"</span>: <span class="nu">8</span>}
+)
+
+fig, axes = mpf.<span class="fn">plot</span>(
+    df_3mo,
+    <span class="pr">type</span>        = <span class="st">"candle"</span>,
+    style       = custom_style,
+    mav         = (<span class="nu">20</span>, <span class="nu">50</span>),         <span class="cm"># overlay MA20 and MA50</span>
+    volume      = <span class="kw">True</span>,
+    figsize     = (<span class="nu">14</span>, <span class="nu">7</span>),
+    title       = <span class="st">"\n  TCS.NS — Candlestick Chart (3M)"</span>,
+    tight_layout= <span class="kw">True</span>,
+    returnfig   = <span class="kw">True</span>,
+    mavcolors   = [C_MA20, C_MA50],
+    warn_too_much_data=<span class="nu">1000</span>
+)
+fig.<span class="fn">savefig</span>(<span class="st">"chart_candle.png"</span>, bbox_inches=<span class="st">"tight"</span>)
+plt.<span class="fn">show</span>()
+
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+<span class="cm"># CHART 5: Interactive Plotly candlestick (Jupyter / browser)</span>
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+df_plot = df_3mo.copy()
+
+fig_px = go.<span class="cl">Figure</span>()
+
+fig_px.<span class="fn">add_trace</span>(go.<span class="cl">Candlestick</span>(
+    x     = df_plot.index,
+    open  = df_plot[<span class="st">"Open"</span>],
+    high  = df_plot[<span class="st">"High"</span>],
+    low   = df_plot[<span class="st">"Low"</span>],
+    close = df_plot[<span class="st">"Close"</span>],
+    name  = <span class="st">"OHLC"</span>,
+    increasing_line_color = <span class="st">"#26c980"</span>,
+    decreasing_line_color = <span class="st">"#f76a6a"</span>
+))
+
+<span class="cm"># Overlay MA20 and MA50 as line traces</span>
+fig_px.<span class="fn">add_trace</span>(go.<span class="cl">Scatter</span>(
+    x=df_plot.index, y=df_plot[<span class="st">"Close"</span>].<span class="fn">rolling</span>(<span class="nu">20</span>).<span class="fn">mean</span>(),
+    line=<span class="fn">dict</span>(color=C_MA20, width=<span class="nu">1</span>), name=<span class="st">"MA 20"</span>
+))
+fig_px.<span class="fn">add_trace</span>(go.<span class="cl">Scatter</span>(
+    x=df_plot.index, y=df_plot[<span class="st">"Close"</span>].<span class="fn">rolling</span>(<span class="nu">50</span>).<span class="fn">mean</span>(),
+    line=<span class="fn">dict</span>(color=C_MA50, width=<span class="nu">1</span>), name=<span class="st">"MA 50"</span>
+))
+
+fig_px.<span class="fn">update_layout</span>(
+    title       = <span class="st">"TCS.NS — Interactive Candlestick (Plotly)"</span>,
+    template    = <span class="st">"plotly_dark"</span>,
+    xaxis_rangeslider_visible = <span class="kw">False</span>,
+    height      = <span class="nu">500</span>,
+    paper_bgcolor = <span class="st">"#0e0f14"</span>,
+    plot_bgcolor  = <span class="st">"#15161d"</span>,
+    font=<span class="fn">dict</span>(family=<span class="st">"monospace"</span>, size=<span class="nu">10</span>)
+)
+fig_px.<span class="fn">show</span>()  <span class="cm"># interactive in Jupyter / browser</span></code></pre></div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 16: TECHNICAL INDICATORS                          -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section-label" id="s16">
+    <span class="num">16</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h2>Technical Indicators &amp; Oscillator Charts</h2>
+        <p>Technical indicators transform raw OHLCV data into signals about momentum, trend strength, volatility, and overbought/oversold conditions. All of the below are computed manually using pandas — no extra library required (though <code>pandas-ta</code> or <code>TA-Lib</code> can automate this at scale).</p>
+
+        <h3>Indicators Covered</h3>
+
+        <h4>RSI — Relative Strength Index</h4>
+        <p>Measures momentum on a 0–100 scale. Traditionally, RSI &gt; 70 = <em>overbought</em> (potential sell), RSI &lt; 30 = <em>oversold</em> (potential buy). Use a 14-period window by convention.</p>
+        <p><strong>Formula:</strong> <code>RSI = 100 − 100 / (1 + RS)</code> where <code>RS = avg_gain / avg_loss</code> over N periods.</p>
+
+        <h4>MACD — Moving Average Convergence Divergence</h4>
+        <p>Shows the relationship between two EMAs. The <strong>MACD line</strong> (EMA12 − EMA26) crossing above the <strong>Signal line</strong> (EMA9 of MACD) is a bullish signal. The <strong>Histogram</strong> (MACD − Signal) shows momentum strength.</p>
+
+        <h4>Bollinger Bands</h4>
+        <p>A volatility envelope around a 20-day SMA. Upper/Lower bands are set at ±2 standard deviations. Price touching the upper band suggests overbought; lower band suggests oversold. A squeeze (bands narrowing) precedes a volatility breakout.</p>
+
+        <h4>ATR — Average True Range</h4>
+        <p>Measures volatility as the average of the true range (max of high−low, |high−prev_close|, |low−prev_close|) over 14 periods. Higher ATR = more volatile market; useful for setting stop-loss distances.</p>
+
+        <div class="note">
+          <div class="note-label">Library shortcut</div>
+          Install <code>pandas-ta</code> (<code>pip install pandas-ta</code>) to compute all indicators with one line: <code>df.ta.rsi(length=14)</code>, <code>df.ta.macd()</code>, <code>df.ta.bbands()</code>, etc.
+        </div>
+
+        <h3>Chart 6 — 4-Panel Technical Dashboard</h3>
+        <p>A stacked multi-panel chart combining Price + Bollinger Bands, RSI(14), MACD(12,26,9) with histogram, and ATR(14) — all with a shared x-axis so crosshair alignment works across panels.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code><span class="cm"># ── Helper functions — compute indicators from scratch ────────────────────────</span>
+
+<span class="kw">def</span> <span class="fn">compute_rsi</span>(series, period=<span class="nu">14</span>):
+    delta = series.<span class="fn">diff</span>()
+    gain  = delta.<span class="fn">clip</span>(lower=<span class="nu">0</span>).<span class="fn">ewm</span>(com=period - <span class="nu">1</span>, adjust=<span class="kw">False</span>).<span class="fn">mean</span>()
+    loss  = (-delta.<span class="fn">clip</span>(upper=<span class="nu">0</span>)).<span class="fn">ewm</span>(com=period - <span class="nu">1</span>, adjust=<span class="kw">False</span>).<span class="fn">mean</span>()
+    rs    = gain / loss
+    <span class="kw">return</span> <span class="nu">100</span> - (<span class="nu">100</span> / (<span class="nu">1</span> + rs))
+
+<span class="kw">def</span> <span class="fn">compute_macd</span>(series, fast=<span class="nu">12</span>, slow=<span class="nu">26</span>, signal=<span class="nu">9</span>):
+    ema_fast   = series.<span class="fn">ewm</span>(span=fast,   adjust=<span class="kw">False</span>).<span class="fn">mean</span>()
+    ema_slow   = series.<span class="fn">ewm</span>(span=slow,   adjust=<span class="kw">False</span>).<span class="fn">mean</span>()
+    macd_line  = ema_fast - ema_slow
+    signal_line= macd_line.<span class="fn">ewm</span>(span=signal, adjust=<span class="kw">False</span>).<span class="fn">mean</span>()
+    histogram  = macd_line - signal_line
+    <span class="kw">return</span> macd_line, signal_line, histogram
+
+<span class="kw">def</span> <span class="fn">compute_bollinger</span>(series, window=<span class="nu">20</span>, num_std=<span class="nu">2</span>):
+    sma        = series.<span class="fn">rolling</span>(window).<span class="fn">mean</span>()
+    std        = series.<span class="fn">rolling</span>(window).<span class="fn">std</span>()
+    upper      = sma + num_std * std
+    lower      = sma - num_std * std
+    <span class="kw">return</span> upper, sma, lower
+
+<span class="kw">def</span> <span class="fn">compute_atr</span>(df, period=<span class="nu">14</span>):
+    hl  = df[<span class="st">"High"</span>] - df[<span class="st">"Low"</span>]
+    hcp = (df[<span class="st">"High"</span>] - df[<span class="st">"Close"</span>].<span class="fn">shift</span>()).<span class="fn">abs</span>()
+    lcp = (df[<span class="st">"Low"</span>]  - df[<span class="st">"Close"</span>].<span class="fn">shift</span>()).<span class="fn">abs</span>()
+    tr  = pd.<span class="fn">concat</span>([hl, hcp, lcp], axis=<span class="nu">1</span>).<span class="fn">max</span>(axis=<span class="nu">1</span>)
+    <span class="kw">return</span> tr.<span class="fn">ewm</span>(span=period, adjust=<span class="kw">False</span>).<span class="fn">mean</span>()
+
+<span class="cm"># ── Build indicator DataFrame ─────────────────────────────────────────────────</span>
+df = yf.<span class="cl">Ticker</span>(<span class="st">"TCS.NS"</span>).<span class="fn">history</span>(period=<span class="st">"1y"</span>)
+close = df[<span class="st">"Close"</span>]
+
+df[<span class="st">"RSI"</span>]                        = <span class="fn">compute_rsi</span>(close)
+df[<span class="st">"MACD"</span>], df[<span class="st">"Signal"</span>], df[<span class="st">"Hist"</span>] = <span class="fn">compute_macd</span>(close)
+df[<span class="st">"BB_upper"</span>], df[<span class="st">"BB_mid"</span>], df[<span class="st">"BB_lower"</span>] = <span class="fn">compute_bollinger</span>(close)
+df[<span class="st">"ATR"</span>]                        = <span class="fn">compute_atr</span>(df)
+df[<span class="st">"MA20"</span>]                       = close.<span class="fn">rolling</span>(<span class="nu">20</span>).<span class="fn">mean</span>()
+df[<span class="st">"MA50"</span>]                       = close.<span class="fn">rolling</span>(<span class="nu">50</span>).<span class="fn">mean</span>()
+
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+<span class="cm"># CHART 6: 4-panel Technical Dashboard</span>
+<span class="cm"># Panels: [Price + BB] [RSI] [MACD + Histogram] [ATR]</span>
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+fig = plt.<span class="fn">figure</span>(figsize=(<span class="nu">15</span>, <span class="nu">12</span>))
+gs  = <span class="cl">GridSpec</span>(<span class="nu">10</span>, <span class="nu">1</span>, figure=fig, hspace=<span class="nu">0.06</span>)
+
+ax1 = fig.<span class="fn">add_subplot</span>(gs[:<span class="nu">4</span>])   <span class="cm"># Price + Bollinger Bands</span>
+ax2 = fig.<span class="fn">add_subplot</span>(gs[<span class="nu">4</span>:<span class="nu">6</span>], sharex=ax1)   <span class="cm"># RSI</span>
+ax3 = fig.<span class="fn">add_subplot</span>(gs[<span class="nu">6</span>:<span class="nu">8</span>], sharex=ax1)   <span class="cm"># MACD</span>
+ax4 = fig.<span class="fn">add_subplot</span>(gs[<span class="nu">8</span>:],   sharex=ax1)   <span class="cm"># ATR</span>
+
+<span class="cm"># ── Panel 1: Price + Bollinger Bands ─────────────────────────────────────────</span>
+ax1.<span class="fn">plot</span>(df.index, close,         color=C_LINE,  lw=<span class="nu">1.4</span>, label=<span class="st">"Close"</span>)
+ax1.<span class="fn">plot</span>(df.index, df[<span class="st">"BB_upper"</span>], color=<span class="st">"#a598ff"</span>, lw=<span class="nu">0.8</span>, label=<span class="st">"BB Upper"</span>, linestyle=<span class="st">"--"</span>)
+ax1.<span class="fn">plot</span>(df.index, df[<span class="st">"BB_mid"</span>],   color=DIM,      lw=<span class="nu">0.7</span>, label=<span class="st">"BB Mid (SMA20)"</span>)
+ax1.<span class="fn">plot</span>(df.index, df[<span class="st">"BB_lower"</span>], color=<span class="st">"#a598ff"</span>, lw=<span class="nu">0.8</span>, label=<span class="st">"BB Lower"</span>, linestyle=<span class="st">"--"</span>)
+ax1.<span class="fn">fill_between</span>(df.index, df[<span class="st">"BB_upper"</span>], df[<span class="st">"BB_lower"</span>],
+                 alpha=<span class="nu">0.05</span>, color=<span class="st">"#7c6af7"</span>)
+ax1.<span class="fn">yaxis.set_major_formatter</span>(mticker.<span class="cl">FuncFormatter</span>(<span class="kw">lambda</span> x,_: <span class="st">f"₹</span><span class="at">{x:,.0f}</span><span class="st">"</span>))
+ax1.<span class="fn">set_title</span>(<span class="st">"TCS.NS — Technical Analysis Dashboard (1Y)"</span>)
+ax1.<span class="fn">legend</span>(loc=<span class="st">"upper left"</span>, ncol=<span class="nu">4</span>)
+<span class="fn">clean_spines</span>(ax1)
+plt.<span class="fn">setp</span>(ax1.get_xticklabels(), visible=<span class="kw">False</span>)
+
+<span class="cm"># ── Panel 2: RSI ──────────────────────────────────────────────────────────────</span>
+ax2.<span class="fn">plot</span>(df.index, df[<span class="st">"RSI"</span>], color=C_MA20, lw=<span class="nu">1.2</span>)
+ax2.<span class="fn">axhline</span>(<span class="nu">70</span>, color=C_DOWN, lw=<span class="nu">0.8</span>, linestyle=<span class="st">"--"</span>, alpha=<span class="nu">0.7</span>)
+ax2.<span class="fn">axhline</span>(<span class="nu">30</span>, color=C_UP,   lw=<span class="nu">0.8</span>, linestyle=<span class="st">"--"</span>, alpha=<span class="nu">0.7</span>)
+ax2.<span class="fn">axhline</span>(<span class="nu">50</span>, color=DIM,    lw=<span class="nu">0.5</span>, linestyle=<span class="st">":"</span>,  alpha=<span class="nu">0.5</span>)
+ax2.<span class="fn">fill_between</span>(df.index, <span class="nu">70</span>, df[<span class="st">"RSI"</span>], <span class="kw">where</span>=df[<span class="st">"RSI"</span>] &gt; <span class="nu">70</span>,
+                 alpha=<span class="nu">0.2</span>, color=C_DOWN)
+ax2.<span class="fn">fill_between</span>(df.index, <span class="nu">30</span>, df[<span class="st">"RSI"</span>], <span class="kw">where</span>=df[<span class="st">"RSI"</span>] &lt; <span class="nu">30</span>,
+                 alpha=<span class="nu">0.2</span>, color=C_UP)
+ax2.<span class="fn">set_ylim</span>(<span class="nu">0</span>, <span class="nu">100</span>)
+ax2.<span class="fn">set_ylabel</span>(<span class="st">"RSI(14)"</span>)
+ax2.<span class="fn">text</span>(<span class="nu">0.01</span>, <span class="nu">0.85</span>, <span class="st">"Overbought (70)"</span>, transform=ax2.transAxes,
+        color=C_DOWN, fontsize=<span class="nu">7</span>, alpha=<span class="nu">0.7</span>)
+ax2.<span class="fn">text</span>(<span class="nu">0.01</span>, <span class="nu">0.07</span>, <span class="st">"Oversold (30)"</span>,   transform=ax2.transAxes,
+        color=C_UP,   fontsize=<span class="nu">7</span>, alpha=<span class="nu">0.7</span>)
+<span class="fn">clean_spines</span>(ax2)
+plt.<span class="fn">setp</span>(ax2.get_xticklabels(), visible=<span class="kw">False</span>)
+
+<span class="cm"># ── Panel 3: MACD ─────────────────────────────────────────────────────────────</span>
+ax3.<span class="fn">plot</span>(df.index, df[<span class="st">"MACD"</span>],   color=C_LINE, lw=<span class="nu">1.1</span>, label=<span class="st">"MACD"</span>)
+ax3.<span class="fn">plot</span>(df.index, df[<span class="st">"Signal"</span>], color=C_MA20, lw=<span class="nu">1.0</span>, label=<span class="st">"Signal"</span>)
+bar_colors = [C_UP <span class="kw">if</span> h &gt;= <span class="nu">0</span> <span class="kw">else</span> C_DOWN <span class="kw">for</span> h <span class="kw">in</span> df[<span class="st">"Hist"</span>]]
+ax3.<span class="fn">bar</span>(df.index, df[<span class="st">"Hist"</span>], color=bar_colors, alpha=<span class="nu">0.6</span>, width=<span class="nu">1</span>)
+ax3.<span class="fn">axhline</span>(<span class="nu">0</span>, color=DIM, lw=<span class="nu">0.5</span>)
+ax3.<span class="fn">set_ylabel</span>(<span class="st">"MACD(12,26,9)"</span>)
+ax3.<span class="fn">legend</span>(loc=<span class="st">"upper left"</span>)
+<span class="fn">clean_spines</span>(ax3)
+plt.<span class="fn">setp</span>(ax3.get_xticklabels(), visible=<span class="kw">False</span>)
+
+<span class="cm"># ── Panel 4: ATR ──────────────────────────────────────────────────────────────</span>
+ax4.<span class="fn">plot</span>(df.index, df[<span class="st">"ATR"</span>], color=<span class="st">"#f78c5d"</span>, lw=<span class="nu">1.1</span>, label=<span class="st">"ATR(14)"</span>)
+ax4.<span class="fn">fill_between</span>(df.index, <span class="nu">0</span>, df[<span class="st">"ATR"</span>], alpha=<span class="nu">0.08</span>, color=<span class="st">"#f78c5d"</span>)
+ax4.<span class="fn">set_ylabel</span>(<span class="st">"ATR(14)"</span>)
+ax4.<span class="fn">xaxis.set_major_formatter</span>(mdates.<span class="cl">DateFormatter</span>(<span class="st">"%b '%y"</span>))
+<span class="fn">clean_spines</span>(ax4, keep=[<span class="st">"bottom"</span>])
+
+fig.<span class="fn">suptitle</span>(<span class="st">""</span>)
+plt.<span class="fn">savefig</span>(<span class="st">"chart_technical.png"</span>, bbox_inches=<span class="st">"tight"</span>)
+plt.<span class="fn">show</span>()</code></pre></div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h3>Chart 7 — Stochastic Oscillator + OBV</h3>
+        <p>Two more momentum/volume tools that complement RSI and MACD:</p>
+        <ul>
+          <li><strong>Stochastic Oscillator (%K, %D)</strong> — Compares a closing price to its price range over N periods (default 14). %K = raw oscillator, %D = 3-period SMA of %K. Crossovers above 80 / below 20 signal reversals.</li>
+          <li><strong>OBV — On-Balance Volume</strong> — Cumulative volume that adds volume on up-days and subtracts on down-days. OBV rising with price = healthy trend. OBV diverging from price = early reversal warning.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code><span class="kw">def</span> <span class="fn">compute_stochastic</span>(df, k_period=<span class="nu">14</span>, d_period=<span class="nu">3</span>):
+    low_min  = df[<span class="st">"Low"</span>].<span class="fn">rolling</span>(k_period).<span class="fn">min</span>()
+    high_max = df[<span class="st">"High"</span>].<span class="fn">rolling</span>(k_period).<span class="fn">max</span>()
+    pct_k    = <span class="nu">100</span> * (df[<span class="st">"Close"</span>] - low_min) / (high_max - low_min)
+    pct_d    = pct_k.<span class="fn">rolling</span>(d_period).<span class="fn">mean</span>()
+    <span class="kw">return</span> pct_k, pct_d
+
+<span class="kw">def</span> <span class="fn">compute_obv</span>(df):
+    direction = df[<span class="st">"Close"</span>].<span class="fn">diff</span>().<span class="fn">apply</span>(<span class="kw">lambda</span> x: <span class="nu">1</span> <span class="kw">if</span> x &gt; <span class="nu">0</span> <span class="kw">else</span> (-<span class="nu">1</span> <span class="kw">if</span> x &lt; <span class="nu">0</span> <span class="kw">else</span> <span class="nu">0</span>))
+    <span class="kw">return</span> (direction * df[<span class="st">"Volume"</span>]).<span class="fn">cumsum</span>()
+
+df[<span class="st">"%K"</span>], df[<span class="st">"%D"</span>] = <span class="fn">compute_stochastic</span>(df)
+df[<span class="st">"OBV"</span>]          = <span class="fn">compute_obv</span>(df)
+
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+<span class="cm"># CHART 7: Stochastic Oscillator + OBV side-by-side</span>
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+fig, (ax_s, ax_o) = plt.<span class="fn">subplots</span>(<span class="nu">1</span>, <span class="nu">2</span>, figsize=(<span class="nu">16</span>, <span class="nu">4</span>), sharey=<span class="kw">False</span>)
+
+<span class="cm"># Stochastic</span>
+ax_s.<span class="fn">plot</span>(df.index, df[<span class="st">"%K"</span>], color=C_LINE, lw=<span class="nu">1.2</span>, label=<span class="st">"%K (14)"</span>)
+ax_s.<span class="fn">plot</span>(df.index, df[<span class="st">"%D"</span>], color=C_MA20, lw=<span class="nu">1.0</span>, label=<span class="st">"%D (3)"</span>, linestyle=<span class="st">"--"</span>)
+ax_s.<span class="fn">axhline</span>(<span class="nu">80</span>, color=C_DOWN, lw=<span class="nu">0.8</span>, linestyle=<span class="st">"--"</span>, alpha=<span class="nu">0.6</span>)
+ax_s.<span class="fn">axhline</span>(<span class="nu">20</span>, color=C_UP,   lw=<span class="nu">0.8</span>, linestyle=<span class="st">"--"</span>, alpha=<span class="nu">0.6</span>)
+ax_s.<span class="fn">fill_between</span>(df.index, <span class="nu">80</span>, <span class="nu">100</span>, alpha=<span class="nu">0.05</span>, color=C_DOWN)
+ax_s.<span class="fn">fill_between</span>(df.index, <span class="nu">0</span>,  <span class="nu">20</span>,  alpha=<span class="nu">0.05</span>, color=C_UP)
+ax_s.<span class="fn">set_ylim</span>(<span class="nu">0</span>, <span class="nu">100</span>)
+ax_s.<span class="fn">set_title</span>(<span class="st">"Stochastic Oscillator (14, 3)"</span>)
+ax_s.<span class="fn">legend</span>()
+ax_s.<span class="fn">xaxis.set_major_formatter</span>(mdates.<span class="cl">DateFormatter</span>(<span class="st">"%b '%y"</span>))
+ax_s.<span class="fn">xaxis.set_major_locator</span>(mdates.<span class="cl">MonthLocator</span>(interval=<span class="nu">2</span>))
+<span class="fn">clean_spines</span>(ax_s, keep=[<span class="st">"bottom"</span>])
+
+<span class="cm"># OBV</span>
+ax_o.<span class="fn">plot</span>(df.index, df[<span class="st">"OBV"</span>] / <span class="nu">1e6</span>, color=C_MA50, lw=<span class="nu">1.2</span>, label=<span class="st">"OBV"</span>)
+ax_o.<span class="fn">fill_between</span>(df.index, <span class="nu">0</span>, df[<span class="st">"OBV"</span>] / <span class="nu">1e6</span>, alpha=<span class="nu">0.06</span>, color=C_MA50)
+ax_o.<span class="fn">set_title</span>(<span class="st">"On-Balance Volume (OBV)"</span>)
+ax_o.<span class="fn">set_ylabel</span>(<span class="st">"OBV (Million shares)"</span>)
+ax_o.<span class="fn">legend</span>()
+ax_o.<span class="fn">xaxis.set_major_formatter</span>(mdates.<span class="cl">DateFormatter</span>(<span class="st">"%b '%y"</span>))
+ax_o.<span class="fn">xaxis.set_major_locator</span>(mdates.<span class="cl">MonthLocator</span>(interval=<span class="nu">2</span>))
+<span class="fn">clean_spines</span>(ax_o, keep=[<span class="st">"bottom"</span>])
+
+plt.<span class="fn">tight_layout</span>()
+plt.<span class="fn">savefig</span>(<span class="st">"chart_stoch_obv.png"</span>, bbox_inches=<span class="st">"tight"</span>)
+plt.<span class="fn">show</span>()</code></pre></div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 17: FUNDAMENTAL ANALYSIS CHARTS                   -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section-label" id="s17">
+    <span class="num">17</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h2>Fundamental Analysis Charts</h2>
+        <p>Fundamental analysis evaluates a company's intrinsic value by examining financial statements, ratios, and business metrics. Charts are the best way to visualise multi-year trends that raw numbers obscure.</p>
+
+        <h3>Charts Covered in This Section</h3>
+        <ul>
+          <li><strong>Chart 8</strong> — Revenue, Gross Profit &amp; Net Income grouped bar chart (4-year trend)</li>
+          <li><strong>Chart 9</strong> — Margins over time: Gross Margin %, Operating Margin %, Net Margin % line chart</li>
+          <li><strong>Chart 10</strong> — Cash Flow waterfall: Operating CF, CapEx, Free Cash Flow</li>
+          <li><strong>Chart 11</strong> — Key Financial Ratios Dashboard: P/E, P/B, debt, liquidity panel grid</li>
+          <li><strong>Chart 12</strong> — DuPont decomposition: ROE broken into Margin × Asset Turnover × Leverage</li>
+        </ul>
+
+        <h4>Key Ratios Reference</h4>
+        <table class="param-table">
+          <thead><tr><th>Ratio</th><th>Formula</th><th>What it measures</th></tr></thead>
+          <tbody>
+            <tr><td>Gross Margin %</td><td>(Revenue − COGS) / Revenue × 100</td><td>Pricing power &amp; production efficiency</td></tr>
+            <tr><td>Operating Margin %</td><td>Operating Income / Revenue × 100</td><td>Core operating profitability</td></tr>
+            <tr><td>Net Margin %</td><td>Net Income / Revenue × 100</td><td>Bottom-line profitability after tax</td></tr>
+            <tr><td>ROE</td><td>Net Income / Shareholders Equity × 100</td><td>Return on equity capital</td></tr>
+            <tr><td>ROA</td><td>Net Income / Total Assets × 100</td><td>Asset utilisation efficiency</td></tr>
+            <tr><td>Debt/Equity</td><td>Total Debt / Total Equity</td><td>Financial leverage &amp; solvency risk</td></tr>
+            <tr><td>Current Ratio</td><td>Current Assets / Current Liabilities</td><td>Short-term liquidity</td></tr>
+            <tr><td>Free Cash Flow</td><td>Operating CF − CapEx</td><td>Cash available after investment</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code>tcs = yf.<span class="cl">Ticker</span>(<span class="st">"TCS.NS"</span>)
+
+<span class="cm"># ── Pull financial statements ─────────────────────────────────────────────────</span>
+inc   = tcs.financials            <span class="cm"># Annual income statement</span>
+bs    = tcs.balance_sheet         <span class="cm"># Annual balance sheet</span>
+cf    = tcs.cashflow              <span class="cm"># Annual cash flow</span>
+
+<span class="cm"># Reverse columns so oldest year is on the left</span>
+inc = inc.iloc[:, ::-<span class="nu">1</span>]
+bs  = bs.iloc[:,  ::-<span class="nu">1</span>]
+cf  = cf.iloc[:,  ::-<span class="nu">1</span>]
+
+years  = [str(c.year) <span class="kw">for</span> c <span class="kw">in</span> inc.columns]
+x      = np.<span class="fn">arange</span>(<span class="fn">len</span>(years))
+width  = <span class="nu">0.25</span>
+
+<span class="cm"># ── Extract rows safely ───────────────────────────────────────────────────────</span>
+<span class="kw">def</span> <span class="fn">get_row</span>(df, key, scale=<span class="nu">1e9</span>):
+    <span class="kw">return</span> df.loc[key].values / scale <span class="kw">if</span> key <span class="kw">in</span> df.index <span class="kw">else</span> np.<span class="fn">zeros</span>(<span class="fn">len</span>(df.columns))
+
+revenue    = <span class="fn">get_row</span>(inc, <span class="st">"Total Revenue"</span>)
+gross_p    = <span class="fn">get_row</span>(inc, <span class="st">"Gross Profit"</span>)
+net_inc    = <span class="fn">get_row</span>(inc, <span class="st">"Net Income"</span>)
+op_inc     = <span class="fn">get_row</span>(inc, <span class="st">"Operating Income"</span>)
+op_cf      = <span class="fn">get_row</span>(cf,  <span class="st">"Operating Cash Flow"</span>)
+capex      = <span class="fn">get_row</span>(cf,  <span class="st">"Capital Expenditure"</span>)
+fcf        = op_cf + capex   <span class="cm"># CapEx is already negative in yfinance</span>
+
+gross_m    = (gross_p / revenue * <span class="nu">100</span>) <span class="kw">if</span> revenue.<span class="fn">any</span>() <span class="kw">else</span> np.<span class="fn">zeros</span>(<span class="nu">4</span>)
+op_m       = (op_inc  / revenue * <span class="nu">100</span>) <span class="kw">if</span> revenue.<span class="fn">any</span>() <span class="kw">else</span> np.<span class="fn">zeros</span>(<span class="nu">4</span>)
+net_m      = (net_inc / revenue * <span class="nu">100</span>) <span class="kw">if</span> revenue.<span class="fn">any</span>() <span class="kw">else</span> np.<span class="fn">zeros</span>(<span class="nu">4</span>)
+
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+<span class="cm"># CHART 8: Revenue, Gross Profit, Net Income grouped bars</span>
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+fig, ax = plt.<span class="fn">subplots</span>(figsize=(<span class="nu">12</span>, <span class="nu">5</span>))
+ax.<span class="fn">bar</span>(x - width, revenue, width, label=<span class="st">"Revenue"</span>,     color=C_LINE,  alpha=<span class="nu">0.85</span>)
+ax.<span class="fn">bar</span>(x,         gross_p,  width, label=<span class="st">"Gross Profit"</span>, color=C_MA50,  alpha=<span class="nu">0.85</span>)
+ax.<span class="fn">bar</span>(x + width, net_inc,  width, label=<span class="st">"Net Income"</span>,   color=C_UP,    alpha=<span class="nu">0.85</span>)
+
+<span class="cm"># Annotate bar tops</span>
+<span class="kw">for</span> i, (r, g, n) <span class="kw">in</span> <span class="fn">enumerate</span>(<span class="fn">zip</span>(revenue, gross_p, net_inc)):
+    ax.<span class="fn">text</span>(i - width, r + <span class="nu">0.5</span>, <span class="st">f"</span><span class="at">{r:.0f}</span><span class="st">"</span>, ha=<span class="st">"center"</span>, va=<span class="st">"bottom"</span>, fontsize=<span class="nu">7</span>, color=TEXT)
+    ax.<span class="fn">text</span>(i,         g + <span class="nu">0.5</span>, <span class="st">f"</span><span class="at">{g:.0f}</span><span class="st">"</span>, ha=<span class="st">"center"</span>, va=<span class="st">"bottom"</span>, fontsize=<span class="nu">7</span>, color=TEXT)
+    ax.<span class="fn">text</span>(i + width, n + <span class="nu">0.5</span>, <span class="st">f"</span><span class="at">{n:.0f}</span><span class="st">"</span>, ha=<span class="st">"center"</span>, va=<span class="st">"bottom"</span>, fontsize=<span class="nu">7</span>, color=TEXT)
+
+ax.<span class="fn">set_xticks</span>(x)
+ax.<span class="fn">set_xticklabels</span>(years)
+ax.<span class="fn">set_ylabel</span>(<span class="st">"₹ Billion"</span>)
+ax.<span class="fn">set_title</span>(<span class="st">"TCS — Revenue, Gross Profit &amp; Net Income (Annual, ₹B)"</span>)
+ax.<span class="fn">legend</span>()
+<span class="fn">clean_spines</span>(ax, keep=[<span class="st">"bottom"</span>])
+plt.<span class="fn">tight_layout</span>()
+plt.<span class="fn">savefig</span>(<span class="st">"chart_income.png"</span>, bbox_inches=<span class="st">"tight"</span>)
+plt.<span class="fn">show</span>()
+
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+<span class="cm"># CHART 9: Margin trends over time</span>
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+fig, ax = plt.<span class="fn">subplots</span>(figsize=(<span class="nu">12</span>, <span class="nu">4</span>))
+ax.<span class="fn">plot</span>(years, gross_m, marker=<span class="st">"o"</span>, color=C_LINE, lw=<span class="nu">2</span>,   label=<span class="st">"Gross Margin %"</span>)
+ax.<span class="fn">plot</span>(years, op_m,    marker=<span class="st">"s"</span>, color=C_MA20, lw=<span class="nu">2</span>,   label=<span class="st">"Operating Margin %"</span>)
+ax.<span class="fn">plot</span>(years, net_m,   marker=<span class="st">"^"</span>, color=C_UP,   lw=<span class="nu">2</span>,   label=<span class="st">"Net Margin %"</span>)
+
+<span class="kw">for</span> i, (gm, om, nm) <span class="kw">in</span> <span class="fn">enumerate</span>(<span class="fn">zip</span>(gross_m, op_m, net_m)):
+    ax.<span class="fn">annotate</span>(<span class="st">f"</span><span class="at">{gm:.1f}</span><span class="st">%"</span>, (years[i], gm), textcoords=<span class="st">"offset points"</span>, xytext=(<span class="nu">0</span>, <span class="nu">7</span>),  ha=<span class="st">"center"</span>, fontsize=<span class="nu">7</span>, color=C_LINE)
+    ax.<span class="fn">annotate</span>(<span class="st">f"</span><span class="at">{om:.1f}</span><span class="st">%"</span>, (years[i], om), textcoords=<span class="st">"offset points"</span>, xytext=(<span class="nu">0</span>, <span class="nu">7</span>),  ha=<span class="st">"center"</span>, fontsize=<span class="nu">7</span>, color=C_MA20)
+    ax.<span class="fn">annotate</span>(<span class="st">f"</span><span class="at">{nm:.1f}</span><span class="st">%"</span>, (years[i], nm), textcoords=<span class="st">"offset points"</span>, xytext=(<span class="nu">0</span>, -<span class="nu">10</span>), ha=<span class="st">"center"</span>, fontsize=<span class="nu">7</span>, color=C_UP)
+
+ax.<span class="fn">set_ylabel</span>(<span class="st">"Margin (%)"</span>)
+ax.<span class="fn">set_title</span>(<span class="st">"TCS — Profitability Margins Trend (Annual)"</span>)
+ax.<span class="fn">legend</span>(loc=<span class="st">"upper left"</span>)
+<span class="fn">clean_spines</span>(ax, keep=[<span class="st">"bottom"</span>])
+plt.<span class="fn">tight_layout</span>()
+plt.<span class="fn">savefig</span>(<span class="st">"chart_margins.png"</span>, bbox_inches=<span class="st">"tight"</span>)
+plt.<span class="fn">show</span>()
+
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+<span class="cm"># CHART 10: Cash Flow waterfall</span>
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+fig, ax = plt.<span class="fn">subplots</span>(figsize=(<span class="nu">10</span>, <span class="nu">5</span>))
+bar_width = <span class="nu">0.28</span>
+
+ax.<span class="fn">bar</span>(x - bar_width, op_cf,        bar_width, label=<span class="st">"Operating CF"</span>, color=C_MA50,  alpha=<span class="nu">0.9</span>)
+ax.<span class="fn">bar</span>(x,             capex,         bar_width, label=<span class="st">"CapEx"</span>,        color=C_DOWN, alpha=<span class="nu">0.9</span>)
+ax.<span class="fn">bar</span>(x + bar_width, fcf,           bar_width, label=<span class="st">"Free Cash Flow"</span>, color=C_UP, alpha=<span class="nu">0.9</span>)
+ax.<span class="fn">axhline</span>(<span class="nu">0</span>, color=DIM, lw=<span class="nu">0.7</span>)
+
+ax.<span class="fn">set_xticks</span>(x)
+ax.<span class="fn">set_xticklabels</span>(years)
+ax.<span class="fn">set_ylabel</span>(<span class="st">"₹ Billion"</span>)
+ax.<span class="fn">set_title</span>(<span class="st">"TCS — Cash Flow Analysis (Annual, ₹B)"</span>)
+ax.<span class="fn">legend</span>()
+<span class="fn">clean_spines</span>(ax, keep=[<span class="st">"bottom"</span>])
+plt.<span class="fn">tight_layout</span>()
+plt.<span class="fn">savefig</span>(<span class="st">"chart_cashflow.png"</span>, bbox_inches=<span class="st">"tight"</span>)
+plt.<span class="fn">show</span>()</code></pre></div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h3>Chart 11 — Key Financial Ratios Dashboard</h3>
+        <p>A single-page snapshot of the most important ratios: liquidity, leverage, efficiency, and valuation. Plotted as a 2×3 panel grid using a mixed chart approach — bar for point-in-time, line for trends.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code><span class="cm"># ── Compute key ratios from financial statements ──────────────────────────────</span>
+total_assets    = <span class="fn">get_row</span>(bs, <span class="st">"Total Assets"</span>)
+total_debt      = <span class="fn">get_row</span>(bs, <span class="st">"Total Debt"</span>)
+equity          = <span class="fn">get_row</span>(bs, <span class="st">"Stockholders Equity"</span>)
+curr_assets     = <span class="fn">get_row</span>(bs, <span class="st">"Current Assets"</span>)
+curr_liabilities= <span class="fn">get_row</span>(bs, <span class="st">"Current Liabilities"</span>)
+
+roe = (net_inc / equity * <span class="nu">100</span>)           <span class="kw">if</span> equity.<span class="fn">any</span>()          <span class="kw">else</span> np.<span class="fn">zeros</span>(<span class="nu">4</span>)
+roa = (net_inc / total_assets * <span class="nu">100</span>)     <span class="kw">if</span> total_assets.<span class="fn">any</span>()    <span class="kw">else</span> np.<span class="fn">zeros</span>(<span class="nu">4</span>)
+dte = (total_debt / equity)              <span class="kw">if</span> equity.<span class="fn">any</span>()          <span class="kw">else</span> np.<span class="fn">zeros</span>(<span class="nu">4</span>)
+cur = (curr_assets / curr_liabilities)   <span class="kw">if</span> curr_liabilities.<span class="fn">any</span>()<span class="kw">else</span> np.<span class="fn">zeros</span>(<span class="nu">4</span>)
+ast = (revenue / total_assets)           <span class="kw">if</span> total_assets.<span class="fn">any</span>()    <span class="kw">else</span> np.<span class="fn">zeros</span>(<span class="nu">4</span>)
+fcf_margin = (fcf / revenue * <span class="nu">100</span>)      <span class="kw">if</span> revenue.<span class="fn">any</span>()          <span class="kw">else</span> np.<span class="fn">zeros</span>(<span class="nu">4</span>)
+
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+<span class="cm"># CHART 11: 2×3 Ratio Dashboard</span>
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+fig, axes = plt.<span class="fn">subplots</span>(<span class="nu">2</span>, <span class="nu">3</span>, figsize=(<span class="nu">16</span>, <span class="nu">8</span>))
+fig.<span class="fn">suptitle</span>(<span class="st">"TCS — Key Financial Ratios Dashboard (Annual)"</span>, fontsize=<span class="nu">13</span>, y=<span class="nu">1.01</span>)
+palette = [C_LINE, C_MA50, C_UP, C_MA20]
+
+panels = [
+    (axes[<span class="nu">0</span>, <span class="nu">0</span>], roe,       <span class="st">"ROE (%)"</span>,          <span class="st">"Return on Equity"</span>,        <span class="kw">True</span>),
+    (axes[<span class="nu">0</span>, <span class="nu">1</span>], roa,       <span class="st">"ROA (%)"</span>,          <span class="st">"Return on Assets"</span>,        <span class="kw">True</span>),
+    (axes[<span class="nu">0</span>, <span class="nu">2</span>], net_m,     <span class="st">"Net Margin (%)"</span>,   <span class="st">"Net Profit Margin"</span>,       <span class="kw">True</span>),
+    (axes[<span class="nu">1</span>, <span class="nu">0</span>], dte,       <span class="st">"D/E Ratio"</span>,        <span class="st">"Debt-to-Equity"</span>,          <span class="kw">False</span>),
+    (axes[<span class="nu">1</span>, <span class="nu">1</span>], cur,       <span class="st">"Current Ratio"</span>,    <span class="st">"Liquidity (≥1.5 healthy)"</span>, <span class="kw">False</span>),
+    (axes[<span class="nu">1</span>, <span class="nu">2</span>], fcf_margin,<span class="st">"FCF Margin (%)"</span>,   <span class="st">"Free Cash Flow Margin"</span>,   <span class="kw">True</span>),
+]
+
+<span class="kw">for</span> ax, data, ylabel, title, pct <span class="kw">in</span> panels:
+    bars = ax.<span class="fn">bar</span>(years, data, color=palette, alpha=<span class="nu">0.85</span>, edgecolor=<span class="st">"none"</span>)
+    ax.<span class="fn">plot</span>(years, data, color=TEXT, lw=<span class="nu">1</span>, marker=<span class="st">"o"</span>, markersize=<span class="nu">4</span>, zorder=<span class="nu">5</span>)
+    <span class="kw">for</span> bar, val <span class="kw">in</span> <span class="fn">zip</span>(bars, data):
+        fmt = <span class="st">f"</span><span class="at">{val:.1f}</span><span class="st">%"</span> <span class="kw">if</span> pct <span class="kw">else</span> <span class="st">f"</span><span class="at">{val:.2f}</span><span class="st">x"</span>
+        ax.<span class="fn">text</span>(bar.<span class="fn">get_x</span>() + bar.<span class="fn">get_width</span>() / <span class="nu">2</span>,
+               bar.<span class="fn">get_height</span>() * <span class="nu">1.01</span>, fmt,
+               ha=<span class="st">"center"</span>, va=<span class="st">"bottom"</span>, fontsize=<span class="nu">7.5</span>, color=TEXT)
+    ax.<span class="fn">set_title</span>(title, fontsize=<span class="nu">9</span>)
+    ax.<span class="fn">set_ylabel</span>(ylabel, fontsize=<span class="nu">8</span>)
+    <span class="fn">clean_spines</span>(ax, keep=[<span class="st">"bottom"</span>])
+
+plt.<span class="fn">tight_layout</span>()
+plt.<span class="fn">savefig</span>(<span class="st">"chart_ratios.png"</span>, bbox_inches=<span class="st">"tight"</span>)
+plt.<span class="fn">show</span>()</code></pre></div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h3>Chart 12 — DuPont Decomposition</h3>
+        <p>Breaks ROE (Return on Equity) into its three drivers: <strong>Net Margin</strong> (profitability), <strong>Asset Turnover</strong> (efficiency), and <strong>Financial Leverage</strong> (use of debt). A grouped bar chart across years makes it easy to see which component is driving ROE changes.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code><span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+<span class="cm"># CHART 12: DuPont Decomposition — ROE = Margin × Turnover × Leverage</span>
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+net_margin   = net_inc / revenue          <span class="cm"># Net Margin</span>
+asset_turn   = revenue / (total_assets <span class="kw">if</span> total_assets.<span class="fn">any</span>() <span class="kw">else</span> np.<span class="fn">ones</span>(<span class="fn">len</span>(revenue)))  <span class="cm"># Asset Turnover</span>
+leverage     = (total_assets / equity)   <span class="kw">if</span> equity.<span class="fn">any</span>() <span class="kw">else</span> np.<span class="fn">ones</span>(<span class="fn">len</span>(revenue))     <span class="cm"># Equity Multiplier</span>
+roe_dupont   = net_margin * asset_turn * leverage * <span class="nu">100</span>
+
+fig, ax = plt.<span class="fn">subplots</span>(figsize=(<span class="nu">12</span>, <span class="nu">5</span>))
+w = <span class="nu">0.2</span>
+ax.<span class="fn">bar</span>(x - w,  net_margin * <span class="nu">100</span>, w, label=<span class="st">"Net Margin %"</span>,     color=C_LINE,  alpha=<span class="nu">0.85</span>)
+ax.<span class="fn">bar</span>(x,       asset_turn,        w, label=<span class="st">"Asset Turnover"</span>,   color=C_MA50,  alpha=<span class="nu">0.85</span>)
+ax.<span class="fn">bar</span>(x + w,  leverage,          w, label=<span class="st">"Equity Multiplier"</span>, color=C_MA200, alpha=<span class="nu">0.85</span>)
+
+ax.<span class="fn">plot</span>(x, roe_dupont, marker=<span class="st">"o"</span>, color=C_UP, lw=<span class="nu">2</span>, label=<span class="st">"ROE % (computed)"</span>, zorder=<span class="nu">5</span>)
+<span class="kw">for</span> i, v <span class="kw">in</span> <span class="fn">enumerate</span>(roe_dupont):
+    ax.<span class="fn">annotate</span>(<span class="st">f"</span><span class="at">{v:.1f}</span><span class="st">%"</span>, (x[i], v), textcoords=<span class="st">"offset points"</span>,
+               xytext=(<span class="nu">0</span>, <span class="nu">7</span>), ha=<span class="st">"center"</span>, fontsize=<span class="nu">7</span>, color=C_UP)
+
+ax.<span class="fn">set_xticks</span>(x)
+ax.<span class="fn">set_xticklabels</span>(years)
+ax.<span class="fn">set_title</span>(<span class="st">"TCS — DuPont Decomposition of ROE (Annual)"</span>)
+ax.<span class="fn">legend</span>(loc=<span class="st">"upper left"</span>)
+<span class="fn">clean_spines</span>(ax, keep=[<span class="st">"bottom"</span>])
+plt.<span class="fn">tight_layout</span>()
+plt.<span class="fn">savefig</span>(<span class="st">"chart_dupont.png"</span>, bbox_inches=<span class="st">"tight"</span>)
+plt.<span class="fn">show</span>()</code></pre></div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECTION 18: PORTFOLIO & COMPARATIVE ANALYSIS             -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section-label" id="s18">
+    <span class="num">18</span>
+    <div class="line"></div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h2>Portfolio &amp; Comparative Analysis Charts</h2>
+        <p>Move beyond a single stock to compare a basket of companies — essential for sector analysis, peer benchmarking, and portfolio construction.</p>
+
+        <h3>Charts Covered</h3>
+        <ul>
+          <li><strong>Chart 13</strong> — Normalised price performance: index all stocks to 100 on day 1 for fair comparison</li>
+          <li><strong>Chart 14</strong> — Correlation heatmap of daily returns using seaborn</li>
+          <li><strong>Chart 15</strong> — Volatility vs Return scatter (risk/reward quadrant)</li>
+          <li><strong>Chart 16</strong> — Rolling 30-day volatility chart for multiple stocks</li>
+          <li><strong>Chart 17</strong> — Peer Valuation Comparison: sector P/E horizontal bar chart</li>
+        </ul>
+
+        <h4>Key concepts</h4>
+        <table class="param-table">
+          <thead><tr><th>Concept</th><th>Method</th><th>Interpretation</th></tr></thead>
+          <tbody>
+            <tr><td>Normalised Returns</td><td><code>df / df.iloc[0] * 100</code></td><td>Compares % gains from same starting point</td></tr>
+            <tr><td>Daily Returns</td><td><code>df.pct_change()</code></td><td>Day-over-day % change</td></tr>
+            <tr><td>Annualised Volatility</td><td><code>std() × √252</code></td><td>Yearly risk measure (252 trading days)</td></tr>
+            <tr><td>Annualised Return</td><td><code>mean() × 252</code></td><td>Expected yearly return at current pace</td></tr>
+            <tr><td>Sharpe Ratio</td><td><code>(ann_return − Rf) / ann_vol</code></td><td>Risk-adjusted return (higher = better)</td></tr>
+            <tr><td>Correlation</td><td><code>returns.corr()</code></td><td>1.0 = perfectly co-moving; 0 = independent</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code><span class="cm"># ── Download 1 year of data for Nifty IT basket ───────────────────────────────</span>
+tickers = [<span class="st">"TCS.NS"</span>, <span class="st">"INFY.NS"</span>, <span class="st">"WIPRO.NS"</span>, <span class="st">"HCLTECH.NS"</span>, <span class="st">"TECHM.NS"</span>]
+raw = yf.<span class="fn">download</span>(tickers, period=<span class="st">"1y"</span>, group_by=<span class="st">"ticker"</span>,
+                  auto_adjust=<span class="kw">True</span>, progress=<span class="kw">False</span>)
+
+close = pd.<span class="cl">DataFrame</span>({t: raw[t][<span class="st">"Close"</span>] <span class="kw">for</span> t <span class="kw">in</span> tickers}).<span class="fn">dropna</span>()
+returns   = close.<span class="fn">pct_change</span>().<span class="fn">dropna</span>()
+norm      = close / close.iloc[<span class="nu">0</span>] * <span class="nu">100</span>       <span class="cm"># normalise to 100</span>
+
+<span class="cm"># ── Annualised stats ──────────────────────────────────────────────────────────</span>
+ann_ret  = returns.<span class="fn">mean</span>() * <span class="nu">252</span> * <span class="nu">100</span>
+ann_vol  = returns.<span class="fn">std</span>()  * np.<span class="fn">sqrt</span>(<span class="nu">252</span>) * <span class="nu">100</span>
+sharpe   = ann_ret / ann_vol     <span class="cm"># simplified (Rf = 0)</span>
+labels   = [t.replace(<span class="st">".NS"</span>, <span class="st">""</span>) <span class="kw">for</span> t <span class="kw">in</span> tickers]
+
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+<span class="cm"># CHART 13: Normalised price performance</span>
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+colors_palette = [C_LINE, C_MA50, C_MA20, C_MA200, <span class="st">"#e85de8"</span>]
+fig, ax = plt.<span class="fn">subplots</span>(figsize=(<span class="nu">14</span>, <span class="nu">5</span>))
+<span class="kw">for</span> i, col <span class="kw">in</span> <span class="fn">enumerate</span>(norm.columns):
+    ax.<span class="fn">plot</span>(norm.index, norm[col], lw=<span class="nu">1.5</span>, color=colors_palette[i],
+            label=col.replace(<span class="st">".NS"</span>, <span class="st">""</span>))
+    <span class="cm"># Annotate last value</span>
+    ax.<span class="fn">annotate</span>(<span class="st">f"</span><span class="at">{norm[col].iloc[-1]:.0f}</span><span class="st">"</span>,
+               xy=(norm.index[-<span class="nu">1</span>], norm[col].iloc[-<span class="nu">1</span>]),
+               xytext=(<span class="nu">5</span>, <span class="nu">0</span>), textcoords=<span class="st">"offset points"</span>,
+               color=colors_palette[i], fontsize=<span class="nu">8</span>, va=<span class="st">"center"</span>)
+
+ax.<span class="fn">axhline</span>(<span class="nu">100</span>, color=DIM, lw=<span class="nu">0.7</span>, linestyle=<span class="st">"--"</span>, alpha=<span class="nu">0.6</span>)
+ax.<span class="fn">xaxis.set_major_formatter</span>(mdates.<span class="cl">DateFormatter</span>(<span class="st">"%b '%y"</span>))
+ax.<span class="fn">set_ylabel</span>(<span class="st">"Indexed Return (Base = 100)"</span>)
+ax.<span class="fn">set_title</span>(<span class="st">"Nifty IT — Normalised Price Performance (1Y)"</span>)
+ax.<span class="fn">legend</span>(loc=<span class="st">"upper left"</span>)
+<span class="fn">clean_spines</span>(ax, keep=[<span class="st">"bottom"</span>])
+plt.<span class="fn">tight_layout</span>()
+plt.<span class="fn">savefig</span>(<span class="st">"chart_normalised.png"</span>, bbox_inches=<span class="st">"tight"</span>)
+plt.<span class="fn">show</span>()
+
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+<span class="cm"># CHART 14: Correlation Heatmap (seaborn)</span>
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+corr = returns.<span class="fn">corr</span>()
+corr.columns = corr.index = labels
+
+fig, ax = plt.<span class="fn">subplots</span>(figsize=(<span class="nu">7</span>, <span class="nu">5.5</span>))
+cmap = sns.<span class="fn">diverging_palette</span>(<span class="nu">250</span>, <span class="nu">130</span>, s=<span class="nu">80</span>, as_cmap=<span class="kw">True</span>)
+sns.<span class="fn">heatmap</span>(corr, annot=<span class="kw">True</span>, fmt=<span class="st">".2f"</span>, cmap=cmap, center=<span class="nu">0.5</span>,
+            linewidths=<span class="nu">1</span>, linecolor=BG,
+            annot_kws={<span class="st">"size"</span>: <span class="nu">9</span>}, ax=ax,
+            cbar_kws={<span class="st">"shrink"</span>: <span class="nu">0.8</span>})
+ax.<span class="fn">set_title</span>(<span class="st">"Daily Returns Correlation Matrix — Nifty IT"</span>)
+plt.<span class="fn">tight_layout</span>()
+plt.<span class="fn">savefig</span>(<span class="st">"chart_corr.png"</span>, bbox_inches=<span class="st">"tight"</span>)
+plt.<span class="fn">show</span>()
+
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+<span class="cm"># CHART 15: Risk / Return Scatter (Quadrant chart)</span>
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+fig, ax = plt.<span class="fn">subplots</span>(figsize=(<span class="nu">8</span>, <span class="nu">6</span>))
+
+<span class="kw">for</span> i, label <span class="kw">in</span> <span class="fn">enumerate</span>(labels):
+    ax.<span class="fn">scatter</span>(ann_vol[i], ann_ret[i], s=<span class="nu">160</span>, color=colors_palette[i],
+               zorder=<span class="nu">5</span>, edgecolors=TEXT, linewidths=<span class="nu">0.5</span>)
+    ax.<span class="fn">annotate</span>(label, (ann_vol[i], ann_ret[i]),
+               textcoords=<span class="st">"offset points"</span>, xytext=(<span class="nu">8</span>, <span class="nu">4</span>),
+               fontsize=<span class="nu">9</span>, color=colors_palette[i])
+
+<span class="cm"># Reference lines at median</span>
+med_vol = ann_vol.<span class="fn">median</span>()
+med_ret = ann_ret.<span class="fn">median</span>()
+ax.<span class="fn">axvline</span>(med_vol, color=DIM, lw=<span class="nu">0.8</span>, linestyle=<span class="st">"--"</span>)
+ax.<span class="fn">axhline</span>(med_ret, color=DIM, lw=<span class="nu">0.8</span>, linestyle=<span class="st">"--"</span>)
+ax.<span class="fn">axhline</span>(<span class="nu">0</span>,       color=C_DOWN, lw=<span class="nu">0.6</span>, linestyle=<span class="st">":"</span>, alpha=<span class="nu">0.5</span>)
+
+<span class="cm"># Quadrant labels</span>
+ax.<span class="fn">text</span>(<span class="nu">0.02</span>, <span class="nu">0.97</span>, <span class="st">"Low Risk\nHigh Return"</span>, transform=ax.transAxes,
+        color=C_UP, fontsize=<span class="nu">8</span>, va=<span class="st">"top"</span>, alpha=<span class="nu">0.6</span>)
+ax.<span class="fn">text</span>(<span class="nu">0.75</span>, <span class="nu">0.97</span>, <span class="st">"High Risk\nHigh Return"</span>, transform=ax.transAxes,
+        color=C_MA20, fontsize=<span class="nu">8</span>, va=<span class="st">"top"</span>, alpha=<span class="nu">0.6</span>)
+ax.<span class="fn">text</span>(<span class="nu">0.02</span>, <span class="nu">0.05</span>, <span class="st">"Low Risk\nLow Return"</span>, transform=ax.transAxes,
+        color=C_MA50, fontsize=<span class="nu">8</span>, va=<span class="st">"bottom"</span>, alpha=<span class="nu">0.6</span>)
+ax.<span class="fn">text</span>(<span class="nu">0.75</span>, <span class="nu">0.05</span>, <span class="st">"High Risk\nLow Return"</span>, transform=ax.transAxes,
+        color=C_DOWN, fontsize=<span class="nu">8</span>, va=<span class="st">"bottom"</span>, alpha=<span class="nu">0.6</span>)
+
+ax.<span class="fn">set_xlabel</span>(<span class="st">"Annualised Volatility (%)"</span>)
+ax.<span class="fn">set_ylabel</span>(<span class="st">"Annualised Return (%)"</span>)
+ax.<span class="fn">set_title</span>(<span class="st">"Risk vs Return — Nifty IT (1Y)"</span>)
+<span class="fn">clean_spines</span>(ax, keep=[<span class="st">"bottom"</span>, <span class="st">"left"</span>])
+plt.<span class="fn">tight_layout</span>()
+plt.<span class="fn">savefig</span>(<span class="st">"chart_risk_return.png"</span>, bbox_inches=<span class="st">"tight"</span>)
+plt.<span class="fn">show</span>()
+
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+<span class="cm"># CHART 16: Rolling 30-day volatility comparison</span>
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+rolling_vol = returns.<span class="fn">rolling</span>(<span class="nu">30</span>).<span class="fn">std</span>() * np.<span class="fn">sqrt</span>(<span class="nu">252</span>) * <span class="nu">100</span>
+
+fig, ax = plt.<span class="fn">subplots</span>(figsize=(<span class="nu">14</span>, <span class="nu">5</span>))
+<span class="kw">for</span> i, col <span class="kw">in</span> <span class="fn">enumerate</span>(rolling_vol.columns):
+    ax.<span class="fn">plot</span>(rolling_vol.index, rolling_vol[col],
+            lw=<span class="nu">1.3</span>, color=colors_palette[i],
+            label=col.replace(<span class="st">".NS"</span>, <span class="st">""</span>))
+
+ax.<span class="fn">xaxis.set_major_formatter</span>(mdates.<span class="cl">DateFormatter</span>(<span class="st">"%b '%y"</span>))
+ax.<span class="fn">set_ylabel</span>(<span class="st">"Annualised Volatility (%)"</span>)
+ax.<span class="fn">set_title</span>(<span class="st">"Nifty IT — Rolling 30-Day Volatility (1Y)"</span>)
+ax.<span class="fn">legend</span>(loc=<span class="st">"upper right"</span>)
+<span class="fn">clean_spines</span>(ax, keep=[<span class="st">"bottom"</span>])
+plt.<span class="fn">tight_layout</span>()
+plt.<span class="fn">savefig</span>(<span class="st">"chart_rolling_vol.png"</span>, bbox_inches=<span class="st">"tight"</span>)
+plt.<span class="fn">show</span>()
+
+<span class="cm"># ── Summary stats table ───────────────────────────────────────────────────────</span>
+summary = pd.<span class="cl">DataFrame</span>({
+    <span class="st">"Ann. Return %"</span> : ann_ret.<span class="fn">round</span>(<span class="nu">2</span>),
+    <span class="st">"Ann. Volatility %"</span>: ann_vol.<span class="fn">round</span>(<span class="nu">2</span>),
+    <span class="st">"Sharpe Ratio"</span>  : sharpe.<span class="fn">round</span>(<span class="nu">2</span>),
+    <span class="st">"Max Drawdown %"</span>: (close / close.<span class="fn">cummax</span>() - <span class="nu">1</span>).<span class="fn">min</span>() * <span class="nu">100</span>
+}, index=labels)
+
+<span class="fn">print</span>(<span class="st">"── Portfolio Risk / Return Summary ───────────────"</span>)
+<span class="fn">print</span>(summary.<span class="fn">to_string</span>())</code></pre></div>
+      <div class="out-cell">
+        <div class="out-cell-header">▶ output</div>
+        <pre>── Portfolio Risk / Return Summary ───────────────
+          Ann. Return %  Ann. Volatility %  Sharpe Ratio  Max Drawdown %
+TCS              -14.23              19.42         -0.73          -26.81
+INFY             -18.47              21.34         -0.87          -30.12
+WIPRO             -9.81              18.87         -0.52          -22.43
+HCLTECH            2.14              20.11          0.11          -19.67
+TECHM             -6.33              22.89         -0.28          -24.55</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
+    <div class="cell-body">
+      <div class="md-cell">
+        <h3>Chart 17 — Peer Valuation Comparison (Bar Chart)</h3>
+        <p>Compare P/E, P/B, and Dividend Yield across the same sector peer group by pulling <code>.info</code> for multiple tickers and building a comparison DataFrame. This reveals whether a stock trades at a premium or discount to its peers.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="cell">
+    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
+    <div class="cell-body">
+      <div class="code-cell"><pre><code><span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+<span class="cm"># CHART 17: Peer valuation comparison</span>
+<span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+valuation_keys = [<span class="st">"trailingPE"</span>, <span class="st">"priceToBook"</span>, <span class="st">"dividendYield"</span>]
+val_labels     = [<span class="st">"Trailing P/E"</span>, <span class="st">"Price / Book"</span>, <span class="st">"Dividend Yield %"</span>]
+
+records = []
+<span class="kw">for</span> t <span class="kw">in</span> tickers:
+    info = yf.<span class="cl">Ticker</span>(t).info
+    pe   = info.get(<span class="st">"trailingPE"</span>, np.nan)
+    pb   = info.get(<span class="st">"priceToBook"</span>, np.nan)
+    dy   = (info.get(<span class="st">"dividendYield"</span>, <span class="nu">0</span>) <span class="kw">or</span> <span class="nu">0</span>) * <span class="nu">100</span>
+    records.<span class="fn">append</span>({<span class="st">"Ticker"</span>: t.replace(<span class="st">".NS"</span>, <span class="st">""</span>), <span class="st">"P/E"</span>: pe,
+                     <span class="st">"P/B"</span>: pb, <span class="st">"Div Yield %"</span>: dy})
+
+val_df = pd.<span class="cl">DataFrame</span>(records).<span class="fn">set_index</span>(<span class="st">"Ticker"</span>)
+<span class="fn">print</span>(val_df)
+
+fig, axes = plt.<span class="fn">subplots</span>(<span class="nu">1</span>, <span class="nu">3</span>, figsize=(<span class="nu">16</span>, <span class="nu">4</span>))
+<span class="kw">for</span> ax, col, title <span class="kw">in</span> <span class="fn">zip</span>(axes, [<span class="st">"P/E"</span>, <span class="st">"P/B"</span>, <span class="st">"Div Yield %"</span>],
+                              [<span class="st">"Trailing P/E Ratio"</span>, <span class="st">"Price-to-Book Ratio"</span>, <span class="st">"Dividend Yield (%)"</span>]):
+    vals = val_df[col]
+    bar_col = [C_UP <span class="kw">if</span> v &lt;= vals.<span class="fn">median</span>() <span class="kw">else</span> C_LINE <span class="kw">for</span> v <span class="kw">in</span> vals]
+    bars = ax.<span class="fn">bar</span>(val_df.index, vals, color=bar_col, alpha=<span class="nu">0.85</span>)
+    ax.<span class="fn">axhline</span>(vals.<span class="fn">mean</span>(), color=C_MA20, lw=<span class="nu">1</span>, linestyle=<span class="st">"--"</span>, label=<span class="st">f"Avg: {vals.mean():.1f}"</span>)
+    <span class="kw">for</span> bar, v <span class="kw">in</span> <span class="fn">zip</span>(bars, vals):
+        ax.<span class="fn">text</span>(bar.<span class="fn">get_x</span>() + bar.<span class="fn">get_width</span>()/<span class="nu">2</span>, bar.<span class="fn">get_height</span>() * <span class="nu">1.01</span>,
+               <span class="st">f"</span><span class="at">{v:.1f}</span><span class="st">"</span>, ha=<span class="st">"center"</span>, fontsize=<span class="nu">7.5</span>, color=TEXT)
+    ax.<span class="fn">set_title</span>(title, fontsize=<span class="nu">9</span>)
+    ax.<span class="fn">legend</span>(fontsize=<span class="nu">7</span>)
+    <span class="fn">clean_spines</span>(ax, keep=[<span class="st">"bottom"</span>])
+
+fig.<span class="fn">suptitle</span>(<span class="st">"Nifty IT — Peer Valuation Comparison"</span>, fontsize=<span class="nu">12</span>)
+plt.<span class="fn">tight_layout</span>()
+plt.<span class="fn">savefig</span>(<span class="st">"chart_peer_valuation.png"</span>, bbox_inches=<span class="st">"tight"</span>)
+plt.<span class="fn">show</span>()</code></pre></div>
+      <div class="out-cell">
+        <div class="out-cell-header">▶ output</div>
+        <pre>         P/E    P/B  Div Yield %
+Ticker
+TCS     24.60  13.20         1.80
+INFY    21.40  10.10         2.70
+WIPRO   17.30   4.20         0.20
+HCLTECH 20.10   7.80         3.10
+TECHM   18.50   4.90         2.40</pre>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /notebook -->
+
+<footer style="background:var(--surface);border-top:1px solid var(--border);text-align:center;padding:28px;color:var(--text-dim);font-size:12.5px;font-family:'JetBrains Mono',monospace;letter-spacing:.04em;">
+  yfinance guide · data sourced from Yahoo Finance · for educational use only
+</footer>
+
+</body>
+</html>

@@ -1,2 +1,3 @@
-# Programming Notes
-A private repo of my notes written in Markdown files
+# Skillset Guide.
+
+A repository of the guides to some important skillsets. 
