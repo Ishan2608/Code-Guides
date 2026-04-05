@@ -1,0 +1,3521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LangChain — Complete Training</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"></script>
+
+  <style>
+    :root {
+      --bg-primary: #080d16;
+      --bg-surface: #0e1524;
+      --bg-surface2: #131d2e;
+      --bg-surface3: #1a2540;
+      --bg-code: #060a12;
+      --border: rgba(99,179,132,0.15);
+      --border-bright: rgba(99,179,132,0.4);
+      --accent: #4ade80;
+      --accent-dim: rgba(74,222,128,0.12);
+      --accent2: #22d3ee;
+      --accent2-dim: rgba(34,211,238,0.1);
+      --text-primary: #e2e8f0;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --text-code: #a8d8a8;
+      --sidebar-w: 280px;
+      --header-h: 0px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+    code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+    h1,h2,h3,h4,h5,h6 { font-family: 'Outfit', sans-serif; }
+
+    /* ─── SIDEBAR ─────────────────────────── */
+    #sidebar {
+      position: fixed; top: 0; left: 0;
+      width: var(--sidebar-w);
+      height: 100vh;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      z-index: 100;
+      transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+      overflow: hidden;
+    }
+    #sidebar.collapsed { transform: translateX(calc(-1 * var(--sidebar-w))); }
+    .sidebar-logo {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .sidebar-logo .logo-mark {
+      display: flex; align-items: center; gap: 10px;
+      font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 800;
+    }
+    .logo-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: linear-gradient(135deg, #4ade80, #22d3ee);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 900; color: #060a12;
+    }
+    .sidebar-subtitle { font-size: 10px; color: var(--text-muted); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 4px; }
+    .sidebar-nav { flex: 1; overflow-y: auto; padding: 12px 0; }
+    .sidebar-nav::-webkit-scrollbar { width: 4px; }
+    .sidebar-nav::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+    .nav-section { margin-bottom: 2px; }
+    .nav-section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 16px; cursor: pointer;
+      font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 600;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--accent); user-select: none;
+      border-radius: 6px; margin: 0 8px;
+      transition: background 0.15s;
+    }
+    .nav-section-header:hover { background: var(--accent-dim); }
+    .nav-section-header .chevron { transition: transform 0.25s; font-size: 12px; }
+    .nav-section-header.open .chevron { transform: rotate(90deg); }
+    .nav-items { overflow: hidden; max-height: 0; transition: max-height 0.3s ease; }
+    .nav-items.open { max-height: 800px; }
+    .nav-item {
+      display: block; padding: 6px 16px 6px 28px;
+      font-size: 13px; color: var(--text-secondary);
+      text-decoration: none; border-radius: 6px; margin: 1px 8px;
+      transition: all 0.15s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .nav-item:hover { background: var(--accent-dim); color: var(--accent); }
+    .nav-item.active { background: var(--accent-dim); color: var(--accent); border-left: 2px solid var(--accent); padding-left: 26px; }
+    .nav-divider { height: 1px; background: var(--border); margin: 8px 16px; }
+
+    /* ─── TOGGLE BUTTON ────────────────────── */
+    #toggle-btn {
+      position: fixed; top: 16px; left: 16px; z-index: 200;
+      width: 36px; height: 36px; border-radius: 8px;
+      background: var(--bg-surface2); border: 1px solid var(--border-bright);
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.2s; color: var(--accent);
+      font-size: 16px;
+    }
+    #toggle-btn:hover { background: var(--accent-dim); }
+    #toggle-btn.shifted { left: calc(var(--sidebar-w) + 12px); }
+
+    /* ─── MAIN CONTENT ─────────────────────── */
+    #main {
+      margin-left: var(--sidebar-w);
+      min-height: 100vh;
+      transition: margin-left 0.3s cubic-bezier(.4,0,.2,1);
+      padding: 0 0 80px 0;
+    }
+    #main.expanded { margin-left: 0; }
+
+    /* ─── PAGE HEADER ──────────────────────── */
+    .page-header {
+      background: linear-gradient(135deg, var(--bg-surface) 0%, var(--bg-surface2) 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 48px 60px 40px;
+      position: relative; overflow: hidden;
+    }
+    .page-header::before {
+      content: '';
+      position: absolute; top: -60px; right: -60px;
+      width: 300px; height: 300px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(74,222,128,0.08) 0%, transparent 70%);
+    }
+    .page-header::after {
+      content: '';
+      position: absolute; bottom: -40px; left: 40%;
+      width: 200px; height: 200px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(34,211,238,0.06) 0%, transparent 70%);
+    }
+    .page-header h1 {
+      font-size: 42px; font-weight: 900; line-height: 1.1;
+      background: linear-gradient(135deg, #4ade80 0%, #22d3ee 50%, #a78bfa 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .page-header p { color: var(--text-secondary); font-size: 16px; margin-top: 12px; max-width: 600px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
+      background: var(--accent-dim); color: var(--accent);
+      border: 1px solid var(--border-bright); margin-right: 8px; margin-top: 16px;
+    }
+
+    /* ─── SECTION LAYOUT ────────────────────── */
+    .content-section {
+      padding: 48px 60px;
+      border-bottom: 1px solid var(--border);
+    }
+    .content-section:last-child { border-bottom: none; }
+
+    /* ─── SECTION HEADING ────────────────────── */
+    .section-label {
+      font-size: 11px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase;
+      color: var(--accent2); margin-bottom: 8px; font-family: 'JetBrains Mono', monospace;
+    }
+    .section-heading {
+      font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 800;
+      color: #f1f5f9; margin-bottom: 8px; line-height: 1.2;
+    }
+    .subsection-heading {
+      font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 700;
+      color: #e2e8f0; margin: 36px 0 12px; position: relative; padding-left: 14px;
+    }
+    .subsection-heading::before {
+      content: ''; position: absolute; left: 0; top: 4px; bottom: 4px;
+      width: 3px; border-radius: 2px; background: var(--accent);
+    }
+    .sub-subsection-heading {
+      font-family: 'Outfit', sans-serif; font-size: 17px; font-weight: 600;
+      color: var(--accent); margin: 24px 0 8px;
+    }
+    .section-divider {
+      height: 1px; background: linear-gradient(90deg, var(--accent) 0%, transparent 100%);
+      margin-bottom: 28px; opacity: 0.3;
+    }
+
+    /* ─── MARKDOWN CELL (text cell) ──────────── */
+    .md-cell {
+      background: var(--bg-surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin: 16px 0;
+      position: relative;
+    }
+    .md-cell::before {
+      content: '';
+      position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; border-radius: 3px 0 0 3px;
+      background: linear-gradient(180deg, var(--accent), var(--accent2));
+    }
+    .md-cell p { color: var(--text-primary); margin-bottom: 10px; }
+    .md-cell p:last-child { margin-bottom: 0; }
+    .md-cell ul, .md-cell ol { padding-left: 20px; color: var(--text-primary); }
+    .md-cell li { margin-bottom: 6px; }
+    .md-cell strong { color: var(--accent); font-weight: 600; }
+    .md-cell em { color: var(--accent2); font-style: italic; }
+    .md-cell .inline-code {
+      background: var(--bg-code); color: #93c5fd; padding: 2px 6px; border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace; font-size: 13px;
+      border: 1px solid rgba(147,197,253,0.15);
+    }
+    .md-cell a { color: var(--accent2); text-decoration: underline; }
+
+    /* ─── INFO / CALLOUT BOXES ───────────────── */
+    .callout {
+      border-radius: 8px; padding: 14px 18px; margin: 16px 0;
+      display: flex; gap: 12px; font-size: 14px;
+    }
+    .callout-info { background: rgba(34,211,238,0.07); border: 1px solid rgba(34,211,238,0.25); color: #a5f3fc; }
+    .callout-warn { background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.25); color: #fde68a; }
+    .callout-success { background: rgba(74,222,128,0.07); border: 1px solid rgba(74,222,128,0.25); color: #bbf7d0; }
+    .callout-tip { background: rgba(167,139,250,0.07); border: 1px solid rgba(167,139,250,0.25); color: #ddd6fe; }
+    .callout-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+
+    /* ─── CODE CELL ────────────────────────── */
+    .code-cell {
+      margin: 16px 0;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--bg-code);
+    }
+    .code-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 14px;
+      background: var(--bg-surface3);
+      border-bottom: 1px solid var(--border);
+    }
+    .code-label {
+      display: flex; align-items: center; gap: 8px;
+      font-family: 'JetBrains Mono', monospace; font-size: 11px;
+      color: var(--text-muted);
+    }
+    .code-in-badge {
+      background: var(--accent-dim); color: var(--accent);
+      border: 1px solid var(--border-bright);
+      padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .code-lang-badge {
+      background: rgba(34,211,238,0.1); color: var(--accent2);
+      border: 1px solid rgba(34,211,238,0.2);
+      padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;
+      font-family: 'JetBrains Mono', monospace; letter-spacing: 0.06em;
+    }
+    .code-lang-badge.bash { background: rgba(251,191,36,0.1); color: #fbbf24; border-color: rgba(251,191,36,0.2); }
+    .copy-btn {
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text-muted); padding: 3px 10px; border-radius: 5px;
+      font-size: 11px; cursor: pointer; font-family: 'IBM Plex Sans', sans-serif;
+      transition: all 0.15s;
+    }
+    .copy-btn:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--border-bright); }
+    .copy-btn.copied { color: var(--accent); border-color: var(--border-bright); }
+    .code-body { padding: 0; }
+    .code-body pre {
+      margin: 0 !important; padding: 18px 20px !important;
+      background: var(--bg-code) !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 13.5px !important; line-height: 1.65 !important;
+      overflow-x: auto;
+    }
+    .code-body pre code { background: transparent !important; font-size: inherit !important; }
+    .code-output {
+      border-top: 1px solid var(--border);
+      padding: 12px 20px;
+      background: var(--bg-primary);
+    }
+    .output-label { font-size: 10px; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; margin-bottom: 6px; }
+    .output-content { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #a5f3fc; white-space: pre-wrap; }
+
+    /* ─── SYNTAX GENERAL BOX ─────────────────── */
+    .syntax-box {
+      background: linear-gradient(135deg, rgba(74,222,128,0.04), rgba(34,211,238,0.04));
+      border: 1px solid var(--border-bright);
+      border-radius: 8px; padding: 14px 18px; margin: 12px 0;
+    }
+    .syntax-box .syntax-title {
+      font-size: 10px; color: var(--accent); text-transform: uppercase;
+      letter-spacing: 0.12em; font-weight: 700; margin-bottom: 8px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ─── TABLE ──────────────────────────────── */
+    .styled-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+    .styled-table th {
+      background: var(--bg-surface3); color: var(--accent);
+      padding: 10px 16px; text-align: left; font-weight: 600;
+      font-family: 'Outfit', sans-serif; border-bottom: 2px solid var(--border-bright);
+    }
+    .styled-table td {
+      padding: 10px 16px; border-bottom: 1px solid var(--border);
+      color: var(--text-secondary); vertical-align: top;
+    }
+    .styled-table tr:hover td { background: var(--accent-dim); }
+    .styled-table td code { background: var(--bg-code); color: #93c5fd; padding: 1px 5px; border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+    /* ─── ECOSYSTEM CARDS ─────────────────────── */
+    .eco-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 20px 0; }
+    .eco-card {
+      background: var(--bg-surface2); border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px;
+      transition: all 0.2s; cursor: default;
+    }
+    .eco-card:hover { border-color: var(--border-bright); transform: translateY(-2px); background: var(--bg-surface3); }
+    .eco-card .eco-icon { font-size: 28px; margin-bottom: 10px; }
+    .eco-card .eco-name { font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; }
+    .eco-card .eco-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+    .eco-card .eco-tag { display: inline-block; margin-top: 10px; font-size: 11px; color: var(--accent); background: var(--accent-dim); padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+
+    /* ─── FLOW DIAGRAM ───────────────────────── */
+    .flow-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+    .flow-box {
+      background: var(--bg-surface3); border: 1px solid var(--border-bright);
+      border-radius: 8px; padding: 8px 16px;
+      font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent);
+      font-weight: 500;
+    }
+    .flow-box.cyan { color: var(--accent2); border-color: rgba(34,211,238,0.3); }
+    .flow-box.purple { color: #a78bfa; border-color: rgba(167,139,250,0.3); }
+    .flow-box.orange { color: #fb923c; border-color: rgba(251,146,60,0.3); }
+    .flow-arrow { color: var(--text-muted); font-size: 18px; }
+
+    /* ─── RESPONSIVE ─────────────────────────── */
+    @media (max-width: 900px) {
+      :root { --sidebar-w: 260px; }
+      #sidebar { transform: translateX(calc(-1 * var(--sidebar-w))); }
+      #sidebar.open { transform: translateX(0); }
+      #main { margin-left: 0 !important; }
+      #toggle-btn { left: 16px !important; }
+      .content-section { padding: 32px 24px; }
+      .page-header { padding: 36px 24px 28px; }
+      .page-header h1 { font-size: 30px; }
+    }
+    @media (max-width: 600px) {
+      .content-section { padding: 24px 16px; }
+      .page-header { padding: 28px 16px; }
+      .page-header h1 { font-size: 24px; }
+      .section-heading { font-size: 24px; }
+      .eco-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ─── OVERLAY ─────────────────────────────── */
+    #overlay {
+      display: none; position: fixed; inset: 0; z-index: 90;
+      background: rgba(0,0,0,0.5); backdrop-filter: blur(2px);
+    }
+    #overlay.visible { display: block; }
+
+    /* ─── PROGRESS BAR ───────────────────────── */
+    #progress-bar {
+      position: fixed; top: 0; left: 0; height: 2px; z-index: 300;
+      background: linear-gradient(90deg, #4ade80, #22d3ee);
+      width: 0%; transition: width 0.1s;
+    }
+
+    /* ─── SCROLL TO TOP ──────────────────────── */
+    #scroll-top {
+      position: fixed; bottom: 24px; right: 24px; z-index: 200;
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--bg-surface3); border: 1px solid var(--border-bright);
+      color: var(--accent); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; opacity: 0; transition: opacity 0.3s;
+    }
+    #scroll-top.visible { opacity: 1; }
+    #scroll-top:hover { background: var(--accent-dim); }
+
+    /* hljs override */
+    .hljs { background: var(--bg-code) !important; }
+
+    /* number list */
+    .num-list { counter-reset: item; padding-left: 0; list-style: none; }
+    .num-list li { display: flex; gap: 14px; margin-bottom: 10px; counter-increment: item; }
+    .num-list li::before {
+      content: counter(item);
+      display: flex; align-items: center; justify-content: center;
+      min-width: 26px; height: 26px; border-radius: 50%;
+      background: var(--accent-dim); color: var(--accent);
+      font-size: 12px; font-weight: 700; flex-shrink: 0; margin-top: 1px;
+      font-family: 'Outfit', sans-serif;
+    }
+  </style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<!-- ═══ SIDEBAR ═══════════════════════════════════════════════════════ -->
+<div id="overlay"></div>
+<aside id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <div class="logo-icon">LC</div>
+      LangChain
+    </div>
+    <div class="sidebar-subtitle">Complete Training Guide</div>
+  </div>
+  <nav class="sidebar-nav" id="sidebar-nav">
+
+    <div class="nav-section">
+      <div class="nav-section-header open" onclick="toggleNav(this)">
+        <span>📖 Introduction</span><span class="chevron">›</span>
+      </div>
+      <div class="nav-items open">
+        <a class="nav-item" href="#what-is-langchain">What is LangChain?</a>
+        <a class="nav-item" href="#why-langchain">Why LangChain?</a>
+        <a class="nav-item" href="#ecosystem">The LangChain Ecosystem</a>
+      </div>
+    </div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-section">
+      <div class="nav-section-header" onclick="toggleNav(this)">
+        <span>⚙️ Setup</span><span class="chevron">›</span>
+      </div>
+      <div class="nav-items">
+        <a class="nav-item" href="#installation">Installation</a>
+        <a class="nav-item" href="#api-keys">API Keys Setup</a>
+        <a class="nav-item" href="#first-run">First Run</a>
+      </div>
+    </div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-section">
+      <div class="nav-section-header" onclick="toggleNav(this)">
+        <span>🤖 Models</span><span class="chevron">›</span>
+      </div>
+      <div class="nav-items">
+        <a class="nav-item" href="#llm-types">Types of Models</a>
+        <a class="nav-item" href="#chat-models">Chat Models</a>
+        <a class="nav-item" href="#model-params">Parameters</a>
+        <a class="nav-item" href="#async-models">Async & Streaming</a>
+      </div>
+    </div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-section">
+      <div class="nav-section-header" onclick="toggleNav(this)">
+        <span>📝 Prompts</span><span class="chevron">›</span>
+      </div>
+      <div class="nav-items">
+        <a class="nav-item" href="#prompt-template">PromptTemplate</a>
+        <a class="nav-item" href="#chat-prompt">ChatPromptTemplate</a>
+        <a class="nav-item" href="#few-shot">Few-Shot Prompting</a>
+        <a class="nav-item" href="#messages-placeholder">MessagesPlaceholder</a>
+      </div>
+    </div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-section">
+      <div class="nav-section-header" onclick="toggleNav(this)">
+        <span>🔄 Output Parsers</span><span class="chevron">›</span>
+      </div>
+      <div class="nav-items">
+        <a class="nav-item" href="#str-parser">StrOutputParser</a>
+        <a class="nav-item" href="#json-parser">JsonOutputParser</a>
+        <a class="nav-item" href="#pydantic-parser">PydanticOutputParser</a>
+      </div>
+    </div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-section">
+      <div class="nav-section-header" onclick="toggleNav(this)">
+        <span>⛓️ LCEL & Chains</span><span class="chevron">›</span>
+      </div>
+      <div class="nav-items">
+        <a class="nav-item" href="#lcel-intro">LCEL Introduction</a>
+        <a class="nav-item" href="#runnables">Runnables</a>
+        <a class="nav-item" href="#parallel">RunnableParallel</a>
+        <a class="nav-item" href="#sequential-chains">Sequential Chains</a>
+      </div>
+    </div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-section">
+      <div class="nav-section-header" onclick="toggleNav(this)">
+        <span>🧠 Memory</span><span class="chevron">›</span>
+      </div>
+      <div class="nav-items">
+        <a class="nav-item" href="#memory-intro">What is Memory?</a>
+        <a class="nav-item" href="#buffer-memory">Buffer Memory</a>
+        <a class="nav-item" href="#summary-memory">Summary Memory</a>
+        <a class="nav-item" href="#chat-history">Chat History</a>
+      </div>
+    </div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-section">
+      <div class="nav-section-header" onclick="toggleNav(this)">
+        <span>📚 RAG Pipeline</span><span class="chevron">›</span>
+      </div>
+      <div class="nav-items">
+        <a class="nav-item" href="#doc-loaders">Document Loaders</a>
+        <a class="nav-item" href="#text-splitters">Text Splitters</a>
+        <a class="nav-item" href="#embeddings">Embeddings</a>
+        <a class="nav-item" href="#vector-stores">Vector Stores</a>
+        <a class="nav-item" href="#retrievers">Retrievers</a>
+        <a class="nav-item" href="#rag-chain">RAG Chain</a>
+      </div>
+    </div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-section">
+      <div class="nav-section-header" onclick="toggleNav(this)">
+        <span>🛠️ Tools</span><span class="chevron">›</span>
+      </div>
+      <div class="nav-items">
+        <a class="nav-item" href="#tools-intro">What are Tools?</a>
+        <a class="nav-item" href="#builtin-tools">Built-in Tools</a>
+        <a class="nav-item" href="#custom-tools">Custom Tools</a>
+        <a class="nav-item" href="#toolkits">Toolkits</a>
+      </div>
+    </div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-section">
+      <div class="nav-section-header" onclick="toggleNav(this)">
+        <span>🕵️ Agents</span><span class="chevron">›</span>
+      </div>
+      <div class="nav-items">
+        <a class="nav-item" href="#agents-intro">What are Agents?</a>
+        <a class="nav-item" href="#react-agent">ReAct Pattern</a>
+        <a class="nav-item" href="#create-agent">create_react_agent</a>
+        <a class="nav-item" href="#custom-agent">Custom Agents</a>
+      </div>
+    </div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-section">
+      <div class="nav-section-header" onclick="toggleNav(this)">
+        <span>🔗 LangGraph</span><span class="chevron">›</span>
+      </div>
+      <div class="nav-items">
+        <a class="nav-item" href="#langgraph-intro">What is LangGraph?</a>
+        <a class="nav-item" href="#state-graph">StateGraph</a>
+        <a class="nav-item" href="#nodes-edges">Nodes & Edges</a>
+        <a class="nav-item" href="#conditional">Conditional Routing</a>
+        <a class="nav-item" href="#cycles">Cycles & Loops</a>
+      </div>
+    </div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-section">
+      <div class="nav-section-header" onclick="toggleNav(this)">
+        <span>🌐 Multi-Agent</span><span class="chevron">›</span>
+      </div>
+      <div class="nav-items">
+        <a class="nav-item" href="#multi-agent-arch">Architecture</a>
+        <a class="nav-item" href="#supervisor">Supervisor Pattern</a>
+        <a class="nav-item" href="#hierarchical">Hierarchical Agents</a>
+        <a class="nav-item" href="#collaboration">Agent Collaboration</a>
+      </div>
+    </div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-section">
+      <div class="nav-section-header" onclick="toggleNav(this)">
+        <span>🔬 LangSmith</span><span class="chevron">›</span>
+      </div>
+      <div class="nav-items">
+        <a class="nav-item" href="#langsmith-setup">Setup & Tracing</a>
+        <a class="nav-item" href="#evaluation">Evaluation</a>
+        <a class="nav-item" href="#monitoring">Monitoring</a>
+      </div>
+    </div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-section">
+      <div class="nav-section-header" onclick="toggleNav(this)">
+        <span>🚀 Best Practices</span><span class="chevron">›</span>
+      </div>
+      <div class="nav-items">
+        <a class="nav-item" href="#error-handling">Error Handling</a>
+        <a class="nav-item" href="#streaming">Streaming</a>
+        <a class="nav-item" href="#production">Production Tips</a>
+      </div>
+    </div>
+
+  </nav>
+</aside>
+
+<!-- ═══ TOGGLE BUTTON ═════════════════════════════════════════════════ -->
+<button id="toggle-btn" onclick="toggleSidebar()" title="Toggle Sidebar">☰</button>
+
+<!-- ═══ SCROLL TOP ════════════════════════════════════════════════════ -->
+<button id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- ═══ MAIN CONTENT ══════════════════════════════════════════════════ -->
+<main id="main">
+
+  <!-- PAGE HEADER -->
+  <header class="page-header">
+    <div class="section-label">Complete Training Guide · Zero to Advanced</div>
+    <h1>LangChain Mastery</h1>
+    <p>From absolute zero to building production-grade AI Agent systems. A comprehensive, hands-on training using Python and Google Gemini.</p>
+    <div>
+      <span class="badge">🐍 Python</span>
+      <span class="badge">🤖 Gemini 3.0</span>
+      <span class="badge">⛓️ LangChain</span>
+      <span class="badge">🔗 LangGraph</span>
+      <span class="badge">🔬 LangSmith</span>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION 1 · INTRODUCTION -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section class="content-section" id="what-is-langchain">
+    <div class="section-label">Section 01</div>
+    <h2 class="section-heading">Introduction to LangChain</h2>
+    <div class="section-divider"></div>
+
+    <h3 class="subsection-heading" id="what-is-langchain-sub">What is LangChain?</h3>
+    <div class="md-cell">
+      <p>Imagine you want to build an AI application — not just a chatbot that answers a single question, but something that can <strong>read documents</strong>, <strong>browse the web</strong>, <strong>remember past conversations</strong>, and <strong>take actions</strong> like running code or sending emails. Doing this from scratch would require hundreds of lines of complex code.</p>
+      <p><strong>LangChain</strong> is an open-source framework that makes building such applications dramatically easier. Think of it as a <em>toolkit and orchestration layer</em> for Large Language Models (LLMs). Instead of writing all the plumbing yourself, LangChain provides ready-made, composable components that you can snap together like LEGO bricks.</p>
+      <p>It was created by <strong>Harrison Chase</strong> in October 2022 and has become one of the most popular AI development frameworks in the world.</p>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon">💡</span>
+      <div><strong>Simple Analogy:</strong> LangChain is to AI what React is to web development — it doesn't replace the underlying engine (the LLM), but it gives you components, patterns, and structure to build sophisticated applications much faster and more reliably.</div>
+    </div>
+
+    <h3 class="subsection-heading" id="why-langchain">Why Use LangChain?</h3>
+    <div class="md-cell">
+      <p>Without LangChain, connecting an LLM to external data sources, managing conversation history, orchestrating multiple steps, or building agents requires significant custom code. LangChain provides:</p>
+      <ul>
+        <li><strong>Composability</strong> — Connect models, prompts, tools, and memory like building blocks</li>
+        <li><strong>Provider Agnostic</strong> — Switch between OpenAI, Google Gemini, Anthropic, Hugging Face, etc. with minimal code changes</li>
+        <li><strong>Built-in Abstractions</strong> — Document loaders, text splitters, vector stores, retrievers — all ready to use</li>
+        <li><strong>Agent Capabilities</strong> — Give your LLM the ability to use tools and make decisions</li>
+        <li><strong>Active Community</strong> — Massive ecosystem of integrations and plugins</li>
+      </ul>
+    </div>
+
+    <h3 class="subsection-heading" id="ecosystem">The LangChain Ecosystem</h3>
+    <div class="md-cell">
+      <p>LangChain is not just a single library — it's an entire ecosystem of tools built around a common philosophy. Here are the four main members of the family:</p>
+    </div>
+
+    <div class="eco-grid">
+      <div class="eco-card">
+        <div class="eco-icon">⛓️</div>
+        <div class="eco-name">LangChain</div>
+        <div class="eco-desc">The core framework. Provides models, prompts, chains, memory, tools, agents, and RAG pipeline components. Your primary building blocks.</div>
+        <span class="eco-tag">Core Framework</span>
+      </div>
+      <div class="eco-card">
+        <div class="eco-icon">🔗</div>
+        <div class="eco-name">LangGraph</div>
+        <div class="eco-desc">Built on top of LangChain, it lets you model AI workflows as <em>graphs</em> with nodes (actions) and edges (transitions). Perfect for complex, multi-step agent workflows with cycles and conditional logic.</div>
+        <span class="eco-tag">Agent Orchestration</span>
+      </div>
+      <div class="eco-card">
+        <div class="eco-icon">🔬</div>
+        <div class="eco-name">LangSmith</div>
+        <div class="eco-desc">A platform for debugging, testing, evaluating, and monitoring your LLM applications. Think of it as DevTools + logging + testing for your AI apps. Cloud-based dashboard.</div>
+        <span class="eco-tag">Observability</span>
+      </div>
+      <div class="eco-card">
+        <div class="eco-icon">🌊</div>
+        <div class="eco-name">LangFlow</div>
+        <div class="eco-desc">A visual, no-code/low-code interface for building LangChain applications via drag-and-drop. Great for prototyping without writing code, or for non-developers.</div>
+        <span class="eco-tag">Visual Builder</span>
+      </div>
+    </div>
+
+    <div class="callout callout-tip">
+      <span class="callout-icon">🎯</span>
+      <div><strong>In this training:</strong> We will focus deeply on <strong>LangChain</strong> (core), <strong>LangGraph</strong>, and <strong>LangSmith</strong>. LangFlow is left for visual exploration separately as it's a GUI tool.</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION 2 · INSTALLATION -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section class="content-section" id="installation">
+    <div class="section-label">Section 02</div>
+    <h2 class="section-heading">Setup &amp; Installation</h2>
+    <div class="section-divider"></div>
+
+    <h3 class="subsection-heading">Installing the Packages</h3>
+    <div class="md-cell">
+      <p>LangChain is split into multiple packages. You install only what you need. Here are the core packages for this training:</p>
+      <ul>
+        <li><span class="inline-code">langchain</span> — The core framework</li>
+        <li><span class="inline-code">langchain-google-genai</span> — Google Gemini integration</li>
+        <li><span class="inline-code">langchain-community</span> — Community integrations (tools, loaders, etc.)</li>
+        <li><span class="inline-code">langgraph</span> — Graph-based agent orchestration</li>
+        <li><span class="inline-code">langsmith</span> — Tracing and evaluation SDK</li>
+        <li><span class="inline-code">chromadb</span> — Vector database for RAG</li>
+        <li><span class="inline-code">faiss-cpu</span> — Alternative vector store</li>
+        <li><span class="inline-code">python-dotenv</span> — Load environment variables</li>
+      </ul>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">INSTALL</span> <span>Package Installation</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge bash">bash</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-bash"># Install all required packages
+pip install langchain langchain-google-genai langchain-community
+pip install langgraph langsmith chromadb faiss-cpu
+pip install python-dotenv pypdf docx2txt beautifulsoup4 requests
+
+# Or install all at once
+pip install langchain langchain-google-genai langchain-community \
+            langgraph langsmith chromadb faiss-cpu \
+            python-dotenv pypdf docx2txt</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="api-keys">API Keys Setup</h3>
+    <div class="md-cell">
+      <p>You'll need a <strong>Google Gemini API key</strong>. Get it from <em>Google AI Studio</em> at <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a>. Store secrets in a <span class="inline-code">.env</span> file — never hardcode them in your code.</p>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">FILE</span> <span>.env — Environment Variables</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge bash">bash</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-bash"># .env file (create this in your project root)
+GOOGLE_API_KEY=your_google_gemini_api_key_here
+LANGCHAIN_API_KEY=your_langsmith_api_key_here
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_PROJECT=my-langchain-training</code></pre>
+      </div>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [1]</span> <span>Loading Environment Variables</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">import os
+from dotenv import load_dotenv
+
+# Load all variables from .env file into environment
+load_dotenv()
+
+# Access them like this
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+print("API key loaded:", "✅" if GOOGLE_API_KEY else "❌")</code></pre>
+      </div>
+      <div class="code-output">
+        <div class="output-label">Out [1]:</div>
+        <div class="output-content">API key loaded: ✅</div>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="first-run">Your First LangChain Run</h3>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [2]</span> <span>Hello, LangChain!</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+
+# Create a model instance — this is the general syntax
+# model = Chat<Provider>(model="<model_name>", api_key="<api_key>")
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+# Send a message and get a response
+response = model.invoke("What is LangChain in one sentence?")
+
+print(response.content)</code></pre>
+      </div>
+      <div class="code-output">
+        <div class="output-label">Out [2]:</div>
+        <div class="output-content">LangChain is an open-source framework that simplifies building applications powered by large language models by providing composable components for chaining prompts, memory, tools, and agents.</div>
+      </div>
+    </div>
+
+    <div class="callout callout-success">
+      <span class="callout-icon">✅</span>
+      <div>You've just made your first LangChain call! Notice we <strong>invoke</strong> the model with a plain string, and get back an <strong>AIMessage</strong> object whose <strong>.content</strong> property holds the text. This pattern will appear throughout.</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION 3 · MODELS -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section class="content-section" id="llm-types">
+    <div class="section-label">Section 03</div>
+    <h2 class="section-heading">Models &amp; LLMs</h2>
+    <div class="section-divider"></div>
+
+    <h3 class="subsection-heading">Types of Models in LangChain</h3>
+    <div class="md-cell">
+      <p>LangChain supports three categories of models, each designed for different tasks:</p>
+      <table class="styled-table" style="margin-top:12px">
+        <thead>
+          <tr><th>Type</th><th>Class Pattern</th><th>Use Case</th><th>Input → Output</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Chat Models</strong></td><td><code>Chat&lt;Provider&gt;</code></td><td>Conversations, Q&amp;A, agents</td><td>Messages → AIMessage</td></tr>
+          <tr><td><strong>LLMs</strong></td><td><code>&lt;Provider&gt;LLM</code></td><td>Text completion, older style</td><td>String → String</td></tr>
+          <tr><td><strong>Embeddings</strong></td><td><code>&lt;Provider&gt;Embeddings</code></td><td>Semantic search, RAG</td><td>Text → Vector</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="subsection-heading" id="chat-models">Chat Models — Deep Dive</h3>
+    <div class="md-cell">
+      <p>Chat models are the most commonly used type today. They work with <strong>messages</strong> — structured units of conversation with roles: <span class="inline-code">SystemMessage</span>, <span class="inline-code">HumanMessage</span>, and <span class="inline-code">AIMessage</span>.</p>
+    </div>
+
+    <div class="syntax-box">
+      <div class="syntax-title">⚡ General Syntax</div>
+      <pre style="background:transparent;font-family:'JetBrains Mono',monospace;font-size:13px;color:#93c5fd;padding:0;overflow-x:auto">model = ChatGoogleGenerativeAI(model="&lt;model_name&gt;", api_key="&lt;api_key&gt;")</pre>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [3]</span> <span>Using Messages with Chat Models</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+
+# Initialize the model
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+# Create a conversation with messages
+messages = [
+    SystemMessage(content="You are a concise Python expert. Always give short answers."),
+    HumanMessage(content="What is a list comprehension?"),
+]
+
+response = model.invoke(messages)
+
+print(type(response))          # &lt;class 'langchain_core.messages.ai.AIMessage'&gt;
+print(response.content)        # The actual text
+print(response.usage_metadata) # Token usage info</code></pre>
+      </div>
+      <div class="code-output">
+        <div class="output-label">Out [3]:</div>
+        <div class="output-content">&lt;class 'langchain_core.messages.ai.AIMessage'&gt;
+A list comprehension is a concise way to create lists: [expr for item in iterable if condition]
+Example: squares = [x**2 for x in range(10) if x % 2 == 0]
+{'input_tokens': 28, 'output_tokens': 34, 'total_tokens': 62}</div>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="model-params">Model Parameters</h3>
+    <div class="md-cell">
+      <p>You can fine-tune model behavior with parameters passed during initialization:</p>
+      <ul>
+        <li><strong>temperature</strong> — Controls randomness. 0 = deterministic, 1 = creative (default varies)</li>
+        <li><strong>max_output_tokens</strong> — Maximum tokens in the response</li>
+        <li><strong>top_p</strong> — Nucleus sampling threshold</li>
+        <li><strong>top_k</strong> — Limits to top-k token choices</li>
+      </ul>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [4]</span> <span>Model Parameters Example</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+
+# General syntax with parameters
+# model = Chat<Provider>(
+#     model="<model_name>",
+#     temperature=<0.0 to 1.0>,
+#     max_output_tokens=<int>,
+#     api_key="<api_key>"
+# )
+
+# Creative mode — higher temperature
+creative_model = ChatGoogleGenerativeAI(
+    model="gemini-3.0-flash",
+    temperature=0.9,
+    max_output_tokens=200,
+    api_key=GOOGLE_API_KEY
+)
+
+# Precise mode — lower temperature
+precise_model = ChatGoogleGenerativeAI(
+    model="gemini-3.0-flash",
+    temperature=0.1,
+    max_output_tokens=200,
+    api_key=GOOGLE_API_KEY
+)
+
+question = "Give me a metaphor for machine learning."
+print("Creative:", creative_model.invoke(question).content)
+print("Precise: ", precise_model.invoke(question).content)</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="async-models">Streaming Responses</h3>
+    <div class="md-cell">
+      <p>Instead of waiting for the entire response, <strong>streaming</strong> lets you process tokens as they arrive — perfect for real-time UIs like chatbots.</p>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [5]</span> <span>Streaming Output Token by Token</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+# stream() returns an iterator of chunks
+print("Streaming response: ", end="")
+for chunk in model.stream("Tell me a short interesting fact about Python."):
+    print(chunk.content, end="", flush=True)
+print()  # New line at end</code></pre>
+      </div>
+      <div class="code-output">
+        <div class="output-label">Out [5] (streamed):</div>
+        <div class="output-content">Streaming response: Python was named after the British comedy group Monty Python's Flying Circus, not the snake — Guido van Rossum wanted a short, unique name and was reading their scripts at the time!</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION 4 · PROMPTS -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section class="content-section" id="prompt-template">
+    <div class="section-label">Section 04</div>
+    <h2 class="section-heading">Prompts &amp; Templates</h2>
+    <div class="section-divider"></div>
+
+    <div class="md-cell">
+      <p>Hardcoding prompts in your application is brittle and hard to maintain. <strong>Prompt Templates</strong> are reusable, parameterized prompts — you define the structure once and fill in variables dynamically at runtime.</p>
+      <p>Think of them like Python f-strings, but with superpowers: validation, formatting, and composition.</p>
+    </div>
+
+    <h3 class="subsection-heading">PromptTemplate — Simple Text Prompts</h3>
+    <div class="md-cell">
+      <p>Use <span class="inline-code">PromptTemplate</span> when working with simple text-based prompts (non-chat). Variables are wrapped in curly braces: <span class="inline-code">{variable_name}</span>.</p>
+    </div>
+
+    <div class="syntax-box">
+      <div class="syntax-title">⚡ General Syntax</div>
+      <pre style="background:transparent;font-family:'JetBrains Mono',monospace;font-size:13px;color:#93c5fd;padding:0;overflow-x:auto">template = PromptTemplate(input_variables=["&lt;var1&gt;", "&lt;var2&gt;"], template="... {var1} ... {var2} ...")</pre>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [6]</span> <span>PromptTemplate Example</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_core.prompts import PromptTemplate
+
+# Define a reusable template
+# General Syntax:
+# template = PromptTemplate(
+#     input_variables=["<var1>", "<var2>"],
+#     template="Your template text with {var1} and {var2}"
+# )
+template = PromptTemplate(
+    input_variables=["topic", "audience"],
+    template="Explain {topic} to a {audience} in 3 bullet points."
+)
+
+# Format the template with actual values
+formatted_prompt = template.format(topic="neural networks", audience="10-year-old")
+print(formatted_prompt)</code></pre>
+      </div>
+      <div class="code-output">
+        <div class="output-label">Out [6]:</div>
+        <div class="output-content">Explain neural networks to a 10-year-old in 3 bullet points.</div>
+      </div>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [7]</span> <span>Using PromptTemplate with a Model</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import PromptTemplate
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+template = PromptTemplate(
+    input_variables=["topic", "audience"],
+    template="Explain {topic} to a {audience} in 3 bullet points."
+)
+
+# Format and invoke
+prompt = template.format(topic="quantum computing", audience="high school student")
+response = model.invoke(prompt)
+print(response.content)</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="chat-prompt">ChatPromptTemplate — For Chat Models</h3>
+    <div class="md-cell">
+      <p><span class="inline-code">ChatPromptTemplate</span> is the preferred way to build prompts for chat models. It lets you define multiple messages with different roles: <strong>system</strong>, <strong>human</strong>, and <strong>ai</strong>.</p>
+    </div>
+
+    <div class="syntax-box">
+      <div class="syntax-title">⚡ General Syntax</div>
+      <pre style="background:transparent;font-family:'JetBrains Mono',monospace;font-size:13px;color:#93c5fd;padding:0;overflow-x:auto">prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a {role}."),
+    ("human", "{user_input}")
+])</pre>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [8]</span> <span>ChatPromptTemplate Example</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+# Build a chat prompt with roles
+# ("role", "message template with {variables}")
+chat_prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are an expert {field} teacher. Be clear and encouraging."),
+    ("human", "I don't understand {concept}. Can you explain it simply?")
+])
+
+# Format with variables
+messages = chat_prompt.format_messages(
+    field="mathematics",
+    concept="derivatives in calculus"
+)
+
+response = model.invoke(messages)
+print(response.content)</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="few-shot">Few-Shot Prompting</h3>
+    <div class="md-cell">
+      <p><strong>Few-shot prompting</strong> is the technique of giving the model a few examples of input-output pairs <em>within the prompt itself</em>, so it learns the pattern you want it to follow. This dramatically improves consistency and accuracy for structured tasks.</p>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [9]</span> <span>Few-Shot Prompting</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate, FewShotChatMessagePromptTemplate
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+# Step 1: Define example input-output pairs
+examples = [
+    {"input": "happy",   "output": "sad"},
+    {"input": "fast",    "output": "slow"},
+    {"input": "bright",  "output": "dark"},
+]
+
+# Step 2: Create an example prompt template
+example_prompt = ChatPromptTemplate.from_messages([
+    ("human", "{input}"),
+    ("ai", "{output}"),
+])
+
+# Step 3: Create FewShotChatMessagePromptTemplate
+few_shot_prompt = FewShotChatMessagePromptTemplate(
+    example_prompt=example_prompt,
+    examples=examples,
+)
+
+# Step 4: Build the final prompt
+final_prompt = ChatPromptTemplate.from_messages([
+    ("system", "You find the antonym of the given word."),
+    few_shot_prompt,
+    ("human", "{input}"),  # New question
+])
+
+# Invoke
+chain = final_prompt | model
+result = chain.invoke({"input": "ancient"})
+print(result.content)  # Should output: "modern" or similar</code></pre>
+      </div>
+      <div class="code-output">
+        <div class="output-label">Out [9]:</div>
+        <div class="output-content">modern</div>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="messages-placeholder">MessagesPlaceholder</h3>
+    <div class="md-cell">
+      <p><span class="inline-code">MessagesPlaceholder</span> is a special slot in a <span class="inline-code">ChatPromptTemplate</span> that is filled with a <em>list of messages</em> at runtime. This is essential for implementing chat history and memory.</p>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [10]</span> <span>MessagesPlaceholder for Chat History</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import HumanMessage, AIMessage
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+# MessagesPlaceholder acts as a dynamic slot for a list of messages
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant."),
+    MessagesPlaceholder(variable_name="history"),  # ← Dynamic slot
+    ("human", "{input}"),
+])
+
+# Simulate chat history
+history = [
+    HumanMessage(content="My name is Alex."),
+    AIMessage(content="Hello Alex! How can I help you today?"),
+]
+
+chain = prompt | model
+response = chain.invoke({
+    "history": history,
+    "input": "What is my name?"
+})
+print(response.content)</code></pre>
+      </div>
+      <div class="code-output">
+        <div class="output-label">Out [10]:</div>
+        <div class="output-content">Your name is Alex! You mentioned it earlier. Is there something specific I can help you with today?</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION 5 · OUTPUT PARSERS -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section class="content-section" id="str-parser">
+    <div class="section-label">Section 05</div>
+    <h2 class="section-heading">Output Parsers</h2>
+    <div class="section-divider"></div>
+
+    <div class="md-cell">
+      <p>By default, a model returns an <span class="inline-code">AIMessage</span> object. <strong>Output Parsers</strong> transform that raw response into a more useful format: a plain string, a JSON dict, a Python object, or a custom structure. They are the final step in a chain.</p>
+    </div>
+
+    <h3 class="subsection-heading">StrOutputParser</h3>
+    <div class="md-cell">
+      <p>The simplest parser. Extracts the <span class="inline-code">.content</span> string from an <span class="inline-code">AIMessage</span>. Use this whenever you just need plain text.</p>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [11]</span> <span>StrOutputParser</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+parser = StrOutputParser()
+
+# Build a chain using the pipe (|) operator — more on this in LCEL section
+chain = model | parser
+
+# Now invoke returns a plain string, not an AIMessage
+result = chain.invoke("What is 2+2?")
+print(type(result))  # &lt;class 'str'&gt;
+print(result)        # "4"</code></pre>
+      </div>
+      <div class="code-output">
+        <div class="output-label">Out [11]:</div>
+        <div class="output-content">&lt;class 'str'&gt;
+4</div>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="json-parser">JsonOutputParser</h3>
+    <div class="md-cell">
+      <p>Parses the model's response as JSON. You should instruct the model to output valid JSON in your prompt. The parser handles the string-to-dict conversion automatically.</p>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [12]</span> <span>JsonOutputParser Example</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import JsonOutputParser
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+parser = JsonOutputParser()
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "Return ONLY valid JSON. No markdown, no explanation."),
+    ("human", "Create a JSON object for a person named {name}, age {age}, job {job}")
+])
+
+chain = prompt | model | parser
+
+result = chain.invoke({"name": "Priya", "age": "28", "job": "data scientist"})
+print(type(result))        # &lt;class 'dict'&gt;
+print(result)
+print(result["name"])      # Access like a regular Python dict</code></pre>
+      </div>
+      <div class="code-output">
+        <div class="output-label">Out [12]:</div>
+        <div class="output-content">{'name': 'Priya', 'age': 28, 'job': 'data scientist'}
+Priya</div>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="pydantic-parser">PydanticOutputParser</h3>
+    <div class="md-cell">
+      <p>The most powerful parser. Uses <strong>Pydantic</strong> models to define an exact schema for the output. LangChain automatically tells the model what format to follow via <em>format instructions</em>, and validates the response against your schema.</p>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [13]</span> <span>Define Pydantic Schema</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from pydantic import BaseModel, Field
+from typing import List
+
+# Define your expected output schema
+class BookReview(BaseModel):
+    title: str = Field(description="The book title")
+    author: str = Field(description="The author's name")
+    rating: int = Field(description="Rating from 1 to 10", ge=1, le=10)
+    summary: str = Field(description="A one-sentence summary")
+    pros: List[str] = Field(description="List of positive points")
+    cons: List[str] = Field(description="List of negative points")</code></pre>
+      </div>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [14]</span> <span>Use PydanticOutputParser</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import PydanticOutputParser
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+# Create the parser with your Pydantic model
+parser = PydanticOutputParser(pydantic_object=BookReview)
+
+# The parser can generate format instructions automatically!
+format_instructions = parser.get_format_instructions()
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a book critic. {format_instructions}"),
+    ("human", "Review the book: {book_title}")
+])
+
+chain = prompt | model | parser
+
+result = chain.invoke({
+    "book_title": "The Hitchhiker's Guide to the Galaxy",
+    "format_instructions": format_instructions
+})
+
+print(type(result))        # &lt;class 'BookReview'&gt;
+print(result.title)        # Typed attribute access
+print(result.rating)       # 9
+print(result.pros)         # ['Witty humor', 'Creative world-building', ...]</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION 6 · LCEL & CHAINS -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section class="content-section" id="lcel-intro">
+    <div class="section-label">Section 06</div>
+    <h2 class="section-heading">LCEL &amp; Chains</h2>
+    <div class="section-divider"></div>
+
+    <div class="md-cell">
+      <p><strong>LCEL</strong> — LangChain Expression Language — is the modern way to compose chains in LangChain. It uses the <strong>pipe operator</strong> (<span class="inline-code">|</span>) to connect components. Think of it as Unix pipes, but for AI components.</p>
+      <p>The core idea: <em>every component in LangChain is a Runnable</em>, meaning it has <span class="inline-code">.invoke()</span>, <span class="inline-code">.stream()</span>, <span class="inline-code">.batch()</span>, and <span class="inline-code">.ainvoke()</span> methods. The pipe operator connects Runnables, passing the output of one as input to the next.</p>
+    </div>
+
+    <div class="flow-row">
+      <div class="flow-box">PromptTemplate</div>
+      <div class="flow-arrow">|</div>
+      <div class="flow-box cyan">ChatModel</div>
+      <div class="flow-arrow">|</div>
+      <div class="flow-box purple">OutputParser</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box orange">Result</div>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [15]</span> <span>LCEL — The Pipe Operator</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+# Build a chain using | (pipe operator)
+# Data flows left to right: prompt → model → parser
+chain = (
+    ChatPromptTemplate.from_messages([
+        ("system", "You are a Python code generator. Return only code, no explanation."),
+        ("human", "Write a function to {task}")
+    ])
+    | model
+    | StrOutputParser()
+)
+
+result = chain.invoke({"task": "calculate the factorial of a number"})
+print(result)</code></pre>
+      </div>
+      <div class="code-output">
+        <div class="output-label">Out [15]:</div>
+        <div class="output-content">def factorial(n):
+    if n == 0 or n == 1:
+        return 1
+    return n * factorial(n - 1)</div>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="runnables">RunnablePassthrough &amp; RunnableLambda</h3>
+    <div class="md-cell">
+      <p><span class="inline-code">RunnablePassthrough</span> passes data through unchanged — useful for preserving original input while other parts transform it. <span class="inline-code">RunnableLambda</span> wraps any Python function as a Runnable.</p>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [16]</span> <span>RunnablePassthrough and RunnableLambda</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_core.runnables import RunnablePassthrough, RunnableLambda
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.output_parsers import StrOutputParser
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+# RunnableLambda wraps any function
+def add_exclamation(text: str) -> str:
+    return text + "!!!"
+
+# Chain: model → parser → custom function
+chain = model | StrOutputParser() | RunnableLambda(add_exclamation)
+result = chain.invoke("Say hello in one word")
+print(result)  # "Hello!!!"
+
+# RunnablePassthrough — passes input unchanged
+passthrough = RunnablePassthrough()
+print(passthrough.invoke({"key": "value"}))  # {"key": "value"}</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="parallel">RunnableParallel — Run Chains in Parallel</h3>
+    <div class="md-cell">
+      <p><span class="inline-code">RunnableParallel</span> runs multiple chains simultaneously and merges their outputs into a dictionary. This is perfect for generating multiple perspectives or transformations at once.</p>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [17]</span> <span>RunnableParallel Example</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnableParallel, RunnablePassthrough
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+parser = StrOutputParser()
+
+# Two independent chains for the same topic
+pro_chain = (
+    ChatPromptTemplate.from_template("List 3 pros of {topic}.")
+    | model | parser
+)
+con_chain = (
+    ChatPromptTemplate.from_template("List 3 cons of {topic}.")
+    | model | parser
+)
+
+# Run both IN PARALLEL — much faster than sequential
+parallel_chain = RunnableParallel(
+    pros=pro_chain,
+    cons=con_chain,
+    topic=RunnablePassthrough()  # Keep original input too
+)
+
+result = parallel_chain.invoke({"topic": "remote work"})
+print("PROS:\n", result["pros"])
+print("\nCONS:\n", result["cons"])
+print("\nOriginal Input:", result["topic"])</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="sequential-chains">Sequential Chains</h3>
+    <div class="md-cell">
+      <p>A <strong>sequential chain</strong> takes the output of one step and feeds it directly as input to the next. This is the default behavior of the <span class="inline-code">|</span> operator — each step's output becomes the next step's input.</p>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [18]</span> <span>Multi-Step Sequential Chain</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+parser = StrOutputParser()
+
+# Chain 1: Generate code
+code_chain = (
+    ChatPromptTemplate.from_template("Write a Python function to {task}. Return only the code.")
+    | model | parser
+)
+
+# Chain 2: Review the generated code
+review_chain = (
+    ChatPromptTemplate.from_template(
+        "Review this Python code for bugs and improvements:\n\n{code}\n\nProvide a brief review."
+    )
+    | model | parser
+)
+
+# Connect them: output of code_chain feeds into review_chain as {code}
+full_chain = code_chain | (lambda code: {"code": code}) | review_chain
+
+result = full_chain.invoke({"task": "reverse a linked list"})
+print(result)</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION 7 · MEMORY -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section class="content-section" id="memory-intro">
+    <div class="section-label">Section 07</div>
+    <h2 class="section-heading">Memory &amp; Chat History</h2>
+    <div class="section-divider"></div>
+
+    <div class="md-cell">
+      <p>LLMs are <strong>stateless by design</strong> — they remember nothing between calls. Each request is processed in isolation. This is a fundamental limitation when building conversational applications.</p>
+      <p><strong>Memory</strong> in LangChain solves this by maintaining a record of the conversation (or a summary of it) and injecting it into each new request. LangChain provides several memory strategies:</p>
+      <ul>
+        <li><strong>ConversationBufferMemory</strong> — Stores the entire conversation verbatim</li>
+        <li><strong>ConversationBufferWindowMemory</strong> — Stores only the last N exchanges</li>
+        <li><strong>ConversationSummaryMemory</strong> — Summarizes older messages to save tokens</li>
+        <li><strong>ConversationSummaryBufferMemory</strong> — Hybrid: recent messages verbatim, older ones summarized</li>
+      </ul>
+    </div>
+
+    <h3 class="subsection-heading" id="buffer-memory">ConversationBufferMemory</h3>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [19]</span> <span>Manual Chat History Pattern (LCEL-compatible)</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.output_parsers import StrOutputParser
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a friendly AI assistant with a great memory."),
+    MessagesPlaceholder(variable_name="history"),
+    ("human", "{input}"),
+])
+
+chain = prompt | model | StrOutputParser()
+
+# Maintain history manually
+history = []
+
+def chat(user_input: str) -> str:
+    response = chain.invoke({"input": user_input, "history": history})
+    # Append to history after each turn
+    history.append(HumanMessage(content=user_input))
+    history.append(AIMessage(content=response))
+    return response
+
+# Multi-turn conversation
+print(chat("My name is Arjun and I love Python."))
+print(chat("What programming language do I love?"))  # Should remember Python
+print(chat("And what's my name?"))                   # Should remember Arjun</code></pre>
+      </div>
+      <div class="code-output">
+        <div class="output-label">Out [19]:</div>
+        <div class="output-content">Hi Arjun! That's great — Python is a fantastic language! What do you like most about it?
+You mentioned that you love Python!
+Your name is Arjun!</div>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="summary-memory">ConversationSummaryMemory</h3>
+    <div class="md-cell">
+      <p>For long conversations, storing everything becomes expensive (too many tokens). <strong>Summary memory</strong> uses the LLM itself to periodically summarize older messages, keeping only a compact summary instead of the full history.</p>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [20]</span> <span>ConversationSummaryBufferMemory</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain.memory import ConversationSummaryBufferMemory
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+# max_token_limit: When history exceeds this, older messages are summarized
+memory = ConversationSummaryBufferMemory(
+    llm=model,
+    max_token_limit=200,
+    return_messages=True
+)
+
+# Add messages
+memory.save_context(
+    {"input": "I'm building a web app in Django."},
+    {"output": "That's great! Django is a powerful Python web framework."}
+)
+memory.save_context(
+    {"input": "I need to integrate payments."},
+    {"output": "I'd recommend Stripe for payment integration with Django."}
+)
+
+# Load the memory — it automatically summarizes when needed
+memory_vars = memory.load_memory_variables({})
+print(memory_vars)</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="chat-history">RunnableWithMessageHistory</h3>
+    <div class="md-cell">
+      <p>The modern, LCEL-compatible way to add persistent memory to any chain. It wraps a chain with automatic history loading and saving per session.</p>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [21]</span> <span>RunnableWithMessageHistory</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.chat_history import BaseChatMessageHistory
+from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain_core.runnables.history import RunnableWithMessageHistory
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+# In-memory store (use Redis or DB in production)
+store = {}
+
+def get_session_history(session_id: str) -> BaseChatMessageHistory:
+    if session_id not in store:
+        store[session_id] = ChatMessageHistory()
+    return store[session_id]
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful assistant."),
+    MessagesPlaceholder(variable_name="history"),
+    ("human", "{input}"),
+])
+
+chain = prompt | model | StrOutputParser()
+
+# Wrap the chain with history management
+chain_with_history = RunnableWithMessageHistory(
+    chain,
+    get_session_history,
+    input_messages_key="input",
+    history_messages_key="history",
+)
+
+# session_id allows multiple independent conversations
+config = {"configurable": {"session_id": "user_123"}}
+
+print(chain_with_history.invoke({"input": "I'm learning LangChain."}, config=config))
+print(chain_with_history.invoke({"input": "What am I learning?"}, config=config))</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION 8 · RAG PIPELINE -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section class="content-section" id="doc-loaders">
+    <div class="section-label">Section 08</div>
+    <h2 class="section-heading">RAG — Retrieval Augmented Generation</h2>
+    <div class="section-divider"></div>
+
+    <div class="md-cell">
+      <p><strong>RAG (Retrieval Augmented Generation)</strong> is a technique that extends an LLM's knowledge with your own documents. Instead of relying solely on what the model learned during training, you retrieve relevant context from a knowledge base and inject it into the prompt at query time.</p>
+      <p><strong>Real-world use cases:</strong> customer support bots, document Q&amp;A, internal knowledge bases, research assistants.</p>
+    </div>
+
+    <div class="flow-row">
+      <div class="flow-box">Your Docs</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box cyan">Loader</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">Splitter</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box purple">Embeddings</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box orange">Vector Store</div>
+    </div>
+    <div class="flow-row" style="margin-top:4px">
+      <div class="flow-box orange">User Query</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box purple">Embed Query</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">Retrieve Chunks</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box cyan">Augment Prompt</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box">LLM Answer</div>
+    </div>
+
+    <h3 class="subsection-heading">Step 1: Document Loaders</h3>
+    <div class="md-cell">
+      <p>Document loaders read raw content (PDFs, web pages, CSVs, Word docs, etc.) and convert them into a standard <span class="inline-code">Document</span> object with <span class="inline-code">.page_content</span> (text) and <span class="inline-code">.metadata</span> (source info).</p>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [22]</span> <span>Various Document Loaders</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_community.document_loaders import (
+    PyPDFLoader,           # For PDF files
+    TextLoader,            # For .txt files
+    WebBaseLoader,         # For web pages
+    CSVLoader,             # For CSV files
+    Docx2txtLoader,        # For Word documents
+    DirectoryLoader        # For entire directories
+)
+
+# ─── PDF Loader ───────────────────────────────────────────
+loader = PyPDFLoader("path/to/document.pdf")
+documents = loader.load()  # Returns list of Document objects
+
+# ─── Text Loader ──────────────────────────────────────────
+loader = TextLoader("path/to/file.txt", encoding="utf-8")
+documents = loader.load()
+
+# ─── Web Loader ───────────────────────────────────────────
+loader = WebBaseLoader(["https://python.org", "https://langchain.com"])
+documents = loader.load()
+
+# ─── Directory Loader ─────────────────────────────────────
+# Load all .txt files in a folder
+loader = DirectoryLoader("./docs/", glob="**/*.txt", loader_cls=TextLoader)
+documents = loader.load()
+
+# Inspect a document
+print(f"Loaded {len(documents)} document(s)")
+print("Content preview:", documents[0].page_content[:200])
+print("Metadata:", documents[0].metadata)</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="text-splitters">Step 2: Text Splitters</h3>
+    <div class="md-cell">
+      <p>LLMs have a context window limit — you can't feed an entire book into a prompt. Text splitters break documents into smaller <strong>chunks</strong>. The key parameters are:</p>
+      <ul>
+        <li><strong>chunk_size</strong> — Maximum characters per chunk</li>
+        <li><strong>chunk_overlap</strong> — Characters shared between consecutive chunks (preserves context at boundaries)</li>
+      </ul>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [23]</span> <span>Text Splitters</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_text_splitters import RecursiveCharacterTextSplitter, CharacterTextSplitter
+
+# RecursiveCharacterTextSplitter is the recommended default
+# It tries to split on paragraphs, then sentences, then words
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=1000,       # Max chars per chunk
+    chunk_overlap=200,     # Overlap to preserve context
+    length_function=len,   # How to measure length
+    separators=["\n\n", "\n", " ", ""]  # Split hierarchy
+)
+
+# Split documents
+chunks = splitter.split_documents(documents)
+
+print(f"Original: {len(documents)} docs → Split: {len(chunks)} chunks")
+print(f"First chunk size: {len(chunks[0].page_content)} chars")
+print(f"First chunk:\n{chunks[0].page_content[:300]}...")</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="embeddings">Step 3: Embeddings</h3>
+    <div class="md-cell">
+      <p><strong>Embeddings</strong> convert text into numerical vectors (arrays of floating-point numbers) that capture semantic meaning. Texts with similar meanings will have vectors that are close together in vector space. This enables <em>semantic search</em> — finding relevant content based on meaning, not just keywords.</p>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [24]</span> <span>Creating Embeddings with Google</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
+# General Syntax:
+# embeddings = <Provider>Embeddings(model="<embedding_model>", api_key="<api_key>")
+embeddings = GoogleGenerativeAIEmbeddings(
+    model="models/embedding-001",
+    google_api_key=GOOGLE_API_KEY
+)
+
+# Embed a single text
+vector = embeddings.embed_query("What is machine learning?")
+print(f"Vector dimensions: {len(vector)}")         # e.g., 768
+print(f"First 5 values: {vector[:5]}")
+
+# Embed multiple documents at once (more efficient)
+texts = ["LangChain is a framework.", "Python is a programming language."]
+vectors = embeddings.embed_documents(texts)
+print(f"Embedded {len(vectors)} documents")</code></pre>
+      </div>
+      <div class="code-output">
+        <div class="output-label">Out [24]:</div>
+        <div class="output-content">Vector dimensions: 768
+First 5 values: [0.0234, -0.0512, 0.0891, -0.0234, 0.0456]
+Embedded 2 documents</div>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="vector-stores">Step 4: Vector Stores</h3>
+    <div class="md-cell">
+      <p>A <strong>vector store</strong> stores your embedded document chunks and provides fast similarity search. When a user asks a question, their query is embedded and compared against all stored vectors — the most similar chunks are retrieved.</p>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [25]</span> <span>ChromaDB Vector Store</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_community.vectorstores import Chroma
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+embeddings = GoogleGenerativeAIEmbeddings(
+    model="models/embedding-001",
+    google_api_key=GOOGLE_API_KEY
+)
+
+# Some sample texts (in practice, these come from your loaders)
+texts = [
+    "LangChain helps developers build LLM applications.",
+    "Python is a versatile programming language widely used in AI.",
+    "Transformers are the backbone of modern large language models.",
+    "RAG combines retrieval systems with generative AI for better answers.",
+    "Vector databases store embeddings for fast semantic search.",
+]
+
+# Create vector store from texts — embeds and indexes automatically
+# General Syntax:
+# vectorstore = VectorStore.from_texts(texts, embedding=embeddings, persist_directory="path")
+vectorstore = Chroma.from_texts(
+    texts,
+    embedding=embeddings,
+    persist_directory="./chroma_db"  # Save to disk for reuse
+)
+
+# Similarity search
+results = vectorstore.similarity_search("How does retrieval work with AI?", k=2)
+for doc in results:
+    print(f"• {doc.page_content}")</code></pre>
+      </div>
+      <div class="code-output">
+        <div class="output-label">Out [25]:</div>
+        <div class="output-content">• RAG combines retrieval systems with generative AI for better answers.
+• Vector databases store embeddings for fast semantic search.</div>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="retrievers">Step 5: Retrievers</h3>
+    <div class="md-cell">
+      <p>A <strong>Retriever</strong> is an interface that takes a query string and returns relevant <span class="inline-code">Document</span> objects. Vector stores can be converted to retrievers, and there are many advanced retriever types.</p>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [26]</span> <span>Retrievers</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_community.vectorstores import Chroma
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
+# Convert vector store to retriever
+retriever = vectorstore.as_retriever(
+    search_type="similarity",        # "similarity", "mmr", "similarity_score_threshold"
+    search_kwargs={"k": 3}           # Return top 3 results
+)
+
+# Use retriever
+docs = retriever.invoke("What is RAG?")
+for doc in docs:
+    print(doc.page_content)
+    print("---")
+
+# MMR (Maximal Marginal Relevance) — avoids redundant results
+mmr_retriever = vectorstore.as_retriever(
+    search_type="mmr",
+    search_kwargs={"k": 3, "fetch_k": 10}  # Fetch 10, return 3 most diverse
+)</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="rag-chain">Step 6: Building the Complete RAG Chain</h3>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [27]</span> <span>Complete RAG Pipeline</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=GOOGLE_API_KEY)
+
+# Load existing vector store
+vectorstore = Chroma(persist_directory="./chroma_db", embedding_function=embeddings)
+retriever = vectorstore.as_retriever(search_kwargs={"k": 3})
+
+# RAG Prompt
+rag_prompt = ChatPromptTemplate.from_messages([
+    ("system", """You are a helpful assistant. Answer the question using ONLY the
+provided context. If the context doesn't contain the answer, say "I don't have
+enough information to answer that."
+
+Context:
+{context}"""),
+    ("human", "{question}")
+])
+
+def format_docs(docs):
+    """Format retrieved documents into a single string."""
+    return "\n\n".join(doc.page_content for doc in docs)
+
+# Build the RAG chain
+# Question → retriever → format → prompt → model → parser
+rag_chain = (
+    {
+        "context": retriever | format_docs,  # Retrieve and format
+        "question": RunnablePassthrough(),   # Pass question unchanged
+    }
+    | rag_prompt
+    | model
+    | StrOutputParser()
+)
+
+# Ask a question!
+answer = rag_chain.invoke("What is LangChain used for?")
+print(answer)</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION 9 · TOOLS -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section class="content-section" id="tools-intro">
+    <div class="section-label">Section 09</div>
+    <h2 class="section-heading">Tools &amp; Toolkits</h2>
+    <div class="section-divider"></div>
+
+    <div class="md-cell">
+      <p>A <strong>Tool</strong> is a function that an LLM can decide to call. Tools bridge the gap between the model and the real world — they let an AI <strong>take actions</strong>: search the web, run Python code, query a database, send an email, call an API, and much more.</p>
+      <p>Every Tool has three essential components:</p>
+      <ul>
+        <li><strong>name</strong> — A unique identifier the LLM uses to refer to the tool</li>
+        <li><strong>description</strong> — A human-readable explanation of what the tool does and when to use it (this is crucial — the LLM reads this to decide when to call the tool)</li>
+        <li><strong>function</strong> — The actual Python function that executes when the tool is called</li>
+      </ul>
+    </div>
+
+    <h3 class="subsection-heading" id="builtin-tools">Built-in Tools</h3>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [28]</span> <span>Using Built-in Tools</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_community.tools import DuckDuckGoSearchRun, WikipediaQueryRun
+from langchain_community.utilities import WikipediaAPIWrapper
+
+# ─── DuckDuckGo Web Search ────────────────────────────────
+search_tool = DuckDuckGoSearchRun()
+print("Tool name:", search_tool.name)
+print("Description:", search_tool.description[:100])
+
+result = search_tool.invoke("LangChain latest version 2024")
+print("Search result:", result[:300])
+
+# ─── Wikipedia Tool ───────────────────────────────────────
+wiki_api = WikipediaAPIWrapper(top_k_results=1, doc_content_chars_max=500)
+wiki_tool = WikipediaQueryRun(api_wrapper=wiki_api)
+
+result = wiki_tool.invoke("Large Language Models")
+print("Wikipedia result:", result[:300])</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="custom-tools">Custom Tools with @tool Decorator</h3>
+    <div class="md-cell">
+      <p>The <span class="inline-code">@tool</span> decorator is the easiest way to turn any Python function into a LangChain tool. The function's <strong>docstring</strong> becomes the tool's description — make it clear and descriptive!</p>
+    </div>
+
+    <div class="syntax-box">
+      <div class="syntax-title">⚡ General Syntax</div>
+      <pre style="background:transparent;font-family:'JetBrains Mono',monospace;font-size:13px;color:#93c5fd;padding:0;overflow-x:auto">@tool
+def &lt;tool_name&gt;(param: type) -> return_type:
+    """&lt;Description the LLM reads to decide when to use this tool.&gt;"""
+    # implementation</pre>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [29]</span> <span>Creating Custom Tools</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_core.tools import tool
+from datetime import datetime
+import math
+
+@tool
+def get_current_time(timezone: str = "UTC") -> str:
+    """Returns the current date and time. Use when the user asks about
+    the current time or date. Input: timezone name (default: UTC)."""
+    return datetime.now().strftime(f"Current date & time: %Y-%m-%d %H:%M:%S ({timezone})")
+
+@tool
+def calculate(expression: str) -> str:
+    """Evaluates a mathematical expression and returns the result.
+    Use for any arithmetic or mathematical calculations.
+    Input: a valid Python math expression like '2 + 2 * 10' or 'math.sqrt(144)'."""
+    try:
+        result = eval(expression, {"math": math, "__builtins__": {}})
+        return f"Result of '{expression}' = {result}"
+    except Exception as e:
+        return f"Error calculating '{expression}': {str(e)}"
+
+@tool
+def word_count(text: str) -> str:
+    """Counts the number of words in a given text.
+    Use when the user asks to count words in a sentence or paragraph."""
+    count = len(text.split())
+    return f"The text contains {count} words."
+
+# Inspect tool properties
+print(f"Name: {calculate.name}")
+print(f"Description: {calculate.description}")
+print(f"Args: {calculate.args}")
+
+# Test the tools
+print(get_current_time.invoke("UTC"))
+print(calculate.invoke("math.sqrt(144) + 2**10"))
+print(word_count.invoke("LangChain is an amazing framework for building AI apps"))</code></pre>
+      </div>
+      <div class="code-output">
+        <div class="output-label">Out [29]:</div>
+        <div class="output-content">Name: calculate
+Description: Evaluates a mathematical expression and returns the result...
+Args: {'expression': {'title': 'Expression', 'type': 'string'}}
+Current date & time: 2025-08-15 14:32:10 (UTC)
+Result of 'math.sqrt(144) + 2**10' = 1036.0
+The text contains 9 words.</div>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="toolkits">Structured Tools with Multiple Inputs</h3>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [30]</span> <span>StructuredTool with Multiple Parameters</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_core.tools import StructuredTool
+from pydantic import BaseModel, Field
+
+# Define input schema using Pydantic
+class WeatherInput(BaseModel):
+    city: str = Field(description="The city name")
+    unit: str = Field(default="celsius", description="Temperature unit: 'celsius' or 'fahrenheit'")
+
+def get_weather(city: str, unit: str = "celsius") -> str:
+    """Fetches the current weather for a given city.
+    (In a real app, this would call a weather API)"""
+    # Simulated response
+    temps = {"London": 15, "Tokyo": 28, "New York": 22, "Mumbai": 35}
+    temp = temps.get(city, 20)
+    if unit == "fahrenheit":
+        temp = (temp * 9/5) + 32
+    return f"Weather in {city}: {temp}°{'F' if unit == 'fahrenheit' else 'C'}, Partly cloudy"
+
+# Create StructuredTool
+weather_tool = StructuredTool.from_function(
+    func=get_weather,
+    name="get_weather",
+    description="Get current weather for any city. Use when asked about weather.",
+    args_schema=WeatherInput
+)
+
+print(weather_tool.invoke({"city": "Tokyo", "unit": "celsius"}))</code></pre>
+      </div>
+      <div class="code-output">
+        <div class="output-label">Out [30]:</div>
+        <div class="output-content">Weather in Tokyo: 28°C, Partly cloudy</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION 10 · AGENTS -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section class="content-section" id="agents-intro">
+    <div class="section-label">Section 10</div>
+    <h2 class="section-heading">Agents</h2>
+    <div class="section-divider"></div>
+
+    <div class="md-cell">
+      <p>An <strong>Agent</strong> is an LLM that can use tools, reason about which tools to use, act on the results, and repeat this process until it has solved the problem. Unlike a chain (which follows a fixed sequence), an agent makes <em>dynamic decisions</em> at runtime about what to do next.</p>
+      <p>This is the key distinction:</p>
+      <ul>
+        <li><strong>Chain:</strong> Predefined, fixed sequence of steps. You (the developer) decide what happens and in what order.</li>
+        <li><strong>Agent:</strong> Dynamic, adaptive reasoning loop. The LLM decides which tools to call, in what order, based on the current situation.</li>
+      </ul>
+    </div>
+
+    <h3 class="subsection-heading" id="react-agent">The ReAct Pattern</h3>
+    <div class="md-cell">
+      <p><strong>ReAct</strong> (Reasoning + Acting) is the most common agent pattern. The agent cycles through:</p>
+      <ol class="num-list">
+        <li><strong>Thought</strong> — The agent reasons about what to do next ("I need to search for current weather in Tokyo...")</li>
+        <li><strong>Action</strong> — The agent calls a tool with specific inputs</li>
+        <li><strong>Observation</strong> — The agent sees the tool's output</li>
+        <li><strong>Repeat</strong> — Until the agent has enough information to give a final answer</li>
+      </ol>
+    </div>
+
+    <h3 class="subsection-heading" id="create-agent">Creating an Agent with create_react_agent</h3>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [31]</span> <span>Define Tools</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_core.tools import tool
+from langchain_community.tools import DuckDuckGoSearchRun
+import math, datetime
+
+@tool
+def calculator(expression: str) -> str:
+    """Evaluates mathematical expressions. Use for any math calculation.
+    Input: a Python math expression string."""
+    try:
+        result = eval(expression, {"math": math, "__builtins__": {}})
+        return str(result)
+    except Exception as e:
+        return f"Error: {e}"
+
+@tool
+def get_date() -> str:
+    """Returns the current date and day of the week.
+    Use when the user asks about today's date."""
+    now = datetime.datetime.now()
+    return now.strftime("Today is %A, %B %d, %Y")
+
+# Combine all available tools
+search = DuckDuckGoSearchRun()
+tools = [calculator, get_date, search]
+print(f"Agent has {len(tools)} tools: {[t.name for t in tools]}")</code></pre>
+      </div>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [32]</span> <span>Create and Run Agent</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain.agents import create_react_agent, AgentExecutor
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain import hub
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+# ─── Option 1: Use a prebuilt ReAct prompt from LangChain Hub ─
+# react_prompt = hub.pull("hwchase17/react")
+
+# ─── Option 2: Define your own ReAct prompt ───────────────────
+react_prompt = ChatPromptTemplate.from_messages([
+    ("system", """You are a helpful AI assistant with access to tools.
+
+Tools available:
+{tools}
+
+Tool names: {tool_names}
+
+Use this format EXACTLY:
+
+Thought: [Your reasoning about what to do]
+Action: [tool_name]
+Action Input: [the input to the tool]
+Observation: [the result of the action]
+... (repeat Thought/Action/Observation as needed)
+Thought: I now know the final answer.
+Final Answer: [your final answer to the user]
+
+Begin!"""),
+    ("human", "{input}"),
+    MessagesPlaceholder(variable_name="agent_scratchpad"),
+])
+
+# Create the agent (binds the model with tools and the prompt)
+agent = create_react_agent(model, tools, react_prompt)
+
+# AgentExecutor handles the reasoning loop
+agent_executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    verbose=True,           # Print each step
+    max_iterations=5,       # Safety limit
+    handle_parsing_errors=True
+)
+
+# Run the agent!
+result = agent_executor.invoke({
+    "input": "What is today's date, and what is 2 to the power of 10?"
+})
+print("\n═══ FINAL ANSWER ═══")
+print(result["output"])</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="custom-agent">Tool Calling Agent (Modern Approach)</h3>
+    <div class="md-cell">
+      <p>Modern LLMs support native <strong>function/tool calling</strong> — a more reliable mechanism than text-based ReAct. Instead of parsing the LLM's text output for "Action:" keywords, the model returns a structured function call directly.</p>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [33]</span> <span>Tool Calling Agent (Recommended)</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain.agents import create_tool_calling_agent, AgentExecutor
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+# Simple prompt — no special formatting needed for tool calling agents
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a helpful AI assistant. Use tools when needed."),
+    ("human", "{input}"),
+    MessagesPlaceholder(variable_name="agent_scratchpad"),
+])
+
+# create_tool_calling_agent uses native tool calling (more reliable)
+agent = create_tool_calling_agent(model, tools, prompt)
+
+executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+
+# Complex query requiring multiple tools
+result = executor.invoke({
+    "input": "Search for 'LangChain agents' online, then calculate how many days are in 3 years."
+})
+print(result["output"])</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION 11 · LANGGRAPH -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section class="content-section" id="langgraph-intro">
+    <div class="section-label">Section 11</div>
+    <h2 class="section-heading">LangGraph</h2>
+    <div class="section-divider"></div>
+
+    <div class="md-cell">
+      <p><strong>LangGraph</strong> is a library for building <em>stateful, multi-actor</em> applications with LLMs. While LangChain's AgentExecutor is great for simple agents, LangGraph gives you much more control when you need:</p>
+      <ul>
+        <li><strong>Cycles</strong> — The agent can loop back and try again</li>
+        <li><strong>Branching</strong> — Different paths based on conditions</li>
+        <li><strong>Persistence</strong> — Save and resume state between calls</li>
+        <li><strong>Human-in-the-loop</strong> — Pause execution and wait for human approval</li>
+        <li><strong>Multi-agent coordination</strong> — Multiple agents working together</li>
+      </ul>
+      <p>LangGraph models your application as a <strong>directed graph</strong> where:</p>
+      <ul>
+        <li><strong>Nodes</strong> are functions (actions, LLM calls, tool executions)</li>
+        <li><strong>Edges</strong> are the connections between nodes (what runs next)</li>
+        <li><strong>State</strong> is a shared data structure passed between nodes</li>
+      </ul>
+    </div>
+
+    <h3 class="subsection-heading" id="state-graph">StateGraph — Core Concept</h3>
+    <div class="md-cell">
+      <p>The <span class="inline-code">StateGraph</span> is the main class in LangGraph. You define a <strong>State</strong> (a TypedDict), add nodes, add edges, and then compile the graph.</p>
+    </div>
+
+    <div class="syntax-box">
+      <div class="syntax-title">⚡ General Syntax</div>
+      <pre style="background:transparent;font-family:'JetBrains Mono',monospace;font-size:13px;color:#93c5fd;padding:0;overflow-x:auto">from langgraph.graph import StateGraph, START, END
+from typing import TypedDict
+
+class State(TypedDict):
+    &lt;field&gt;: &lt;type&gt;
+
+graph = StateGraph(State)
+graph.add_node("&lt;node_name&gt;", &lt;function&gt;)
+graph.add_edge(START, "&lt;node_name&gt;")
+graph.add_edge("&lt;node_name&gt;", END)
+app = graph.compile()</pre>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [34]</span> <span>Your First LangGraph</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langgraph.graph import StateGraph, START, END
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import HumanMessage, AIMessage
+from typing import TypedDict, Annotated, List
+import operator
+
+# Step 1: Define the State — the data that flows through the graph
+class ChatState(TypedDict):
+    messages: Annotated[List, operator.add]  # Messages accumulate (append)
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+# Step 2: Define nodes (functions that transform state)
+def call_model(state: ChatState) -> ChatState:
+    """Node: calls the LLM with current messages."""
+    response = model.invoke(state["messages"])
+    return {"messages": [response]}  # Appended to existing messages
+
+# Step 3: Build the graph
+graph_builder = StateGraph(ChatState)
+
+# Add nodes
+graph_builder.add_node("model", call_model)
+
+# Add edges: START → model → END
+graph_builder.add_edge(START, "model")
+graph_builder.add_edge("model", END)
+
+# Step 4: Compile the graph
+chat_app = graph_builder.compile()
+
+# Step 5: Run the graph
+initial_state = {"messages": [HumanMessage(content="What is LangGraph?")]}
+final_state = chat_app.invoke(initial_state)
+
+print(final_state["messages"][-1].content)</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="nodes-edges">Nodes &amp; Edges — Building Complex Graphs</h3>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [35]</span> <span>Multi-Node Graph with Tool Calling</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langgraph.graph import StateGraph, START, END
+from langgraph.prebuilt import ToolNode
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import HumanMessage
+from langchain_core.tools import tool
+from typing import TypedDict, Annotated, List
+import operator, math
+
+@tool
+def calculator(expression: str) -> str:
+    """Evaluate math expressions."""
+    return str(eval(expression, {"math": math, "__builtins__": {}}))
+
+tools = [calculator]
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+model_with_tools = model.bind_tools(tools)  # Tell the model about available tools
+
+class AgentState(TypedDict):
+    messages: Annotated[List, operator.add]
+
+# ─── Node Functions ───────────────────────────────────────
+def agent_node(state: AgentState):
+    """The agent decides what to do."""
+    response = model_with_tools.invoke(state["messages"])
+    return {"messages": [response]}
+
+# ToolNode automatically handles tool execution
+tool_node = ToolNode(tools)
+
+# ─── Conditional Edge Function ────────────────────────────
+def should_continue(state: AgentState) -> str:
+    """Decide: call tools or end?"""
+    last_message = state["messages"][-1]
+    if hasattr(last_message, "tool_calls") and last_message.tool_calls:
+        return "tools"  # Route to tool node
+    return "end"        # Route to END
+
+# ─── Build Graph ──────────────────────────────────────────
+graph = StateGraph(AgentState)
+graph.add_node("agent", agent_node)
+graph.add_node("tools", tool_node)
+
+graph.add_edge(START, "agent")
+graph.add_conditional_edges("agent", should_continue, {
+    "tools": "tools",   # If tools needed, go to tool_node
+    "end": END          # Otherwise, finish
+})
+graph.add_edge("tools", "agent")  # After tool use, back to agent
+
+app = graph.compile()
+
+# Run
+result = app.invoke({"messages": [HumanMessage("What is 15 factorial?")]})
+print(result["messages"][-1].content)</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="conditional">Conditional Routing</h3>
+    <div class="md-cell">
+      <p>Conditional edges let you create branching logic — the graph dynamically chooses which node to visit next based on the current state. The routing function returns a string that maps to a target node.</p>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [36]</span> <span>Complex Conditional Routing</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langgraph.graph import StateGraph, START, END
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from typing import TypedDict
+
+class RoutingState(TypedDict):
+    user_input: str
+    category: str
+    response: str
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+# ─── Classifier Node ──────────────────────────────────────
+def classify_input(state: RoutingState) -> RoutingState:
+    """Classify user input into categories."""
+    chain = (
+        ChatPromptTemplate.from_template(
+            "Classify this as exactly one word — 'math', 'writing', or 'general':\n{input}"
+        ) | model | StrOutputParser()
+    )
+    category = chain.invoke({"input": state["user_input"]}).strip().lower()
+    return {"category": category}
+
+# ─── Specialist Nodes ─────────────────────────────────────
+def math_expert(state: RoutingState) -> RoutingState:
+    response = model.invoke(f"Solve this mathematically: {state['user_input']}").content
+    return {"response": f"[MATH EXPERT]: {response}"}
+
+def writing_expert(state: RoutingState) -> RoutingState:
+    response = model.invoke(f"Help with this writing task: {state['user_input']}").content
+    return {"response": f"[WRITING EXPERT]: {response}"}
+
+def general_assistant(state: RoutingState) -> RoutingState:
+    response = model.invoke(state["user_input"]).content
+    return {"response": f"[GENERAL]: {response}"}
+
+# ─── Router Function ──────────────────────────────────────
+def route_by_category(state: RoutingState) -> str:
+    cat = state.get("category", "general")
+    if "math" in cat: return "math"
+    if "writ" in cat: return "writing"
+    return "general"
+
+# ─── Build Graph ──────────────────────────────────────────
+graph = StateGraph(RoutingState)
+graph.add_node("classifier", classify_input)
+graph.add_node("math", math_expert)
+graph.add_node("writing", writing_expert)
+graph.add_node("general", general_assistant)
+
+graph.add_edge(START, "classifier")
+graph.add_conditional_edges("classifier", route_by_category, {
+    "math": "math",
+    "writing": "writing",
+    "general": "general"
+})
+graph.add_edge("math", END)
+graph.add_edge("writing", END)
+graph.add_edge("general", END)
+
+router_app = graph.compile()
+
+# Test routing
+result = router_app.invoke({"user_input": "What is the derivative of x^3?"})
+print(result["response"])</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="cycles">Cycles, Persistence &amp; Checkpoints</h3>
+    <div class="md-cell">
+      <p>LangGraph can <strong>persist state between invocations</strong> using <em>checkpointers</em>. This enables pausing execution, resuming from a checkpoint, and implementing human-in-the-loop workflows.</p>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [37]</span> <span>Persistence with MemorySaver Checkpointer</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langgraph.graph import StateGraph, START, END
+from langgraph.checkpoint.memory import MemorySaver
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import HumanMessage
+from typing import TypedDict, Annotated, List
+import operator
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+class State(TypedDict):
+    messages: Annotated[List, operator.add]
+
+def chatbot_node(state: State):
+    return {"messages": [model.invoke(state["messages"])]}
+
+graph = StateGraph(State)
+graph.add_node("chatbot", chatbot_node)
+graph.add_edge(START, "chatbot")
+graph.add_edge("chatbot", END)
+
+# Add checkpointer — saves state after each step
+checkpointer = MemorySaver()
+app = graph.compile(checkpointer=checkpointer)
+
+# thread_id identifies this conversation session
+config = {"configurable": {"thread_id": "thread_001"}}
+
+# Turn 1
+app.invoke({"messages": [HumanMessage("My favorite color is green.")]}, config=config)
+
+# Turn 2 — the graph REMEMBERS the previous state!
+result = app.invoke({"messages": [HumanMessage("What's my favorite color?")]}, config=config)
+print(result["messages"][-1].content)  # Should mention "green"</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION 12 · MULTI-AGENT SYSTEMS -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section class="content-section" id="multi-agent-arch">
+    <div class="section-label">Section 12</div>
+    <h2 class="section-heading">Multi-Agent Systems</h2>
+    <div class="section-divider"></div>
+
+    <div class="md-cell">
+      <p>A <strong>Multi-Agent System (MAS)</strong> is a system where multiple AI agents work together, each with specialized roles and capabilities, to solve complex tasks that would be too large or complex for a single agent.</p>
+      <p>Why use multiple agents?</p>
+      <ul>
+        <li><strong>Specialization</strong> — Each agent excels at its specific domain (research, coding, writing, etc.)</li>
+        <li><strong>Parallelism</strong> — Agents can work on different parts of a problem simultaneously</li>
+        <li><strong>Scalability</strong> — Add more agents without changing the core architecture</li>
+        <li><strong>Context management</strong> — Each agent maintains a focused, smaller context window</li>
+      </ul>
+    </div>
+
+    <h3 class="subsection-heading" id="supervisor">The Supervisor Pattern</h3>
+    <div class="md-cell">
+      <p>In the <strong>Supervisor Pattern</strong>, a central <em>Supervisor agent</em> receives the user's request, delegates subtasks to specialized <em>Worker agents</em>, collects their outputs, and synthesizes a final response. This is the most common multi-agent pattern.</p>
+    </div>
+
+    <div class="flow-row">
+      <div class="flow-box orange">User Query</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box" style="background:var(--bg-surface3);border-color:rgba(74,222,128,0.5);color:#4ade80;font-weight:700">Supervisor Agent</div>
+      <div class="flow-arrow">→</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="flow-box cyan" style="font-size:12px">Researcher Agent</div>
+        <div class="flow-box purple" style="font-size:12px">Coder Agent</div>
+        <div class="flow-box" style="font-size:12px">Writer Agent</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-box orange">Final Answer</div>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [38]</span> <span>Supervisor Agent with LangGraph</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langgraph.graph import StateGraph, START, END
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from typing import TypedDict, List, Literal
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+parser = StrOutputParser()
+
+# ─── State ────────────────────────────────────────────────
+class MASState(TypedDict):
+    user_request: str
+    next_agent: str
+    research_output: str
+    code_output: str
+    final_response: str
+
+# ─── Specialized Worker Agents ────────────────────────────
+def researcher_agent(state: MASState) -> MASState:
+    """Agent specialized in research and information gathering."""
+    chain = (
+        ChatPromptTemplate.from_template(
+            "You are a research specialist. Research and summarize key information about:\n{topic}"
+        ) | model | parser
+    )
+    result = chain.invoke({"topic": state["user_request"]})
+    return {"research_output": result}
+
+def coder_agent(state: MASState) -> MASState:
+    """Agent specialized in writing Python code."""
+    chain = (
+        ChatPromptTemplate.from_template(
+            "You are a Python expert. Write clean, working Python code for:\n{task}\n"
+            "Context from research: {context}"
+        ) | model | parser
+    )
+    result = chain.invoke({
+        "task": state["user_request"],
+        "context": state.get("research_output", "No research yet")
+    })
+    return {"code_output": result}
+
+def supervisor_agent(state: MASState) -> MASState:
+    """Supervisor decides which agent to call next."""
+    chain = (
+        ChatPromptTemplate.from_template(
+            """You are a supervisor managing specialized agents.
+            
+User request: {request}
+Research done: {has_research}
+Code done: {has_code}
+
+Respond with EXACTLY ONE of: 'researcher', 'coder', 'FINISH'
+- 'researcher': if research/information is needed
+- 'coder': if code implementation is needed
+- 'FINISH': if we have enough information to answer
+
+Your decision:"""
+        ) | model | parser
+    )
+    decision = chain.invoke({
+        "request": state["user_request"],
+        "has_research": bool(state.get("research_output")),
+        "has_code": bool(state.get("code_output"))
+    }).strip().lower()
+    
+    if "finish" in decision: return {"next_agent": "FINISH"}
+    if "coder" in decision:  return {"next_agent": "coder"}
+    return {"next_agent": "researcher"}
+
+def synthesizer_node(state: MASState) -> MASState:
+    """Combines all agent outputs into a final response."""
+    chain = (
+        ChatPromptTemplate.from_template(
+            """Synthesize this information into a comprehensive final answer.
+            
+Original request: {request}
+Research findings: {research}
+Code solution: {code}
+
+Provide a clear, complete response:"""
+        ) | model | parser
+    )
+    final = chain.invoke({
+        "request": state["user_request"],
+        "research": state.get("research_output", "N/A"),
+        "code": state.get("code_output", "N/A")
+    })
+    return {"final_response": final}
+
+# ─── Route based on supervisor decision ───────────────────
+def route_to_agent(state: MASState) -> str:
+    return state.get("next_agent", "researcher")
+
+# ─── Build Multi-Agent Graph ──────────────────────────────
+graph = StateGraph(MASState)
+graph.add_node("supervisor", supervisor_agent)
+graph.add_node("researcher", researcher_agent)
+graph.add_node("coder", coder_agent)
+graph.add_node("synthesizer", synthesizer_node)
+
+graph.add_edge(START, "supervisor")
+graph.add_conditional_edges("supervisor", route_to_agent, {
+    "researcher": "researcher",
+    "coder": "coder",
+    "FINISH": "synthesizer",
+})
+graph.add_edge("researcher", "supervisor")  # Back to supervisor
+graph.add_edge("coder", "supervisor")       # Back to supervisor
+graph.add_edge("synthesizer", END)
+
+mas_app = graph.compile()
+
+# Run the multi-agent system
+result = mas_app.invoke({
+    "user_request": "How do I implement a binary search tree in Python? "
+                    "Include explanation and working code.",
+    "next_agent": "",
+    "research_output": "",
+    "code_output": "",
+    "final_response": ""
+})
+
+print("═" * 50)
+print("FINAL RESPONSE:")
+print("═" * 50)
+print(result["final_response"])</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="hierarchical">Hierarchical Agent Systems</h3>
+    <div class="md-cell">
+      <p>For very complex workflows, you can build <strong>hierarchical</strong> systems — a top-level supervisor delegates to <em>sub-supervisors</em>, each managing their own team of specialized agents. This creates powerful, scalable AI pipelines.</p>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [39]</span> <span>Hierarchical Multi-Agent Pattern</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langgraph.graph import StateGraph, START, END
+from typing import TypedDict
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+parser = StrOutputParser()
+
+# ─── Sub-team: Data Analysis Team ────────────────────────
+class AnalysisState(TypedDict):
+    task: str
+    data_cleaned: str
+    insights: str
+
+def data_cleaner(state: AnalysisState) -> AnalysisState:
+    chain = ChatPromptTemplate.from_template(
+        "You are a data cleaning specialist. Describe how to clean data for: {task}"
+    ) | model | parser
+    return {"data_cleaned": chain.invoke({"task": state["task"]})}
+
+def insight_generator(state: AnalysisState) -> AnalysisState:
+    chain = ChatPromptTemplate.from_template(
+        "Generate data insights for: {task}\nClean data approach: {cleaned}"
+    ) | model | parser
+    return {"insights": chain.invoke({"task": state["task"], "cleaned": state["data_cleaned"]})}
+
+# Build sub-graph for data analysis
+analysis_graph = StateGraph(AnalysisState)
+analysis_graph.add_node("cleaner", data_cleaner)
+analysis_graph.add_node("insights", insight_generator)
+analysis_graph.add_edge(START, "cleaner")
+analysis_graph.add_edge("cleaner", "insights")
+analysis_graph.add_edge("insights", END)
+analysis_subgraph = analysis_graph.compile()
+
+# ─── Top-Level System ─────────────────────────────────────
+class TopState(TypedDict):
+    user_query: str
+    analysis_result: str
+    final_answer: str
+
+def run_analysis_team(state: TopState) -> TopState:
+    """Delegates to the analysis sub-graph."""
+    sub_result = analysis_subgraph.invoke({"task": state["user_query"], "data_cleaned": "", "insights": ""})
+    return {"analysis_result": sub_result["insights"]}
+
+def final_writer(state: TopState) -> TopState:
+    chain = ChatPromptTemplate.from_template(
+        "Write a professional report based on:\nQuery: {query}\nAnalysis: {analysis}"
+    ) | model | parser
+    return {"final_answer": chain.invoke({"query": state["user_query"], "analysis": state["analysis_result"]})}
+
+top_graph = StateGraph(TopState)
+top_graph.add_node("analysis_team", run_analysis_team)
+top_graph.add_node("writer", final_writer)
+top_graph.add_edge(START, "analysis_team")
+top_graph.add_edge("analysis_team", "writer")
+top_graph.add_edge("writer", END)
+
+hierarchical_app = top_graph.compile()
+result = hierarchical_app.invoke({
+    "user_query": "Analyze customer churn patterns in an e-commerce dataset",
+    "analysis_result": "", "final_answer": ""
+})
+print(result["final_answer"])</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="collaboration">Agent Collaboration with Shared Memory</h3>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [40]</span> <span>Agents Sharing Memory &amp; Collaborating</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langgraph.graph import StateGraph, START, END
+from langgraph.checkpoint.memory import MemorySaver
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+from typing import TypedDict, Annotated, List
+import operator
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+# Shared state accessible by all agents
+class CollaborativeState(TypedDict):
+    messages: Annotated[List, operator.add]
+    shared_notes: str  # A shared "whiteboard" all agents can read/write
+    current_agent: str
+
+# Agent A: Planner
+def planner_agent(state: CollaborativeState) -> CollaborativeState:
+    system = SystemMessage(content=
+        f"You are the Planner agent. Your role is to break down tasks into steps. "
+        f"Current shared notes:\n{state.get('shared_notes', 'Empty')}"
+    )
+    response = model.invoke([system] + state["messages"])
+    notes = state.get("shared_notes", "") + f"\n[PLANNER]: {response.content[:200]}"
+    return {
+        "messages": [AIMessage(content=f"[PLANNER]: {response.content}")],
+        "shared_notes": notes,
+        "current_agent": "executor"
+    }
+
+# Agent B: Executor
+def executor_agent(state: CollaborativeState) -> CollaborativeState:
+    system = SystemMessage(content=
+        f"You are the Executor agent. Your role is to implement the plan. "
+        f"Current shared notes:\n{state.get('shared_notes', 'Empty')}"
+    )
+    response = model.invoke([system] + state["messages"])
+    notes = state.get("shared_notes", "") + f"\n[EXECUTOR]: {response.content[:200]}"
+    return {
+        "messages": [AIMessage(content=f"[EXECUTOR]: {response.content}")],
+        "shared_notes": notes,
+        "current_agent": "done"
+    }
+
+def route_agents(state: CollaborativeState) -> str:
+    return state.get("current_agent", "planner")
+
+# Build collaborative graph
+collab_graph = StateGraph(CollaborativeState)
+collab_graph.add_node("planner", planner_agent)
+collab_graph.add_node("executor", executor_agent)
+
+collab_graph.add_edge(START, "planner")
+collab_graph.add_conditional_edges("planner", route_agents, {
+    "executor": "executor", "done": END
+})
+collab_graph.add_conditional_edges("executor", route_agents, {
+    "planner": "planner", "done": END
+})
+
+collab_app = collab_graph.compile(checkpointer=MemorySaver())
+
+config = {"configurable": {"thread_id": "collab_001"}}
+result = collab_app.invoke({
+    "messages": [HumanMessage("Build a REST API for a todo list app")],
+    "shared_notes": "",
+    "current_agent": "planner"
+}, config=config)
+
+for msg in result["messages"]:
+    print(msg.content[:300])
+    print("─" * 40)</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION 13 · LANGSMITH -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section class="content-section" id="langsmith-setup">
+    <div class="section-label">Section 13</div>
+    <h2 class="section-heading">LangSmith — Observability</h2>
+    <div class="section-divider"></div>
+
+    <div class="md-cell">
+      <p><strong>LangSmith</strong> is Anthropic LangChain's platform for <em>debugging, testing, evaluating, and monitoring</em> your LLM applications. When things go wrong with an AI app (and they will!), LangSmith lets you see exactly what happened at every step.</p>
+      <p>Key features:</p>
+      <ul>
+        <li><strong>Tracing</strong> — See every LLM call, tool invocation, and chain step with full inputs/outputs</li>
+        <li><strong>Evaluation</strong> — Automatically evaluate your app's responses for quality, correctness, etc.</li>
+        <li><strong>Datasets</strong> — Build test datasets and run regression tests</li>
+        <li><strong>Monitoring</strong> — Track latency, cost, error rates in production</li>
+        <li><strong>Playground</strong> — Iterate on prompts interactively</li>
+      </ul>
+    </div>
+
+    <h3 class="subsection-heading">Setup &amp; Tracing</h3>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [41]</span> <span>Enable LangSmith Tracing</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">import os
+
+# Set these environment variables to enable tracing
+# (Or put them in your .env file)
+os.environ["LANGCHAIN_TRACING_V2"] = "true"
+os.environ["LANGCHAIN_API_KEY"] = "your_langsmith_api_key"
+os.environ["LANGCHAIN_PROJECT"] = "my-langchain-training"  # Project name in LangSmith
+
+# Once set, ALL LangChain operations are automatically traced!
+# No code changes needed — just set the env vars.
+
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+chain = (
+    ChatPromptTemplate.from_template("Explain {topic} briefly.")
+    | model
+    | StrOutputParser()
+)
+
+# This call is automatically traced in LangSmith — you can see:
+# - The prompt that was sent
+# - The model's raw response
+# - Token usage and latency
+# - Any errors that occurred
+result = chain.invoke({"topic": "neural networks"})
+print(result)
+print("\n✅ Check your LangSmith dashboard at https://smith.langchain.com")</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="evaluation">Evaluation with LangSmith</h3>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [42]</span> <span>Creating Datasets and Running Evals</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langsmith import Client
+from langsmith.evaluation import evaluate, LangChainStringEvaluator
+
+client = Client()
+
+# ─── Step 1: Create a dataset ─────────────────────────────
+dataset_name = "QA Test Dataset"
+
+# Define test cases (input-output pairs)
+examples = [
+    {"input": "What is Python?",
+     "output": "Python is a high-level, interpreted programming language known for its readability."},
+    {"input": "What is LangChain?",
+     "output": "LangChain is a framework for building LLM-powered applications."},
+    {"input": "What is RAG?",
+     "output": "RAG stands for Retrieval Augmented Generation, combining retrieval with generation."},
+]
+
+# Create dataset in LangSmith
+dataset = client.create_dataset(dataset_name, description="Test cases for QA chain")
+client.create_examples(
+    inputs=[{"question": ex["input"]} for ex in examples],
+    outputs=[{"answer": ex["output"]} for ex in examples],
+    dataset_id=dataset.id,
+)
+
+# ─── Step 2: Define the chain to evaluate ─────────────────
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+def my_chain(inputs: dict) -> dict:
+    """The function to evaluate — must return a dict."""
+    chain = (
+        ChatPromptTemplate.from_template("Answer concisely: {question}")
+        | model | StrOutputParser()
+    )
+    return {"answer": chain.invoke({"question": inputs["question"]})}
+
+# ─── Step 3: Run evaluation ───────────────────────────────
+evaluator = LangChainStringEvaluator("qa", config={"llm": model})
+
+results = evaluate(
+    my_chain,
+    data=dataset_name,
+    evaluators=[evaluator],
+    experiment_prefix="gemini-qa-test"
+)
+
+print("Evaluation complete! View results in LangSmith dashboard.")</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="monitoring">Custom Run Metadata</h3>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [43]</span> <span>Adding Metadata to Runs</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_core.tracers.context import tracing_v2_enabled
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.callbacks import LangChainTracer
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+# Add custom metadata and tags to your traces
+with tracing_v2_enabled(project_name="production-app"):
+    response = model.invoke(
+        "Summarize what LangSmith does.",
+        config={
+            "tags": ["production", "summarization"],
+            "metadata": {
+                "user_id": "user_456",
+                "session_id": "sess_789",
+                "version": "v2.1"
+            }
+        }
+    )
+    print(response.content)</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SECTION 14 · BEST PRACTICES -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <section class="content-section" id="error-handling">
+    <div class="section-label">Section 14</div>
+    <h2 class="section-heading">Best Practices &amp; Production</h2>
+    <div class="section-divider"></div>
+
+    <h3 class="subsection-heading">Error Handling &amp; Fallbacks</h3>
+    <div class="md-cell">
+      <p>LLM applications can fail due to API errors, rate limits, or unexpected model outputs. LangChain provides built-in mechanisms for graceful error handling.</p>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [44]</span> <span>Fallbacks and Retry Logic</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+import time
+
+# ─── Fallback chains ──────────────────────────────────────
+# Primary model (fast, cheap)
+primary_model = ChatGoogleGenerativeAI(
+    model="gemini-3.0-flash",
+    api_key=GOOGLE_API_KEY,
+    max_retries=2  # Auto-retry on transient errors
+)
+
+# Fallback model (if primary fails)
+fallback_model = ChatGoogleGenerativeAI(
+    model="gemini-3.0-flash",
+    api_key=GOOGLE_API_KEY,
+    temperature=0
+)
+
+# .with_fallbacks() — automatically uses fallback if primary fails
+robust_model = primary_model.with_fallbacks([fallback_model])
+
+# ─── Exception handling in chains ─────────────────────────
+from langchain_core.runnables import RunnableLambda
+
+def safe_invoke(chain, inputs, default="Unable to process request."):
+    """Safely invoke a chain with error handling."""
+    try:
+        return chain.invoke(inputs)
+    except Exception as e:
+        print(f"Chain failed: {e}")
+        return default
+
+# ─── Output validation ────────────────────────────────────
+def validate_output(output: str) -> str:
+    """Validate and sanitize model output."""
+    if not output or len(output) < 5:
+        raise ValueError("Output too short or empty")
+    return output.strip()
+
+chain = (
+    ChatPromptTemplate.from_template("Summarize: {text}")
+    | robust_model
+    | StrOutputParser()
+    | RunnableLambda(validate_output)
+)
+
+result = safe_invoke(chain, {"text": "LangChain is a powerful AI framework."})
+print(result)</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="streaming">Async &amp; Batch Processing</h3>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [45]</span> <span>Async Invocation and Batch Processing</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">import asyncio
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+chain = (
+    ChatPromptTemplate.from_template("In one sentence, what is {topic}?")
+    | model | StrOutputParser()
+)
+
+# ─── Batch Processing — multiple inputs at once ────────────
+# Much more efficient than calling invoke() in a loop!
+topics = [
+    {"topic": "machine learning"},
+    {"topic": "neural networks"},
+    {"topic": "reinforcement learning"},
+    {"topic": "natural language processing"},
+]
+
+# batch() sends all requests concurrently
+results = chain.batch(topics, config={"max_concurrency": 4})
+for topic, result in zip(topics, results):
+    print(f"• {topic['topic']}: {result}")
+
+# ─── Async Invocation ─────────────────────────────────────
+async def generate_many():
+    tasks = [chain.ainvoke({"topic": t["topic"]}) for t in topics]
+    results = await asyncio.gather(*tasks)
+    return results
+
+# Run async
+# results = asyncio.run(generate_many())  # In scripts
+# await generate_many()  # In Jupyter notebooks</code></pre>
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" id="production">Production Best Practices</h3>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [46]</span> <span>Caching — Save Money &amp; Speed</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.globals import set_llm_cache
+from langchain_community.cache import InMemoryCache, SQLiteCache
+
+# ─── In-Memory Cache (single session) ─────────────────────
+set_llm_cache(InMemoryCache())
+
+model = ChatGoogleGenerativeAI(model="gemini-3.0-flash", api_key=GOOGLE_API_KEY)
+
+import time
+
+# First call — hits the API
+start = time.time()
+result1 = model.invoke("What is Python?")
+print(f"First call: {time.time()-start:.2f}s")
+
+# Second identical call — served from CACHE (instant, no API cost!)
+start = time.time()
+result2 = model.invoke("What is Python?")
+print(f"Cached call: {time.time()-start:.4f}s")
+
+# ─── SQLite Cache (persistent across sessions) ─────────────
+set_llm_cache(SQLiteCache(database_path=".langchain_cache.db"))
+# Now cache persists even after restarting your Python process!</code></pre>
+      </div>
+    </div>
+
+    <div class="code-cell">
+      <div class="code-header">
+        <div class="code-label"><span class="code-in-badge">In [47]</span> <span>Rate Limiting &amp; Token Tracking</span></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="code-lang-badge">python</span>
+          <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        </div>
+      </div>
+      <div class="code-body">
+        <pre><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.callbacks import get_openai_callback  # Works conceptually
+from langchain_community.callbacks.manager import get_openai_callback
+
+model = ChatGoogleGenerativeAI(
+    model="gemini-3.0-flash",
+    api_key=GOOGLE_API_KEY,
+    request_timeout=30,     # Timeout after 30 seconds
+    max_retries=3,           # Retry up to 3 times on failure
+)
+
+# ─── Track token usage ────────────────────────────────────
+# For Google models, check usage_metadata on the response
+response = model.invoke("Summarize the key concepts of LangChain.")
+usage = response.usage_metadata
+print(f"Input tokens:  {usage.get('input_tokens', 'N/A')}")
+print(f"Output tokens: {usage.get('output_tokens', 'N/A')}")
+print(f"Total tokens:  {usage.get('total_tokens', 'N/A')}")
+
+# ─── Simple rate limiter using time.sleep ─────────────────
+import time
+from typing import List
+
+def rate_limited_batch(chain, inputs: List[dict], delay: float = 0.5) -> List:
+    """Process inputs with a delay between each call to respect rate limits."""
+    results = []
+    for i, inp in enumerate(inputs):
+        result = chain.invoke(inp)
+        results.append(result)
+        if i < len(inputs) - 1:  # Don't sleep after the last item
+            time.sleep(delay)
+    return results</code></pre>
+      </div>
+    </div>
+
+    <div class="callout callout-success">
+      <span class="callout-icon">🎓</span>
+      <div>
+        <strong>Congratulations — You've Completed the LangChain Training!</strong><br>
+        You've covered everything from basic LLM calls to advanced multi-agent systems. The journey:
+        <strong>Models → Prompts → Parsers → LCEL → Memory → RAG → Tools → Agents → LangGraph → Multi-Agent → LangSmith</strong>.
+        The next step is building real projects and experimenting with what you've learned!
+      </div>
+    </div>
+
+    <h3 class="subsection-heading" style="margin-top:32px">Quick Reference Cheat Sheet</h3>
+    <table class="styled-table">
+      <thead><tr><th>Concept</th><th>Key Class / Function</th><th>When to Use</th></tr></thead>
+      <tbody>
+        <tr><td>Chat Model</td><td><code>ChatGoogleGenerativeAI</code></td><td>Any LLM interaction</td></tr>
+        <tr><td>Prompt</td><td><code>ChatPromptTemplate</code></td><td>Structured, reusable prompts</td></tr>
+        <tr><td>Parse to string</td><td><code>StrOutputParser</code></td><td>Get plain text from model</td></tr>
+        <tr><td>Parse to object</td><td><code>PydanticOutputParser</code></td><td>Structured/validated output</td></tr>
+        <tr><td>Compose steps</td><td><code>|</code> (LCEL pipe)</td><td>Connect any runnables</td></tr>
+        <tr><td>Parallel steps</td><td><code>RunnableParallel</code></td><td>Run multiple chains at once</td></tr>
+        <tr><td>Chat history</td><td><code>RunnableWithMessageHistory</code></td><td>Persistent conversations</td></tr>
+        <tr><td>Load docs</td><td><code>PyPDFLoader / WebBaseLoader</code></td><td>Feed external data to model</td></tr>
+        <tr><td>Split docs</td><td><code>RecursiveCharacterTextSplitter</code></td><td>Chunk large documents</td></tr>
+        <tr><td>Vector store</td><td><code>Chroma / FAISS</code></td><td>Store and search embeddings</td></tr>
+        <tr><td>RAG retrieval</td><td><code>vectorstore.as_retriever()</code></td><td>Semantic document search</td></tr>
+        <tr><td>Custom tool</td><td><code>@tool</code> decorator</td><td>Give agent capabilities</td></tr>
+        <tr><td>Simple agent</td><td><code>create_tool_calling_agent</code></td><td>Tool-using LLM agent</td></tr>
+        <tr><td>Graph agent</td><td><code>StateGraph (LangGraph)</code></td><td>Complex multi-step agents</td></tr>
+        <tr><td>Multi-agent</td><td><code>Supervisor + Workers pattern</code></td><td>Complex collaborative AI</td></tr>
+        <tr><td>Observability</td><td><code>LANGCHAIN_TRACING_V2=true</code></td><td>Debug and monitor via LangSmith</td></tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:48px;padding:32px;background:linear-gradient(135deg,rgba(74,222,128,0.05),rgba(34,211,238,0.05));border:1px solid var(--border-bright);border-radius:12px;text-align:center">
+      <div style="font-size:32px;margin-bottom:12px">🚀</div>
+      <h3 style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:800;color:#f1f5f9;margin-bottom:8px">What's Next?</h3>
+      <p style="color:var(--text-secondary);max-width:500px;margin:0 auto">
+        Explore the official <a href="https://python.langchain.com/docs/introduction/" target="_blank" style="color:var(--accent)">LangChain Documentation</a>,
+        browse <a href="https://smith.langchain.com" target="_blank" style="color:var(--accent2)">LangSmith</a> for traces,
+        and try <a href="https://github.com/langchain-ai/langchain" target="_blank" style="color:var(--accent)">LangChain on GitHub</a>.
+        Build something amazing.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══ JAVASCRIPT ═════════════════════════════════════════════════ -->
+<script>
+  // Initialize highlight.js
+  document.addEventListener("DOMContentLoaded", function() {
+    hljs.highlightAll();
+    updateProgress();
+    updateActiveNav();
+    // Open first nav section
+    const firstHeader = document.querySelector('.nav-section-header');
+    if (firstHeader) firstHeader.classList.add('open');
+    const firstItems = document.querySelector('.nav-items');
+    if (firstItems) firstItems.classList.add('open');
+  });
+
+  // Sidebar toggle
+  const sidebar = document.getElementById('sidebar');
+  const main = document.getElementById('main');
+  const toggleBtn = document.getElementById('toggle-btn');
+  const overlay = document.getElementById('overlay');
+  let isMobile = window.innerWidth <= 900;
+
+  function toggleSidebar() {
+    if (isMobile) {
+      sidebar.classList.toggle('open');
+      overlay.classList.toggle('visible');
+      toggleBtn.style.left = sidebar.classList.contains('open') ? 'calc(260px + 12px)' : '16px';
+    } else {
+      sidebar.classList.toggle('collapsed');
+      main.classList.toggle('expanded');
+      toggleBtn.classList.toggle('shifted');
+    }
+  }
+
+  overlay.addEventListener('click', () => {
+    if (isMobile) {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('visible');
+      toggleBtn.style.left = '16px';
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    isMobile = window.innerWidth <= 900;
+  });
+
+  // Nav section collapse/expand
+  function toggleNav(header) {
+    header.classList.toggle('open');
+    const items = header.nextElementSibling;
+    items.classList.toggle('open');
+  }
+
+  // Copy code button
+  function copyCode(btn) {
+    const pre = btn.closest('.code-cell').querySelector('pre');
+    const text = pre.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  // Progress bar
+  function updateProgress() {
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    document.getElementById('progress-bar').style.width = pct + '%';
+  }
+
+  // Active nav item & scroll-to-top
+  function updateActiveNav() {
+    const sections = document.querySelectorAll('.content-section');
+    const navItems = document.querySelectorAll('.nav-item');
+    const scrollTop = window.scrollY + 100;
+
+    // Scroll-to-top button
+    document.getElementById('scroll-top').classList.toggle('visible', window.scrollY > 300);
+
+    let activeId = '';
+    sections.forEach(section => {
+      if (section.offsetTop <= scrollTop) activeId = section.id;
+    });
+
+    navItems.forEach(item => {
+      const href = item.getAttribute('href');
+      if (href) {
+        const id = href.replace('#', '');
+        item.classList.toggle('active', id === activeId);
+      }
+    });
+  }
+
+  window.addEventListener('scroll', () => { updateProgress(); updateActiveNav(); });
+
+  // Make all nav-items close sidebar on mobile when clicked
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => {
+      if (isMobile) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('visible');
+        toggleBtn.style.left = '16px';
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

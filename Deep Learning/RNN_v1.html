@@ -1,0 +1,2108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RNN — Deep Implementation Guide</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Montserrat:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Mermaid CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+
+  <!-- Prism.js for code highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            poppins: ['Poppins', 'sans-serif'],
+            montserrat: ['Montserrat', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            base:    '#060c1a',
+            surface: '#0d1528',
+            card:    '#111d35',
+            border:  '#1e2f50',
+            sky:     '#38bdf8',
+            violet:  '#a78bfa',
+            emerald: '#34d399',
+            amber:   '#fbbf24',
+            rose:    '#fb7185',
+            muted:   '#64748b',
+            body:    '#cbd5e1',
+            heading: '#f1f5f9',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background-color: #060c1a;
+      color: #cbd5e1;
+      font-family: 'Poppins', sans-serif;
+      line-height: 1.75;
+      overflow-x: hidden;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #060c1a; }
+    ::-webkit-scrollbar-thumb { background: #1e2f50; border-radius: 3px; }
+
+    /* ── Sidebar nav ── */
+    #sidebar { scrollbar-width: none; }
+    #sidebar::-webkit-scrollbar { display: none; }
+
+    /* ── Typography ── */
+    h1,h2,h3,h4 { font-family: 'Poppins', sans-serif; color: #f1f5f9; }
+    .section-label {
+      font-family: 'Montserrat', sans-serif;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #38bdf8;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: #111d35;
+      border: 1px solid #1e2f50;
+      border-radius: 12px;
+      padding: 1.5rem;
+    }
+    .card-glow {
+      box-shadow: 0 0 0 1px #1e2f50, 0 0 30px rgba(56,189,248,0.04);
+    }
+
+    /* ── Accent pill tags ── */
+    .tag-sky    { background:#0c2233; color:#38bdf8; border:1px solid #38bdf820; }
+    .tag-violet { background:#1a1030; color:#a78bfa; border:1px solid #a78bfa20; }
+    .tag-emerald{ background:#0a1f18; color:#34d399; border:1px solid #34d39920; }
+    .tag-amber  { background:#1f1700; color:#fbbf24; border:1px solid #fbbf2420; }
+    .tag-rose   { background:#200a10; color:#fb7185; border:1px solid #fb718520; }
+    .tag {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      font-family: 'Montserrat', sans-serif;
+      letter-spacing: 0.05em;
+    }
+
+    /* ── Code blocks ── */
+    pre[class*="language-"] {
+      background: #080f1e !important;
+      border: 1px solid #1e2f50;
+      border-radius: 10px;
+      font-size: 0.82rem;
+      font-family: 'JetBrains Mono', monospace;
+      line-height: 1.65;
+      overflow-x: auto;
+      padding: 1.25rem 1.5rem !important;
+      margin: 0 !important;
+    }
+    code[class*="language-"] { font-family: 'JetBrains Mono', monospace !important; }
+
+    /* ── Math block ── */
+    .math-block {
+      background: #080f1e;
+      border-left: 3px solid #a78bfa;
+      border-radius: 0 8px 8px 0;
+      padding: 1rem 1.25rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.9rem;
+      color: #e2e8f0;
+      margin: 0.75rem 0;
+    }
+    .math-block .eq-label { color: #64748b; font-size: 0.72rem; margin-bottom: 4px; }
+
+    /* ── Step blocks ── */
+    .step-connector { position: relative; }
+    .step-connector::before {
+      content: '';
+      position: absolute;
+      left: 19px; top: 48px;
+      width: 2px;
+      height: calc(100% - 48px);
+      background: linear-gradient(to bottom, #38bdf840, transparent);
+      z-index: 0;
+    }
+
+    /* ── Bullet points ── */
+    .custom-list li {
+      position: relative;
+      padding-left: 1.4rem;
+      margin-bottom: 0.45rem;
+    }
+    .custom-list li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      color: #38bdf8;
+      font-size: 0.75rem;
+      top: 3px;
+    }
+
+    /* ── Callout boxes ── */
+    .callout {
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      font-size: 0.88rem;
+    }
+    .callout-insight { background:#0a1829; border-left:3px solid #38bdf8; color:#94b8d8; }
+    .callout-warn    { background:#1a120a; border-left:3px solid #fbbf24; color:#c4a35a; }
+    .callout-key     { background:#110a22; border-left:3px solid #a78bfa; color:#b09ce0; }
+    .callout-success { background:#071a12; border-left:3px solid #34d399; color:#6cbf9a; }
+
+    /* ── Mermaid override ── */
+    .mermaid { background: transparent !important; }
+    .mermaid svg { max-width: 100%; }
+
+    /* ── Nav active ── */
+    .nav-link { transition: all 0.2s; }
+    .nav-link:hover { color: #38bdf8; }
+    .nav-link.active { color: #38bdf8; border-left: 2px solid #38bdf8; padding-left: 8px; }
+
+    /* ── Hero gradient ── */
+    .hero-bg {
+      background: radial-gradient(ellipse at 20% 40%, rgba(56,189,248,0.08) 0%, transparent 60%),
+                  radial-gradient(ellipse at 80% 20%, rgba(167,139,250,0.07) 0%, transparent 50%),
+                  #060c1a;
+    }
+
+    /* ── Table ── */
+    table { border-collapse: collapse; width: 100%; }
+    th { background: #0d1528; color: #38bdf8; font-family: 'Montserrat', sans-serif; font-size: 0.78rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 10px 14px; text-align: left; border-bottom: 1px solid #1e2f50; }
+    td { padding: 9px 14px; border-bottom: 1px solid #1a2640; font-size: 0.86rem; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #0d1528; }
+
+    /* ── Animation keyframes ── */
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(18px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .fade-up { animation: fadeUp 0.5s ease both; }
+
+    @keyframes pulse-ring {
+      0%,100% { box-shadow: 0 0 0 0 rgba(56,189,248,0.3); }
+      50%      { box-shadow: 0 0 0 6px rgba(56,189,248,0); }
+    }
+
+    /* ── RNN Canvas viz ── */
+    #rnn-canvas-container canvas { border-radius: 10px; }
+
+    /* ── Section divider ── */
+    .section-divider {
+      height: 1px;
+      background: linear-gradient(to right, transparent, #1e2f50, transparent);
+      margin: 3rem 0;
+    }
+
+    /* ── Inline code ── */
+    .inline-code {
+      background: #0d1528;
+      border: 1px solid #1e2f50;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82em;
+      color: #a78bfa;
+    }
+
+    /* ── Progress indicator ── */
+    #progress-bar {
+      position: fixed;
+      top: 0; left: 0;
+      height: 2px;
+      background: linear-gradient(to right, #38bdf8, #a78bfa);
+      z-index: 1000;
+      transition: width 0.1s;
+    }
+
+    /* ── Weight matrix viz ── */
+    .matrix-cell {
+      width: 32px; height: 32px;
+      border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem;
+      font-family: 'JetBrains Mono', monospace;
+      transition: all 0.3s;
+    }
+
+    /* ── Gradient flow arrows ── */
+    @keyframes flow-right {
+      from { stroke-dashoffset: 40; }
+      to   { stroke-dashoffset: 0; }
+    }
+    @keyframes flow-left {
+      from { stroke-dashoffset: 0; }
+      to   { stroke-dashoffset: 40; }
+    }
+    .flow-arrow-fwd { animation: flow-right 1.2s linear infinite; }
+    .flow-arrow-bwd { animation: flow-left  1.2s linear infinite; stroke: #fb7185; }
+  </style>
+</head>
+<body>
+
+<!-- Progress bar -->
+<div id="progress-bar" style="width:0%"></div>
+
+<!-- ═══════════════════════════════════════════
+     SIDEBAR NAV
+════════════════════════════════════════════ -->
+<nav id="sidebar" class="fixed left-0 top-0 h-screen w-60 hidden xl:flex flex-col pt-8 pb-6 px-4 overflow-y-auto z-50"
+     style="background:#080f1e; border-right:1px solid #1e2f50;">
+  <div class="mb-8">
+    <span class="section-label">Deep Learning</span>
+    <h2 class="text-heading font-poppins font-bold text-lg mt-1">RNN Guide</h2>
+  </div>
+  <div class="space-y-1 text-sm font-montserrat text-muted">
+    <a href="#part1" class="nav-link block py-1.5 px-2 rounded">① Formal Definition</a>
+    <a href="#terminology" class="nav-link block py-1.5 px-3 text-xs">— Terminology</a>
+    <a href="#math" class="nav-link block py-1.5 px-3 text-xs">— Mathematics</a>
+    <a href="#bptt-theory" class="nav-link block py-1.5 px-3 text-xs">— BPTT Theory</a>
+    <a href="#part2" class="nav-link block py-1.5 px-2 rounded mt-2">② The Layer Confusion</a>
+    <a href="#part3" class="nav-link block py-1.5 px-2 rounded mt-2">③ Implementation</a>
+    <a href="#step1" class="nav-link block py-1.5 px-3 text-xs">— Step 1: Data Prep</a>
+    <a href="#step2" class="nav-link block py-1.5 px-3 text-xs">— Step 2: Weights</a>
+    <a href="#step3" class="nav-link block py-1.5 px-3 text-xs">— Step 3: Forward Pass</a>
+    <a href="#step4" class="nav-link block py-1.5 px-3 text-xs">— Step 4: Loss</a>
+    <a href="#step5" class="nav-link block py-1.5 px-3 text-xs">— Step 5: BPTT</a>
+    <a href="#step6" class="nav-link block py-1.5 px-3 text-xs">— Step 6: Grad Clip</a>
+    <a href="#step7" class="nav-link block py-1.5 px-3 text-xs">— Step 7: Update</a>
+    <a href="#step8" class="nav-link block py-1.5 px-3 text-xs">— Step 8: Train Loop</a>
+    <a href="#step9" class="nav-link block py-1.5 px-3 text-xs">— Step 9: Predict</a>
+    <a href="#part4" class="nav-link block py-1.5 px-2 rounded mt-2">④ Mental Models</a>
+    <a href="#full-code" class="nav-link block py-1.5 px-2 rounded mt-2">⑤ Full Code</a>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════
+     MAIN CONTENT
+════════════════════════════════════════════ -->
+<main class="xl:ml-60">
+
+  <!-- ── HERO ── -->
+  <section class="hero-bg px-6 md:px-16 py-20 md:py-28 relative overflow-hidden">
+    <!-- decorative rings -->
+    <div class="absolute top-10 right-10 w-64 h-64 rounded-full opacity-5" style="background:radial-gradient(circle, #38bdf8, transparent)"></div>
+    <div class="absolute bottom-0 left-1/3 w-96 h-96 rounded-full opacity-5" style="background:radial-gradient(circle, #a78bfa, transparent)"></div>
+
+    <div class="max-w-4xl relative z-10">
+      <span class="section-label">Recurrent Neural Networks · NumPy Implementation</span>
+      <h1 class="text-4xl md:text-6xl font-bold mt-3 mb-6 leading-tight">
+        RNNs From <span style="background:linear-gradient(90deg,#38bdf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">First Principles</span>
+      </h1>
+      <p class="text-body text-lg md:text-xl max-w-2xl font-light leading-8">
+        A complete implementation guide — no TensorFlow, no magic. Just NumPy arrays, weight matrices, and the loop that makes recurrence work. Every line explained.
+      </p>
+      <div class="flex flex-wrap gap-2 mt-6">
+        <span class="tag tag-sky">NumPy</span>
+        <span class="tag tag-violet">BPTT</span>
+        <span class="tag tag-emerald">Forward Pass</span>
+        <span class="tag tag-amber">Weight Matrices</span>
+        <span class="tag tag-rose">Gradient Flow</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="px-6 md:px-16 py-10 max-w-5xl mx-auto space-y-24">
+
+    <!-- ════════════════════════════════════
+         PART 1: FORMAL DEFINITION
+    ════════════════════════════════════ -->
+    <section id="part1">
+      <span class="section-label">Part 1</span>
+      <h2 class="text-3xl font-bold mt-2 mb-2">Formal Definition</h2>
+      <p class="text-muted text-sm mb-8">Building the theoretical foundation before a single line of code.</p>
+
+      <!-- What is RNN -->
+      <div class="card card-glow mb-8">
+        <h3 class="text-xl font-semibold mb-4 text-sky">What Is a Recurrent Neural Network?</h3>
+        <p class="text-body mb-4">
+          A <strong class="text-heading">Recurrent Neural Network (RNN)</strong> is a class of artificial neural network designed to operate on
+          <em class="text-sky">sequential data</em> — data where the order of elements carries meaning.
+          Unlike a feedforward (Dense) network that maps a fixed input vector to an output, an RNN processes sequences
+          one element at a time while maintaining an internal <strong class="text-violet">hidden state</strong> — a vector of numbers
+          that acts as the network's compressed memory of everything it has seen so far.
+        </p>
+        <p class="text-body mb-4">
+          The critical insight: <strong class="text-emerald">the same set of weights is applied at every time step</strong>.
+          This is not a bug — it is the central design philosophy. The network learns one transformation
+          that it applies recurrently across the sequence. This is what makes RNNs compact and generalizable.
+        </p>
+        <div class="callout callout-insight mt-4">
+          <strong class="text-sky">Core Intuition:</strong> Think of the hidden state as a rolling summary note.
+          At each word of a sentence, you read the word and update your note. The same "note-taking rule" applies at every word.
+          By the end of the sentence, your note captures the gist of the entire thing.
+        </div>
+      </div>
+
+      <!-- Terminology -->
+      <div id="terminology" class="card card-glow mb-8">
+        <h3 class="text-xl font-semibold mb-5 text-violet">Key Terminology</h3>
+        <div class="overflow-x-auto rounded-lg border border-border">
+          <table>
+            <thead>
+              <tr>
+                <th>Term</th>
+                <th>Symbol</th>
+                <th>Meaning</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="text-sky font-mono font-semibold">Time Step</td>
+                <td class="font-mono text-amber">t</td>
+                <td>A single position in the sequence (e.g., one word, one frame, one data point)</td>
+              </tr>
+              <tr>
+                <td class="text-sky font-mono font-semibold">Input</td>
+                <td class="font-mono text-amber">x<sub>t</sub></td>
+                <td>The feature vector at time step t (shape: vocab_size × 1 for one-hot)</td>
+              </tr>
+              <tr>
+                <td class="text-sky font-mono font-semibold">Hidden State</td>
+                <td class="font-mono text-amber">h<sub>t</sub></td>
+                <td>The memory vector at time step t (shape: hidden_size × 1). This is what "rolls over"</td>
+              </tr>
+              <tr>
+                <td class="text-sky font-mono font-semibold">Output</td>
+                <td class="font-mono text-amber">y<sub>t</sub></td>
+                <td>The raw logit vector at time step t (shape: vocab_size × 1)</td>
+              </tr>
+              <tr>
+                <td class="text-sky font-mono font-semibold">W<sub>xh</sub></td>
+                <td class="font-mono text-violet">Input→Hidden</td>
+                <td>Weight matrix transforming the input x<sub>t</sub> into hidden space. Shape: (hidden_size × vocab_size)</td>
+              </tr>
+              <tr>
+                <td class="text-sky font-mono font-semibold">W<sub>hh</sub></td>
+                <td class="font-mono text-rose">Hidden→Hidden</td>
+                <td>The recurrent weight matrix — transforms previous hidden state h<sub>t-1</sub>. Shape: (hidden_size × hidden_size). This is the "memory" matrix</td>
+              </tr>
+              <tr>
+                <td class="text-sky font-mono font-semibold">W<sub>hy</sub></td>
+                <td class="font-mono text-emerald">Hidden→Output</td>
+                <td>Weight matrix transforming hidden state to output logits. Shape: (vocab_size × hidden_size)</td>
+              </tr>
+              <tr>
+                <td class="text-sky font-mono font-semibold">Unrolling</td>
+                <td class="font-mono text-amber">—</td>
+                <td>Expanding the recurrence over T time steps to create a "virtual" deep network for backprop</td>
+              </tr>
+              <tr>
+                <td class="text-sky font-mono font-semibold">BPTT</td>
+                <td class="font-mono text-amber">—</td>
+                <td>Backpropagation Through Time — the algorithm for computing gradients by traversing the unrolled graph in reverse</td>
+              </tr>
+              <tr>
+                <td class="text-sky font-mono font-semibold">Sequence Length</td>
+                <td class="font-mono text-amber">T</td>
+                <td>How many time steps are processed in one forward-backward pass (a.k.a. chunk size or window)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Mathematics -->
+      <div id="math" class="card card-glow mb-8">
+        <h3 class="text-xl font-semibold mb-5 text-emerald">Mathematical Foundation</h3>
+        <p class="text-body mb-4">
+          The entire RNN is defined by just two equations. Every single time step executes these same two operations:
+        </p>
+
+        <div class="math-block">
+          <div class="eq-label">Equation 1 — Hidden State Update (the core recurrence)</div>
+          <span class="text-emerald">h<sub>t</sub></span> = tanh( <span class="text-sky">W<sub>xh</sub></span> · <span class="text-amber">x<sub>t</sub></span>  +  <span class="text-rose">W<sub>hh</sub></span> · <span class="text-violet">h<sub>t-1</sub></span>  +  b<sub>h</sub> )
+        </div>
+
+        <div class="math-block">
+          <div class="eq-label">Equation 2 — Output Computation</div>
+          <span class="text-amber">y<sub>t</sub></span> = <span class="text-emerald">W<sub>hy</sub></span> · <span class="text-emerald">h<sub>t</sub></span>  +  b<sub>y</sub>
+        </div>
+
+        <div class="math-block">
+          <div class="eq-label">Equation 3 — Softmax (converts logits to probabilities)</div>
+          <span class="text-violet">p<sub>t</sub></span> = exp(<span class="text-amber">y<sub>t</sub></span>) / Σ exp(<span class="text-amber">y<sub>t</sub></span>)
+        </div>
+
+        <div class="math-block">
+          <div class="eq-label">Equation 4 — Cross-Entropy Loss (per time step)</div>
+          L = − Σ<sub>t</sub>  log( <span class="text-violet">p<sub>t</sub></span>[ target<sub>t</sub> ] )
+        </div>
+
+        <div class="mt-5 grid md:grid-cols-3 gap-4">
+          <div class="callout callout-key text-sm">
+            <strong class="text-violet">tanh</strong> squishes any value into (−1, +1).
+            This prevents hidden state values from exploding as they accumulate across time steps.
+          </div>
+          <div class="callout callout-success text-sm">
+            <strong class="text-emerald">W<sub>hh</sub> · h<sub>t-1</sub></strong> is literally what creates memory.
+            The previous hidden state is scaled and mixed into the new one. Remove this term → feedforward network.
+          </div>
+          <div class="callout callout-insight text-sm">
+            <strong class="text-sky">Same W at every t.</strong> W<sub>xh</sub>, W<sub>hh</sub>, W<sub>hy</sub>
+            are <em>not</em> per-timestep. There are only 3 weight matrices total, reused at every step.
+          </div>
+        </div>
+      </div>
+
+      <!-- BPTT Theory -->
+      <div id="bptt-theory" class="card card-glow">
+        <h3 class="text-xl font-semibold mb-5 text-amber">Backpropagation Through Time (BPTT)</h3>
+        <p class="text-body mb-4">
+          Standard backprop works on a static computation graph. An RNN, unrolled across T time steps, creates a
+          <strong class="text-heading">chain of T "virtual layers"</strong> — all sharing the same weights. 
+          BPTT runs the chain rule backward through this chain.
+        </p>
+        <p class="text-body mb-4">The key gradient accumulation equations are:</p>
+
+        <div class="math-block">
+          <div class="eq-label">Gradient of loss w.r.t. output weights (accumulated over all T steps)</div>
+          ∂L/∂W<sub>hy</sub>  +=  dy<sub>t</sub> · h<sub>t</sub><sup>T</sup>  &nbsp;&nbsp; ∀t ∈ {0…T}
+        </div>
+        <div class="math-block">
+          <div class="eq-label">Gradient flowing INTO hidden state from two sources</div>
+          <span class="text-rose">dh<sub>t</sub></span>  =  W<sub>hy</sub><sup>T</sup> · dy<sub>t</sub>  +  <span class="text-violet">dh<sub>next</sub></span>
+          &nbsp;&nbsp; ← output error + gradient from future time step
+        </div>
+        <div class="math-block">
+          <div class="eq-label">Through tanh activation (1 - h²  is the tanh derivative)</div>
+          <span class="text-amber">dhraw<sub>t</sub></span>  =  (1 − h<sub>t</sub>²) ⊙ dh<sub>t</sub>
+        </div>
+        <div class="math-block">
+          <div class="eq-label">Gradient accumulation for recurrent weight matrices</div>
+          ∂L/∂W<sub>xh</sub>  +=  dhraw<sub>t</sub> · x<sub>t</sub><sup>T</sup><br/>
+          ∂L/∂W<sub>hh</sub>  +=  dhraw<sub>t</sub> · h<sub>t-1</sub><sup>T</sup><br/>
+          <span class="text-violet">dh<sub>next</sub></span>  =  W<sub>hh</sub><sup>T</sup> · dhraw<sub>t</sub>  ← passed to previous time step
+        </div>
+
+        <div class="callout callout-warn mt-4">
+          <strong class="text-amber">⚠ The Vanishing Gradient Problem:</strong> Because dh<sub>next</sub> is multiplied by W<sub>hh</sub>
+          at every step going backward, if W<sub>hh</sub> has singular values &lt; 1, the gradient shrinks exponentially.
+          After 20–30 steps, it becomes ≈ 0 — the network forgets long-term dependencies. This is why LSTMs/GRUs exist.
+          Gradient clipping handles the exploding variant.
+        </div>
+      </div>
+    </section>
+
+    <div class="section-divider"></div>
+
+    <!-- ════════════════════════════════════
+         PART 2: THE LAYER CONFUSION
+    ════════════════════════════════════ -->
+    <section id="part2">
+      <span class="section-label">Part 2</span>
+      <h2 class="text-3xl font-bold mt-2 mb-2">Resolving The Layer Confusion</h2>
+      <p class="text-muted text-sm mb-8">The question that trips everyone: "Where are the layers in an RNN?"</p>
+
+      <div class="card card-glow mb-8">
+        <h3 class="text-xl font-semibold mb-4 text-sky">DNN Layers vs. RNN Time Steps</h3>
+        <p class="text-body mb-4">
+          In a <strong class="text-heading">Dense Neural Network (DNN)</strong>, "layers" refer to distinct sets of weights
+          (Layer 1 has its own W₁, Layer 2 has W₂, etc.) that transform data <em>spatially</em> — depth in the network
+          equals depth in the stack.
+        </p>
+        <p class="text-body mb-4">
+          In an RNN, the analog of "depth" is <strong class="text-violet">time</strong>. Unrolling the RNN across T time steps creates
+          a network that looks like T layers deep — but all T of those "virtual layers" <strong class="text-emerald">share the same weights</strong>.
+          This is called <strong class="text-heading">weight sharing across time</strong>.
+        </p>
+
+        <div class="grid md:grid-cols-2 gap-4 mt-5">
+          <div class="rounded-xl p-4" style="background:#0a1829; border:1px solid #1e3a5f;">
+            <h4 class="text-sky font-semibold text-sm mb-3 font-montserrat">DENSE NETWORK</h4>
+            <div class="space-y-2 text-sm text-body">
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-sky"></div>
+                <span>W₁ (Layer 1) — unique to Layer 1</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-violet"></div>
+                <span>W₂ (Layer 2) — unique to Layer 2</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-emerald"></div>
+                <span>W₃ (Output) — unique to output</span>
+              </div>
+              <div class="mt-3 callout callout-insight text-xs">
+                Data flows: Input → L1 → L2 → Output<br/>Each transition uses its own weights.
+              </div>
+            </div>
+          </div>
+          <div class="rounded-xl p-4" style="background:#0a1220; border:1px solid #1e3050;">
+            <h4 class="text-violet font-semibold text-sm mb-3 font-montserrat">RNN (UNROLLED)</h4>
+            <div class="space-y-2 text-sm text-body">
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-sky"></div>
+                <span>Wxh — shared across ALL time steps</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-rose"></div>
+                <span>Whh — shared across ALL time steps</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-full bg-emerald"></div>
+                <span>Why — shared across ALL time steps</span>
+              </div>
+              <div class="mt-3 callout callout-key text-xs">
+                Data flows: x₀→h₀→h₁→h₂→…→hₜ<br/>Same weights, different hidden states each step.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RNN Unrolling Diagram -->
+      <div class="card card-glow mb-8">
+        <h3 class="text-lg font-semibold mb-5 text-heading">The Unrolled RNN — A Visual</h3>
+        <p class="text-body text-sm mb-5">
+          Each vertical column below is a time step. Every column executes <em>identical equations</em> with <em>shared weights</em>.
+          The hidden state <span class="inline-code">h</span> is the horizontal arrow connecting them.
+        </p>
+        <!-- SVG Unrolled RNN Diagram -->
+        <div class="overflow-x-auto pb-2">
+          <svg viewBox="0 0 860 280" xmlns="http://www.w3.org/2000/svg" style="min-width:600px; max-width:100%; font-family:'JetBrains Mono', monospace;">
+            <!-- Background grid lines -->
+            <defs>
+              <marker id="arrow-fwd" markerWidth="8" markerHeight="8" refX="7" refY="3" orient="auto">
+                <path d="M0,0 L8,3 L0,6 Z" fill="#38bdf8"/>
+              </marker>
+              <marker id="arrow-bwd" markerWidth="8" markerHeight="8" refX="1" refY="3" orient="auto">
+                <path d="M8,0 L0,3 L8,6 Z" fill="#fb7185"/>
+              </marker>
+              <marker id="arrow-up" markerWidth="8" markerHeight="8" refX="3" refY="1" orient="auto">
+                <path d="M0,8 L3,0 L6,8 Z" fill="#34d399"/>
+              </marker>
+              <marker id="arrow-down" markerWidth="8" markerHeight="8" refX="3" refY="7" orient="auto">
+                <path d="M0,0 L3,8 L6,0 Z" fill="#fbbf24"/>
+              </marker>
+            </defs>
+
+            <!-- Time step labels -->
+            <text x="100" y="24" fill="#64748b" font-size="11" text-anchor="middle">t = 0</text>
+            <text x="280" y="24" fill="#64748b" font-size="11" text-anchor="middle">t = 1</text>
+            <text x="460" y="24" fill="#64748b" font-size="11" text-anchor="middle">t = 2</text>
+            <text x="640" y="24" fill="#64748b" font-size="11" text-anchor="middle">t = 3</text>
+            <text x="790" y="24" fill="#64748b" font-size="11" text-anchor="middle">…</text>
+
+            <!-- ── TIME STEP 0 ── -->
+            <!-- y0 output box -->
+            <rect x="60" y="36" width="80" height="34" rx="6" fill="#071a12" stroke="#34d399" stroke-width="1.5"/>
+            <text x="100" y="57" fill="#34d399" font-size="11" text-anchor="middle">ŷ₀ / p₀</text>
+            <!-- h0 hidden box -->
+            <rect x="60" y="110" width="80" height="40" rx="8" fill="#0d1528" stroke="#38bdf8" stroke-width="2"/>
+            <text x="100" y="135" fill="#38bdf8" font-size="12" text-anchor="middle" font-weight="600">h₀</text>
+            <!-- x0 input box -->
+            <rect x="60" y="200" width="80" height="34" rx="6" fill="#1a1400" stroke="#fbbf24" stroke-width="1.5"/>
+            <text x="100" y="221" fill="#fbbf24" font-size="11" text-anchor="middle">x₀</text>
+
+            <!-- arrows t=0 -->
+            <line x1="100" y1="200" x2="100" y2="154" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrow-up)"/>
+            <line x1="100" y1="110" x2="100" y2="72" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrow-up)"/>
+
+            <!-- ── TIME STEP 1 ── -->
+            <rect x="240" y="36" width="80" height="34" rx="6" fill="#071a12" stroke="#34d399" stroke-width="1.5"/>
+            <text x="280" y="57" fill="#34d399" font-size="11" text-anchor="middle">ŷ₁ / p₁</text>
+            <rect x="240" y="110" width="80" height="40" rx="8" fill="#0d1528" stroke="#38bdf8" stroke-width="2"/>
+            <text x="280" y="135" fill="#38bdf8" font-size="12" text-anchor="middle" font-weight="600">h₁</text>
+            <rect x="240" y="200" width="80" height="34" rx="6" fill="#1a1400" stroke="#fbbf24" stroke-width="1.5"/>
+            <text x="280" y="221" fill="#fbbf24" font-size="11" text-anchor="middle">x₁</text>
+            <line x1="280" y1="200" x2="280" y2="154" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrow-up)"/>
+            <line x1="280" y1="110" x2="280" y2="72" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrow-up)"/>
+
+            <!-- ── TIME STEP 2 ── -->
+            <rect x="420" y="36" width="80" height="34" rx="6" fill="#071a12" stroke="#34d399" stroke-width="1.5"/>
+            <text x="460" y="57" fill="#34d399" font-size="11" text-anchor="middle">ŷ₂ / p₂</text>
+            <rect x="420" y="110" width="80" height="40" rx="8" fill="#0d1528" stroke="#38bdf8" stroke-width="2"/>
+            <text x="460" y="135" fill="#38bdf8" font-size="12" text-anchor="middle" font-weight="600">h₂</text>
+            <rect x="420" y="200" width="80" height="34" rx="6" fill="#1a1400" stroke="#fbbf24" stroke-width="1.5"/>
+            <text x="460" y="221" fill="#fbbf24" font-size="11" text-anchor="middle">x₂</text>
+            <line x1="460" y1="200" x2="460" y2="154" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrow-up)"/>
+            <line x1="460" y1="110" x2="460" y2="72" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrow-up)"/>
+
+            <!-- ── TIME STEP 3 ── -->
+            <rect x="600" y="36" width="80" height="34" rx="6" fill="#071a12" stroke="#34d399" stroke-width="1.5"/>
+            <text x="640" y="57" fill="#34d399" font-size="11" text-anchor="middle">ŷ₃ / p₃</text>
+            <rect x="600" y="110" width="80" height="40" rx="8" fill="#0d1528" stroke="#38bdf8" stroke-width="2"/>
+            <text x="640" y="135" fill="#38bdf8" font-size="12" text-anchor="middle" font-weight="600">h₃</text>
+            <rect x="600" y="200" width="80" height="34" rx="6" fill="#1a1400" stroke="#fbbf24" stroke-width="1.5"/>
+            <text x="640" y="221" fill="#fbbf24" font-size="11" text-anchor="middle">x₃</text>
+            <line x1="640" y1="200" x2="640" y2="154" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrow-up)"/>
+            <line x1="640" y1="110" x2="640" y2="72" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrow-up)"/>
+
+            <!-- ── h₋₁ init ── -->
+            <rect x="0" y="110" width="50" height="40" rx="6" fill="#120a22" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="4,2"/>
+            <text x="25" y="132" fill="#a78bfa" font-size="9" text-anchor="middle">h₋₁</text>
+            <text x="25" y="143" fill="#64748b" font-size="7.5" text-anchor="middle">zeros</text>
+            <line x1="50" y1="130" x2="60" y2="130" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrow-fwd)"/>
+
+            <!-- FORWARD hidden-state arrows (h→h) -->
+            <!-- Solid forward arrows: h0→h1, h1→h2, h2→h3 -->
+            <path d="M 140 130 L 240 130" stroke="#38bdf8" stroke-width="2" stroke-dasharray="6,3"
+                  fill="none" marker-end="url(#arrow-fwd)">
+              <animate attributeName="stroke-dashoffset" from="18" to="0" dur="1.5s" repeatCount="indefinite"/>
+            </path>
+            <path d="M 320 130 L 420 130" stroke="#38bdf8" stroke-width="2" stroke-dasharray="6,3"
+                  fill="none" marker-end="url(#arrow-fwd)">
+              <animate attributeName="stroke-dashoffset" from="18" to="0" dur="1.5s" repeatCount="indefinite" begin="0.3s"/>
+            </path>
+            <path d="M 500 130 L 600 130" stroke="#38bdf8" stroke-width="2" stroke-dasharray="6,3"
+                  fill="none" marker-end="url(#arrow-fwd)">
+              <animate attributeName="stroke-dashoffset" from="18" to="0" dur="1.5s" repeatCount="indefinite" begin="0.6s"/>
+            </path>
+            <path d="M 680 130 L 800 130" stroke="#38bdf8" stroke-width="2" stroke-dasharray="6,3"
+                  fill="none" marker-end="url(#arrow-fwd)">
+              <animate attributeName="stroke-dashoffset" from="18" to="0" dur="1.5s" repeatCount="indefinite" begin="0.9s"/>
+            </path>
+
+            <!-- BPTT gradient arrows (red, going backward) -->
+            <path d="M 600 145 L 500 145" stroke="#fb718580" stroke-width="1.5" stroke-dasharray="4,3"
+                  fill="none" marker-end="url(#arrow-bwd)">
+              <animate attributeName="stroke-dashoffset" from="0" to="14" dur="1.2s" repeatCount="indefinite"/>
+            </path>
+            <path d="M 420 145 L 320 145" stroke="#fb718580" stroke-width="1.5" stroke-dasharray="4,3"
+                  fill="none" marker-end="url(#arrow-bwd)">
+              <animate attributeName="stroke-dashoffset" from="0" to="14" dur="1.2s" repeatCount="indefinite" begin="0.2s"/>
+            </path>
+            <path d="M 240 145 L 140 145" stroke="#fb718580" stroke-width="1.5" stroke-dasharray="4,3"
+                  fill="none" marker-end="url(#arrow-bwd)">
+              <animate attributeName="stroke-dashoffset" from="0" to="14" dur="1.2s" repeatCount="indefinite" begin="0.4s"/>
+            </path>
+
+            <!-- Weight labels -->
+            <text x="190" y="122" fill="#38bdf870" font-size="9" text-anchor="middle">W_hh</text>
+            <text x="370" y="122" fill="#38bdf870" font-size="9" text-anchor="middle">W_hh</text>
+            <text x="550" y="122" fill="#38bdf870" font-size="9" text-anchor="middle">W_hh</text>
+            <text x="93" y="180" fill="#fbbf2470" font-size="8" text-anchor="middle">W_xh</text>
+            <text x="273" y="180" fill="#fbbf2470" font-size="8" text-anchor="middle">W_xh</text>
+            <text x="453" y="180" fill="#fbbf2470" font-size="8" text-anchor="middle">W_xh</text>
+            <text x="107" y="90" fill="#34d39970" font-size="8" text-anchor="middle">W_hy</text>
+            <text x="287" y="90" fill="#34d39970" font-size="8" text-anchor="middle">W_hy</text>
+            <text x="467" y="90" fill="#34d39970" font-size="8" text-anchor="middle">W_hy</text>
+
+            <!-- Legend -->
+            <g transform="translate(10, 255)">
+              <line x1="0" y1="8" x2="20" y2="8" stroke="#38bdf8" stroke-width="2" stroke-dasharray="6,3"/>
+              <text x="25" y="12" fill="#64748b" font-size="9">Forward pass (h flows →)</text>
+              <line x1="170" y1="8" x2="190" y2="8" stroke="#fb7185" stroke-width="1.5" stroke-dasharray="4,3"/>
+              <text x="195" y="12" fill="#64748b" font-size="9">BPTT gradient (∂L flows ←)</text>
+              <rect x="380" y="2" width="14" height="12" rx="2" fill="#0d1528" stroke="#38bdf8" stroke-width="1.5"/>
+              <text x="400" y="12" fill="#64748b" font-size="9">Hidden state h</text>
+              <rect x="480" y="2" width="14" height="12" rx="2" fill="#1a1400" stroke="#fbbf24" stroke-width="1.5"/>
+              <text x="500" y="12" fill="#64748b" font-size="9">Input x</text>
+              <rect x="560" y="2" width="14" height="12" rx="2" fill="#071a12" stroke="#34d399" stroke-width="1.5"/>
+              <text x="580" y="12" fill="#64748b" font-size="9">Output ŷ</text>
+            </g>
+          </svg>
+        </div>
+
+        <div class="mt-5 callout callout-insight">
+          <strong class="text-sky">Key Observation:</strong> The <span class="inline-code">W_hh</span> label appears on every horizontal arrow —
+          the same matrix. This is weight sharing in action. Code-wise, there is a single <span class="inline-code">Whh</span> numpy array
+          that gets <em>reused</em> in every iteration of the for-loop.
+        </div>
+      </div>
+
+      <!-- Weight Matrices Explained -->
+      <div class="card card-glow">
+        <h3 class="text-lg font-semibold mb-4 text-heading">How Weight Matrices Map to "Layers"</h3>
+        <p class="text-body text-sm mb-5">
+          Instead of thinking "Layer 1, Layer 2, Layer 3", think about the three <em>transitions</em> that happen at each time step:
+        </p>
+        <div class="grid md:grid-cols-3 gap-4">
+          <div class="rounded-xl p-4" style="background:#080f1e; border:1px solid #1e3a5f;">
+            <div class="text-xs font-montserrat font-bold text-sky mb-2 tracking-widest">TRANSITION 1</div>
+            <div class="font-mono text-lg font-bold text-sky mb-1">W<sub>xh</sub></div>
+            <div class="text-xs text-muted mb-2">Shape: (hidden_size × vocab_size)</div>
+            <p class="text-body text-xs">Maps the one-hot input vector into hidden space. Think of this as the "input encoder". It is the DNN equivalent of the first layer weights.</p>
+          </div>
+          <div class="rounded-xl p-4" style="background:#080f1e; border:1px solid #3a1e5f;">
+            <div class="text-xs font-montserrat font-bold text-rose mb-2 tracking-widest">TRANSITION 2 — THE KEY</div>
+            <div class="font-mono text-lg font-bold text-rose mb-1">W<sub>hh</sub></div>
+            <div class="text-xs text-muted mb-2">Shape: (hidden_size × hidden_size)</div>
+            <p class="text-body text-xs">The recurrent weight. Maps the previous hidden state into the current one. This is the feedback loop. It has NO DNN equivalent — it is what makes this "recurrent".</p>
+          </div>
+          <div class="rounded-xl p-4" style="background:#080f1e; border:1px solid #1e5f3a;">
+            <div class="text-xs font-montserrat font-bold text-emerald mb-2 tracking-widest">TRANSITION 3</div>
+            <div class="font-mono text-lg font-bold text-emerald mb-1">W<sub>hy</sub></div>
+            <div class="text-xs text-muted mb-2">Shape: (vocab_size × hidden_size)</div>
+            <p class="text-body text-xs">Maps the hidden state to an output prediction. Think of this as the "output decoder" or classifier head. Equivalent to the final DNN layer.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="section-divider"></div>
+
+    <!-- ════════════════════════════════════
+         PART 3: IMPLEMENTATION
+    ════════════════════════════════════ -->
+    <section id="part3">
+      <span class="section-label">Part 3</span>
+      <h2 class="text-3xl font-bold mt-2 mb-2">Step-by-Step Implementation</h2>
+      <p class="text-muted text-sm mb-8">
+        We implement a <strong class="text-heading">character-level language model</strong> using a vanilla RNN in NumPy.
+        This is the clearest canonical example for understanding RNN mechanics.
+        Given a string like <span class="inline-code">"hello"</span>, the model learns to predict the next character at each position.
+      </p>
+
+      <div class="callout callout-insight mb-8">
+        <strong class="text-sky">Why character-level?</strong> Vocabulary is tiny (26 letters + punctuation), sequences are natural,
+        and the task is concrete: input <span class="inline-code">'h'</span> → predict <span class="inline-code">'e'</span>, etc.
+        Everything transfers to word-level, time-series, or any other sequential domain.
+      </div>
+
+      <!-- STEP 1 -->
+      <div id="step1" class="step-connector mb-12">
+        <div class="flex items-center gap-4 mb-5">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm z-10"
+               style="background:#0c2233; border:2px solid #38bdf8; color:#38bdf8; animation:pulse-ring 2s infinite;">1</div>
+          <div>
+            <h3 class="text-xl font-semibold text-heading">Data Preparation</h3>
+            <p class="text-muted text-xs">Building the vocabulary and encoding scheme</p>
+          </div>
+        </div>
+
+        <div class="card card-glow mb-4">
+          <ul class="custom-list text-body text-sm space-y-2 mb-5">
+            <li>We collect all unique characters in the training text to build a <strong class="text-heading">vocabulary</strong>. This is the set of all possible symbols our model can see or produce.</li>
+            <li><strong class="text-sky">One-hot encoding</strong> converts a character index (an integer) into a binary vector of size <span class="inline-code">vocab_size</span>. Only the position corresponding to the character is 1; everything else is 0.</li>
+            <li>We need this because weight matrices perform linear algebra — they need vectors, not integers.</li>
+            <li>Shape of <span class="inline-code">x_t</span>: <span class="inline-code">(vocab_size, 1)</span> — a column vector. This 2D shape (not a 1D array) is intentional so matrix multiplication works cleanly.</li>
+            <li><strong class="text-violet">char_to_ix</strong> and <strong class="text-violet">ix_to_char</strong> are lookup tables for converting between characters and indices — used during encoding (input) and decoding (output/prediction).</li>
+          </ul>
+          <pre><code class="language-python">import numpy as np
+
+# ─────────────────────────────────────────────────────────────────────
+# STEP 1: Data Preparation
+# ─────────────────────────────────────────────────────────────────────
+
+# Training text — in practice this would be a large corpus
+data = "hello world. recurrent neural networks are powerful."
+
+# Build vocabulary: set of all unique characters
+chars = sorted(list(set(data)))   # e.g., [' ', '.', 'a', 'c', 'd', ...]
+vocab_size = len(chars)           # number of unique symbols
+
+# Lookup tables — the bridge between characters and numbers
+char_to_ix = { ch: i for i, ch in enumerate(chars) }
+ix_to_char = { i: ch for i, ch in enumerate(chars) }
+
+print(f"Vocab size: {vocab_size}")
+print(f"Sample mapping: 'h' -> {char_to_ix['h']}, index {char_to_ix['h']} -> '{ix_to_char[char_to_ix['h']]}'")
+
+# One-hot encoder: converts an index to a (vocab_size, 1) column vector
+# Why (vocab_size, 1) and not (vocab_size,)?
+# → So matrix mult: Wxh @ x_t works as (hidden_size × vocab_size) @ (vocab_size × 1) = (hidden_size × 1)
+def one_hot(index, size):
+    vec = np.zeros((size, 1))   # all zeros
+    vec[index] = 1.0             # flip exactly one position to 1
+    return vec
+
+# Example: character 'h' at index 3 in a vocab of 10
+# one_hot(3, 10) → [0, 0, 0, 1, 0, 0, 0, 0, 0, 0]ᵀ</code></pre>
+        </div>
+
+        <div class="callout callout-key text-sm">
+          <strong class="text-violet">Why column vectors?</strong> In NumPy, <span class="inline-code">np.zeros((n, 1))</span> creates a 2D column vector.
+          When you do <span class="inline-code">W @ x</span> where W is (m×n) and x is (n×1), you get (m×1). If x were 1D (n,),
+          NumPy would still work but gradients accumulate incorrectly during BPTT. Always use explicit 2D column vectors.
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div id="step2" class="step-connector mb-12">
+        <div class="flex items-center gap-4 mb-5">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm z-10"
+               style="background:#1a1030; border:2px solid #a78bfa; color:#a78bfa;">2</div>
+          <div>
+            <h3 class="text-xl font-semibold text-heading">Weight Initialization</h3>
+            <p class="text-muted text-xs">Setting up the three weight matrices and biases</p>
+          </div>
+        </div>
+
+        <div class="card card-glow mb-4">
+          <ul class="custom-list text-body text-sm space-y-2 mb-5">
+            <li>We initialize three weight matrices: <strong class="text-sky">W_xh</strong> (input→hidden), <strong class="text-rose">W_hh</strong> (hidden→hidden), <strong class="text-emerald">W_hy</strong> (hidden→output).</li>
+            <li>We initialize with <strong class="text-heading">small random values</strong> (scaled by 0.01). Large initial values cause tanh to saturate (output ≈ ±1) immediately, killing gradients before training even begins.</li>
+            <li><strong class="text-sky">Biases</strong> are initialized to zero — no symmetry-breaking needed for biases.</li>
+            <li><span class="inline-code">hidden_size</span> is a hyperparameter controlling the model's capacity — how much information the hidden state can store. Larger = more expressive but slower and more prone to overfitting.</li>
+            <li><span class="inline-code">seq_length</span> determines how many time steps we unroll per training update — a tradeoff between long-range dependencies and gradient stability.</li>
+          </ul>
+          <pre><code class="language-python"># ─────────────────────────────────────────────────────────────────────
+# STEP 2: Hyperparameters & Weight Initialization
+# ─────────────────────────────────────────────────────────────────────
+
+hidden_size   = 64     # Dimensionality of the hidden state vector
+seq_length    = 25     # How many time steps to unroll per training step
+learning_rate = 1e-1   # Step size for gradient descent (SGD)
+
+# ── WEIGHT MATRICES ──────────────────────────────────────────────────
+#
+# Wxh: Input → Hidden
+#   Shape: (hidden_size, vocab_size)
+#   At each step: Wxh @ x_t encodes the current character into hidden space
+Wxh = np.random.randn(hidden_size, vocab_size) * 0.01
+
+# Whh: Hidden → Hidden  ← THE RECURRENT MATRIX
+#   Shape: (hidden_size, hidden_size)
+#   At each step: Whh @ h_prev carries memory forward in time
+#   This is what makes the network "recurrent" — it references itself
+Whh = np.random.randn(hidden_size, hidden_size) * 0.01
+
+# Why: Hidden → Output
+#   Shape: (vocab_size, hidden_size)
+#   At each step: Why @ h_t decodes hidden state to character logits
+Why = np.random.randn(vocab_size, hidden_size) * 0.01
+
+# ── BIAS VECTORS ─────────────────────────────────────────────────────
+bh = np.zeros((hidden_size, 1))   # Hidden bias — same shape as h_t
+by = np.zeros((vocab_size, 1))    # Output bias — same shape as y_t
+
+print(f"Wxh shape: {Wxh.shape}")   # (64, vocab_size) — input encoder
+print(f"Whh shape: {Whh.shape}")   # (64, 64)         — memory matrix
+print(f"Why shape: {Why.shape}")   # (vocab_size, 64) — output decoder</code></pre>
+        </div>
+
+        <!-- Weight shape visualization -->
+        <div class="card card-glow">
+          <h4 class="text-sm font-semibold text-heading mb-4">Weight Matrix Dimensions — Visual</h4>
+          <div class="overflow-x-auto">
+            <svg viewBox="0 0 700 130" xmlns="http://www.w3.org/2000/svg" style="min-width:500px; max-width:100%; font-family:'JetBrains Mono', monospace;">
+              <!-- Wxh -->
+              <text x="90" y="18" fill="#38bdf8" font-size="12" text-anchor="middle" font-weight="bold">W_xh</text>
+              <rect x="10" y="25" width="50" height="80" rx="4" fill="#0c2233" stroke="#38bdf8" stroke-width="1.5"/>
+              <text x="35" y="55" fill="#38bdf8" font-size="9" text-anchor="middle">hidden</text>
+              <text x="35" y="68" fill="#38bdf8" font-size="9" text-anchor="middle">_size</text>
+              <text x="35" y="90" fill="#64748b" font-size="8" text-anchor="middle">rows</text>
+              <text x="90" y="68" fill="#64748b" font-size="9" text-anchor="middle">×</text>
+              <rect x="100" y="45" width="80" height="30" rx="4" fill="#0c2233" stroke="#38bdf8" stroke-width="1.5"/>
+              <text x="140" y="63" fill="#38bdf8" font-size="9" text-anchor="middle">vocab_size (cols)</text>
+
+              <!-- Whh -->
+              <text x="320" y="18" fill="#fb7185" font-size="12" text-anchor="middle" font-weight="bold">W_hh</text>
+              <rect x="240" y="25" width="50" height="80" rx="4" fill="#200a10" stroke="#fb7185" stroke-width="1.5"/>
+              <text x="265" y="55" fill="#fb7185" font-size="9" text-anchor="middle">hidden</text>
+              <text x="265" y="68" fill="#fb7185" font-size="9" text-anchor="middle">_size</text>
+              <text x="265" y="90" fill="#64748b" font-size="8" text-anchor="middle">rows</text>
+              <text x="315" y="68" fill="#64748b" font-size="9" text-anchor="middle">×</text>
+              <rect x="325" y="30" width="50" height="70" rx="4" fill="#200a10" stroke="#fb7185" stroke-width="1.5"/>
+              <text x="350" y="60" fill="#fb7185" font-size="9" text-anchor="middle">hidden</text>
+              <text x="350" y="73" fill="#fb7185" font-size="9" text-anchor="middle">_size</text>
+              <text x="350" y="92" fill="#64748b" font-size="8" text-anchor="middle">cols</text>
+              <text x="395" y="65" fill="#64748b" font-size="10" text-anchor="middle">← square!</text>
+
+              <!-- Why -->
+              <text x="560" y="18" fill="#34d399" font-size="12" text-anchor="middle" font-weight="bold">W_hy</text>
+              <rect x="480" y="35" width="80" height="30" rx="4" fill="#071a12" stroke="#34d399" stroke-width="1.5"/>
+              <text x="520" y="53" fill="#34d399" font-size="9" text-anchor="middle">vocab_size (rows)</text>
+              <text x="575" y="53" fill="#64748b" font-size="9" text-anchor="middle">×</text>
+              <rect x="585" y="25" width="50" height="80" rx="4" fill="#071a12" stroke="#34d399" stroke-width="1.5"/>
+              <text x="610" y="55" fill="#34d399" font-size="9" text-anchor="middle">hidden</text>
+              <text x="610" y="68" fill="#34d399" font-size="9" text-anchor="middle">_size</text>
+              <text x="610" y="90" fill="#64748b" font-size="8" text-anchor="middle">cols</text>
+
+              <!-- Dimensions reminder at bottom -->
+              <text x="90" y="118" fill="#64748b" font-size="9" text-anchor="middle">(hidden × vocab)</text>
+              <text x="320" y="118" fill="#64748b" font-size="9" text-anchor="middle">(hidden × hidden)</text>
+              <text x="545" y="118" fill="#64748b" font-size="9" text-anchor="middle">(vocab × hidden)</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div id="step3" class="step-connector mb-12">
+        <div class="flex items-center gap-4 mb-5">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm z-10"
+               style="background:#071a12; border:2px solid #34d399; color:#34d399;">3</div>
+          <div>
+            <h3 class="text-xl font-semibold text-heading">Forward Pass — The Unrolling Loop</h3>
+            <p class="text-muted text-xs">This is where "rollover" happens — a for-loop replaces "layers"</p>
+          </div>
+        </div>
+
+        <div class="callout callout-key mb-4 text-sm">
+          <strong class="text-violet">The Core Insight:</strong> The RNN "architecture" is not a deep stack of different weight matrices.
+          It is a <strong>for-loop over time steps</strong>. Each iteration of the loop is one "layer" of the unrolled graph.
+          The loop body executes the same two equations every iteration. This is the entire "rollover concept" implemented in code.
+        </div>
+
+        <div class="card card-glow mb-4">
+          <ul class="custom-list text-body text-sm space-y-2 mb-5">
+            <li>We store all intermediate values (<span class="inline-code">xs, hs, ys, ps</span>) as Python dictionaries keyed by time step <span class="inline-code">t</span>. This is <strong class="text-heading">crucial for BPTT</strong> — we need to access h₀, h₁, …, hₜ when computing gradients in the backward pass.</li>
+            <li><span class="inline-code">hs[-1]</span> stores the initial hidden state h₋₁ (all zeros at the very start, or the last hidden state from the previous sequence chunk). This is <strong class="text-sky">the key state that carries memory between training chunks</strong>.</li>
+            <li>Inside the loop: <span class="inline-code">hs[t] = np.tanh(Wxh @ xs[t] + Whh @ hs[t-1] + bh)</span> — This single line IS the RNN. It reads the current input, reads the previous hidden state, combines them, and produces the new hidden state.</li>
+            <li><span class="inline-code">Whh @ hs[t-1]</span> is the recurrent connection. <span class="inline-code">hs[t-1]</span> is the hidden state from the <em>previous loop iteration</em> — hence the "rollover".</li>
+            <li>Softmax converts raw output logits into probabilities — each element becomes ∈ (0,1) and they sum to 1.</li>
+          </ul>
+          <pre><code class="language-python"># ─────────────────────────────────────────────────────────────────────
+# STEP 3: Forward Pass — "Unrolling" the RNN
+# ─────────────────────────────────────────────────────────────────────
+# inputs:  list of character indices, length T (e.g., [3, 8, 5, 5, 14, ...])
+# targets: list of character indices shifted by 1 (the "next char" labels)
+# hprev:   the hidden state from the END of the previous training chunk
+#          (connects chunks together → long-term memory across chunks)
+
+def forward_pass(inputs, targets, hprev):
+    # Storage dictionaries — indexed by time step t
+    # We MUST save these for backprop later
+    xs = {}   # one-hot input vectors       xs[t].shape = (vocab_size, 1)
+    hs = {}   # hidden states               hs[t].shape = (hidden_size, 1)
+    ys = {}   # raw output logits           ys[t].shape = (vocab_size, 1)
+    ps = {}   # softmax probabilities       ps[t].shape = (vocab_size, 1)
+
+    # h[-1] = initial hidden state (previous chunk's final state)
+    # Key: dict allows negative indexing, so hs[t-1] at t=0 gives hs[-1]
+    hs[-1] = np.copy(hprev)
+
+    loss = 0.0
+
+    # ── THE UNROLLING LOOP ─────────────────────────────────
+    # This for-loop IS the unrolled RNN.
+    # Each iteration = one time step = one "virtual layer"
+    for t in range(len(inputs)):
+
+        # Encode current character as one-hot column vector
+        xs[t] = one_hot(inputs[t], vocab_size)   # shape: (vocab_size, 1)
+
+        # ── CORE RNN EQUATION ─────────────────────────────────────────
+        # h_t = tanh( Wxh · x_t  +  Whh · h_{t-1}  +  bh )
+        #        ↑           ↑           ↑
+        #    activation  input term  RECURRENT TERM (rollover!)
+        #
+        # hs[t-1] is ALWAYS available because:
+        #   - at t=0, hs[-1] = hprev (set above)
+        #   - at t=1, hs[0] was just computed in iteration t=0
+        #   - at t=2, hs[1] was just computed in iteration t=1
+        #   This is the "rollover" — each step feeds into the next
+        hs[t] = np.tanh(
+            Wxh @ xs[t] +    # (hidden_size × vocab_size) @ (vocab_size × 1) = (hidden_size × 1)
+            Whh @ hs[t-1] +  # (hidden_size × hidden_size) @ (hidden_size × 1) = (hidden_size × 1)
+            bh               # (hidden_size × 1)
+        )  # result shape: (hidden_size, 1), values ∈ (-1, +1)
+
+        # Output: decode hidden state to logit scores over vocabulary
+        ys[t] = Why @ hs[t] + by   # (vocab_size × hidden_size) @ (hidden_size × 1) = (vocab_size × 1)
+
+        # Softmax: convert logits to probability distribution
+        # Subtract max for numerical stability (prevents overflow in exp)
+        exp_y = np.exp(ys[t] - np.max(ys[t]))
+        ps[t] = exp_y / np.sum(exp_y)              # shape: (vocab_size, 1), sums to 1
+
+        # Cross-entropy loss: -log(probability assigned to correct character)
+        # ps[t][targets[t], 0] → probability of the correct next character
+        loss += -np.log(ps[t][targets[t], 0])
+
+    # Return loss, and all cached intermediate values (needed for backprop)
+    return loss, xs, hs, ys, ps</code></pre>
+        </div>
+
+        <div class="callout callout-success text-sm">
+          <strong class="text-emerald">Why store everything?</strong> During backprop, to compute the gradient of a tanh, we need
+          <span class="inline-code">h_t</span>. To compute <span class="inline-code">dWhh</span>, we need both
+          <span class="inline-code">h_{t-1}</span> and <span class="inline-code">dhraw_t</span>. All of these are from the forward pass.
+          Without storing them, we'd have to re-run the forward pass during backward — wasteful and error-prone.
+        </div>
+      </div>
+
+      <!-- STEP 4 -->
+      <div id="step4" class="step-connector mb-12">
+        <div class="flex items-center gap-4 mb-5">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm z-10"
+               style="background:#1a1400; border:2px solid #fbbf24; color:#fbbf24;">4</div>
+          <div>
+            <h3 class="text-xl font-semibold text-heading">Loss Function</h3>
+            <p class="text-muted text-xs">Cross-entropy across all time steps</p>
+          </div>
+        </div>
+
+        <div class="card card-glow mb-4">
+          <ul class="custom-list text-body text-sm space-y-2 mb-5">
+            <li>The loss is computed <strong class="text-heading">inside the forward pass</strong> by accumulating at each time step — this is already handled in Step 3 via <span class="inline-code">loss += -np.log(ps[t][targets[t], 0])</span>.</li>
+            <li>Total loss = sum of per-step cross-entropy losses. It measures: "how surprised was the model at each character?"</li>
+            <li><strong class="text-amber">Perplexity</strong> = exp(loss / T) — a common metric. Lower is better. Perplexity of K means the model is "as confused as choosing uniformly from K options".</li>
+            <li>The gradient of softmax + cross-entropy combined is elegantly simple: <span class="inline-code">dy_t = p_t - one_hot(target_t)</span>. The probability of the correct class just needs to be 1.0; subtracting 1 from it gives the gradient.</li>
+          </ul>
+          <pre><code class="language-python"># ─────────────────────────────────────────────────────────────────────
+# STEP 4: Loss (computed inside forward_pass, shown separately for clarity)
+# ─────────────────────────────────────────────────────────────────────
+
+# After forward_pass returns, you have:
+#   loss   = total cross-entropy across all T time steps
+#   ps     = dict of probability vectors at each time step
+
+# Perplexity (for monitoring training progress)
+T = seq_length
+perplexity = np.exp(loss / T)
+# Interpretation: exp(loss/T) = e^(average bits per character)
+# Perfect prediction → perplexity = 1.0
+# Random (uniform vocab) → perplexity = vocab_size
+
+# ── Gradient of combined Softmax + Cross-Entropy ─────────────────────
+# For each time step t, the gradient of L w.r.t. y_t (pre-softmax logits) is:
+#   dy_t = p_t - one_hot(target_t)
+#
+# Example: vocab_size=5, target is index 2, p_t = [0.1, 0.2, 0.4, 0.1, 0.2]
+# dy_t = [0.1, 0.2, 0.4-1, 0.1, 0.2] = [0.1, 0.2, -0.6, 0.1, 0.2]
+# The model needs to INCREASE probability at index 2 and decrease others.
+#
+# This will be used in STEP 5 (backward pass).
+# dy[targets[t]] -= 1   ← the one-liner for this gradient</code></pre>
+        </div>
+      </div>
+
+      <!-- STEP 5 -->
+      <div id="step5" class="step-connector mb-12">
+        <div class="flex items-center gap-4 mb-5">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm z-10"
+               style="background:#200a10; border:2px solid #fb7185; color:#fb7185;">5</div>
+          <div>
+            <h3 class="text-xl font-semibold text-heading">Backward Pass — BPTT</h3>
+            <p class="text-muted text-xs">The gradient flows backward through time — through the same loop</p>
+          </div>
+        </div>
+
+        <div class="callout callout-warn mb-4 text-sm">
+          <strong class="text-amber">The BPTT Mental Model:</strong> The forward pass unrolled the RNN left-to-right (t=0 to t=T).
+          BPTT runs right-to-left (t=T to t=0), accumulating gradients for the <em>shared</em> weight matrices at each step.
+          The gradient <span class="inline-code">dhnext</span> carries error signals backward in time, just as
+          <span class="inline-code">hs[t-1]</span> carried the hidden state forward.
+        </div>
+
+        <div class="card card-glow mb-4">
+          <ul class="custom-list text-body text-sm space-y-2 mb-5">
+            <li>We initialize gradient buffers to <strong class="text-heading">zero</strong> — same shapes as their corresponding weight matrices. These will be <em>accumulated</em> over all time steps.</li>
+            <li><span class="inline-code">dhnext</span> starts as zero — at the last time step, no gradient comes from "the future" (there is no t+1). As we go backward, this accumulates the error signal passed from t+1 to t.</li>
+            <li><span class="inline-code">dy = ps[t].copy(); dy[targets[t]] -= 1</span> — the gradient of softmax + cross-entropy in one line. Error is distributed across all output classes.</li>
+            <li><span class="inline-code">dWhy += dy @ hs[t].T</span> — outer product of output gradient and hidden state. This is how Why "learns" to decode the hidden state. Shape: (vocab_size, 1) @ (1, hidden_size) = (vocab_size, hidden_size) ✓</li>
+            <li><span class="inline-code">dh = Why.T @ dy + dhnext</span> — gradient arriving at h_t has two sources: (1) the output prediction error at this step, and (2) the gradient flowing backward from the next time step. This is BPTT.</li>
+            <li><span class="inline-code">dhraw = (1 - hs[t]**2) * dh</span> — the derivative of tanh is (1 - tanh²). We apply this before propagating further back through Wxh and Whh.</li>
+            <li><span class="inline-code">dWhh += dhraw @ hs[t-1].T</span> — gradient for the recurrent matrix. Uses h_{t-1} which is always in our <span class="inline-code">hs</span> dict from the forward pass.</li>
+            <li><span class="inline-code">dhnext = Whh.T @ dhraw</span> — pass the gradient to the previous time step. This is the "chain rule through time".</li>
+          </ul>
+          <pre><code class="language-python"># ─────────────────────────────────────────────────────────────────────
+# STEP 5: Backward Pass — Backpropagation Through Time (BPTT)
+# ─────────────────────────────────────────────────────────────────────
+
+def backward_pass(inputs, targets, xs, hs, ps):
+    # Initialize gradient buffers — same shape as weight matrices
+    # These will ACCUMULATE over all T time steps
+    dWxh = np.zeros_like(Wxh)   # (hidden_size, vocab_size)
+    dWhh = np.zeros_like(Whh)   # (hidden_size, hidden_size)
+    dWhy = np.zeros_like(Why)   # (vocab_size, hidden_size)
+    dbh  = np.zeros_like(bh)    # (hidden_size, 1)
+    dby  = np.zeros_like(by)    # (vocab_size, 1)
+
+    # Gradient carried BACKWARD through time steps
+    # Starts as zero because at t=T, there is no future gradient
+    dhnext = np.zeros_like(hs[0])   # (hidden_size, 1)
+
+    # ── REVERSED LOOP — BPTT ──────────────────────────────────────────
+    # We go backward: t = T-1, T-2, ..., 1, 0
+    # (mirror image of the forward pass loop)
+    for t in reversed(range(len(inputs))):
+
+        # ── 1. Output gradient ──────────────────────────────────────
+        # Gradient of loss w.r.t. y_t (pre-softmax logits)
+        # For softmax + cross-entropy: ∂L/∂y_t = p_t - one_hot(target_t)
+        dy = np.copy(ps[t])          # copy probability vector
+        dy[targets[t]] -= 1          # subtract 1 at the correct class position
+
+        # ── 2. Gradient for Why and by ──────────────────────────────
+        # ∂L/∂Why = dy_t · h_t^T  (outer product — accumulated sum over all t)
+        dWhy += dy @ hs[t].T         # (vocab_size,1) @ (1,hidden_size) = (vocab_size, hidden_size) ✓
+        dby  += dy                   # (vocab_size, 1) ✓
+
+        # ── 3. Gradient flowing INTO h_t ────────────────────────────
+        # Two contributions:
+        #   a) From the output at this time step: Why.T @ dy
+        #   b) From the NEXT time step's hidden state: dhnext
+        # (at t=T-1, dhnext=0; at earlier t, dhnext carries future error)
+        dh = Why.T @ dy + dhnext     # (hidden_size,hidden_size)@(hidden_size,1) + (hidden_size,1)
+
+        # ── 4. Through the tanh activation ──────────────────────────
+        # tanh'(x) = 1 - tanh(x)² = 1 - h_t²
+        # We have h_t stored in hs[t], so we use it directly
+        dhraw = (1 - hs[t] ** 2) * dh   # element-wise: (hidden_size, 1)
+
+        # ── 5. Gradient for Wxh, Whh, bh ────────────────────────────
+        dbh  += dhraw                    # bias gradient
+        dWxh += dhraw @ xs[t].T         # (hidden_size,1) @ (1,vocab_size) = (hidden_size, vocab_size) ✓
+        dWhh += dhraw @ hs[t-1].T       # (hidden_size,1) @ (1,hidden_size) = (hidden_size, hidden_size) ✓
+        #                   ↑
+        # hs[t-1] for t=0 is hs[-1] = hprev (set during forward pass!)
+
+        # ── 6. Pass gradient BACKWARD to previous time step ─────────
+        # This is the recurrent backprop — mirrors the recurrent forward pass
+        dhnext = Whh.T @ dhraw           # (hidden_size,hidden_size).T @ (hidden_size,1) = (hidden_size,1)
+
+    return dWxh, dWhh, dWhy, dbh, dby</code></pre>
+        </div>
+
+        <!-- BPTT gradient flow diagram -->
+        <div class="card card-glow">
+          <h4 class="text-sm font-semibold text-heading mb-4">BPTT Gradient Flow — Data Dependency at Each Step</h4>
+          <div class="overflow-x-auto">
+            <div class="mermaid" style="background:transparent; min-width:500px;">
+flowchart RL
+    classDef grad fill:#200a10,stroke:#fb7185,color:#fb7185
+    classDef weight fill:#0d1528,stroke:#a78bfa,color:#a78bfa
+    classDef hidden fill:#0a1829,stroke:#38bdf8,color:#38bdf8
+
+    dy3["∂L/∂y₃"]:::grad --> dWhy["+=dWhy\n+=dby"]:::weight
+    dy3 --> dh3["∂L/∂h₃\n= Wʰʸᵀ·dy₃\n+ dhnext(=0)"]:::hidden
+    dh3 --> dhraw3["dhraw₃\n= (1-h₃²)·dh₃"]:::grad
+    dhraw3 --> dWxh["+=dWxh\n+=dWhh\n+=dbh"]:::weight
+    dhraw3 --> dhnext3["dhnext\n= Wʰʰᵀ·dhraw₃"]:::hidden
+
+    dhnext3 --> dh2["∂L/∂h₂\n= Wʰʸᵀ·dy₂\n+ dhnext"]:::hidden
+    dh2 --> dhraw2["dhraw₂\n= (1-h₂²)·dh₂"]:::grad
+    dhraw2 --> dWxh
+    dhraw2 --> dhnext2["dhnext\n= Wʰʰᵀ·dhraw₂"]:::hidden
+
+    dhnext2 --> dh1["∂L/∂h₁\n= Wʰʸᵀ·dy₁\n+ dhnext"]:::hidden
+    dh1 --> dhraw1["dhraw₁\n= (1-h₁²)·dh₁"]:::grad
+    dhraw1 --> dWxh
+    dhraw1 --> dhnext1["dhnext→h₀"]:::hidden
+            </div>
+          </div>
+          <p class="text-muted text-xs mt-3">Note: <span class="inline-code">dWxh</span>, <span class="inline-code">dWhh</span>, <span class="inline-code">dby</span>, <span class="inline-code">dbh</span> are <em>accumulated</em> (+=) across all time steps — they don't reset per step. This is because they are shared weights.</p>
+        </div>
+      </div>
+
+      <!-- STEP 6 -->
+      <div id="step6" class="step-connector mb-12">
+        <div class="flex items-center gap-4 mb-5">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm z-10"
+               style="background:#1a1400; border:2px solid #fbbf24; color:#fbbf24;">6</div>
+          <div>
+            <h3 class="text-xl font-semibold text-heading">Gradient Clipping</h3>
+            <p class="text-muted text-xs">Preventing the exploding gradient problem</p>
+          </div>
+        </div>
+
+        <div class="card card-glow mb-4">
+          <ul class="custom-list text-body text-sm space-y-2 mb-5">
+            <li>Exploding gradients occur when gradients grow exponentially large through long sequences. A single massive update can destroy all learned weights.</li>
+            <li><strong class="text-amber">Gradient clipping</strong> caps each gradient element to a maximum absolute value (typically 5). Simple and effective — it keeps updates bounded without otherwise changing training dynamics.</li>
+            <li>This is <strong class="text-heading">not</strong> the same as weight decay or L2 regularization — it operates on gradients, not weights, and is applied <em>before</em> the weight update.</li>
+          </ul>
+          <pre><code class="language-python"># ─────────────────────────────────────────────────────────────────────
+# STEP 6: Gradient Clipping
+# ─────────────────────────────────────────────────────────────────────
+
+def clip_gradients(*grads, clip_value=5.0):
+    """Clip each gradient element to [-clip_value, +clip_value]"""
+    clipped = []
+    for grad in grads:
+        # np.clip(arr, min, max, out=arr) clips in-place
+        np.clip(grad, -clip_value, clip_value, out=grad)
+        clipped.append(grad)
+    return clipped
+
+# Usage after backward_pass:
+# dWxh, dWhh, dWhy, dbh, dby = clip_gradients(dWxh, dWhh, dWhy, dbh, dby)
+#
+# Why clip at ±5?
+# → Empirically found to be stable for most RNN setups.
+# → If gradients are typically small (< 1), clipping at 5 has no effect.
+# → If one batch produces gradients of 500, clipping to 5 prevents a destructive update.
+# → Gradient NORM clipping (scale to unit sphere) is more principled but this works.</code></pre>
+        </div>
+      </div>
+
+      <!-- STEP 7 -->
+      <div id="step7" class="step-connector mb-12">
+        <div class="flex items-center gap-4 mb-5">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm z-10"
+               style="background:#071a12; border:2px solid #34d399; color:#34d399;">7</div>
+          <div>
+            <h3 class="text-xl font-semibold text-heading">Weight Update (SGD + Adagrad)</h3>
+            <p class="text-muted text-xs">Applying the accumulated gradients to update shared weights</p>
+          </div>
+        </div>
+
+        <div class="card card-glow mb-4">
+          <ul class="custom-list text-body text-sm space-y-2 mb-5">
+            <li><strong class="text-heading">SGD</strong>: <span class="inline-code">W -= lr * dW</span>. Simple, interpretable. Works fine but is sensitive to learning rate.</li>
+            <li><strong class="text-sky">Adagrad</strong> adapts the learning rate per parameter — parameters that receive large gradients get smaller updates, and vice versa. Particularly useful for RNNs where some weights update far more frequently than others.</li>
+            <li>The <span class="inline-code">mem</span> (memory) matrix accumulates squared gradients. Dividing by <span class="inline-code">np.sqrt(mem + 1e-8)</span> normalizes the update. The <span class="inline-code">1e-8</span> prevents division by zero.</li>
+            <li>Weight matrices are updated <strong class="text-heading">once per training chunk</strong> (once per sequence of T steps), using the <em>sum</em> of gradients accumulated across all T steps in that chunk.</li>
+          </ul>
+          <pre><code class="language-python"># ─────────────────────────────────────────────────────────────────────
+# STEP 7: Weight Update
+# ─────────────────────────────────────────────────────────────────────
+
+# Option A: Vanilla SGD (simple, for understanding)
+def update_sgd(lr=1e-1):
+    global Wxh, Whh, Why, bh, by
+    Wxh -= lr * dWxh
+    Whh -= lr * dWhh
+    Why -= lr * dWhy
+    bh  -= lr * dbh
+    by  -= lr * dby
+
+# ─────────────────────────────────────────────────────────────────────
+# Option B: Adagrad (Adaptive Gradient — used in Karpathy's min-char-rnn)
+# Initialize memory (accumulated squared gradients) to zero once
+mWxh = np.zeros_like(Wxh)
+mWhh = np.zeros_like(Whh)
+mWhy = np.zeros_like(Why)
+mbh  = np.zeros_like(bh)
+mby  = np.zeros_like(by)
+
+def update_adagrad(dWxh, dWhh, dWhy, dbh, dby, lr=1e-1):
+    global Wxh, Whh, Why, bh, by
+    global mWxh, mWhh, mWhy, mbh, mby
+
+    # For each parameter: accumulate squared gradient, then scale update
+    for param, dparam, mem in [
+        (Wxh, dWxh, mWxh),
+        (Whh, dWhh, mWhh),
+        (Why, dWhy, mWhy),
+        (bh,  dbh,  mbh),
+        (by,  dby,  mby),
+    ]:
+        mem += dparam ** 2                          # accumulate squared gradient
+        param -= lr * dparam / np.sqrt(mem + 1e-8) # adaptive update (in-place)</code></pre>
+        </div>
+      </div>
+
+      <!-- STEP 8 -->
+      <div id="step8" class="step-connector mb-12">
+        <div class="flex items-center gap-4 mb-5">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm z-10"
+               style="background:#0c2233; border:2px solid #38bdf8; color:#38bdf8;">8</div>
+          <div>
+            <h3 class="text-xl font-semibold text-heading">Training Loop</h3>
+            <p class="text-muted text-xs">The outer loop that orchestrates all steps together</p>
+          </div>
+        </div>
+
+        <div class="card card-glow mb-4">
+          <ul class="custom-list text-body text-sm space-y-2 mb-5">
+            <li>We slide a window of size <span class="inline-code">seq_length</span> through the text, creating overlapping input-target pairs. At each position: inputs = chars[i:i+T], targets = chars[i+1:i+T+1].</li>
+            <li><strong class="text-sky">hprev</strong> is NOT reset between consecutive chunks in the same epoch — it carries the hidden state forward, giving the illusion of processing the full text with long-range memory even though we only backprop through T steps.</li>
+            <li>When we reach the end of the text and wrap around (epoch boundary), hprev IS reset to zeros — the beginning of a new document has no prior context.</li>
+            <li>The training loop calls: forward → backward → clip → update. One full cycle = one parameter update.</li>
+          </ul>
+          <pre><code class="language-python"># ─────────────────────────────────────────────────────────────────────
+# STEP 8: Training Loop
+# ─────────────────────────────────────────────────────────────────────
+
+def train(data, n_epochs=50, log_every=1000):
+    # Reset hidden state at the very beginning of training
+    hprev = np.zeros((hidden_size, 1))
+
+    smooth_loss = -np.log(1.0 / vocab_size) * seq_length  # initial loss estimate
+
+    for epoch in range(n_epochs):
+        p = 0  # position in text (sliding window pointer)
+
+        # Reset hidden state at start of each epoch
+        # (new epoch = new document context from scratch)
+        hprev = np.zeros((hidden_size, 1))
+
+        while p < len(data) - seq_length - 1:
+
+            # ── Prepare input/target sequences ───────────────────────
+            # inputs[t] = index of character at position p+t
+            # targets[t] = index of character at position p+t+1
+            # The target for character t is the NEXT character — that's the prediction task
+            inputs  = [char_to_ix[ch] for ch in data[p:p + seq_length]]
+            targets = [char_to_ix[ch] for ch in data[p + 1:p + seq_length + 1]]
+
+            # ── Forward pass ─────────────────────────────────────────
+            # hprev flows in from the previous chunk — preserving context
+            loss, xs, hs, ys, ps = forward_pass(inputs, targets, hprev)
+
+            # ── Backward pass (BPTT) ──────────────────────────────────
+            dWxh, dWhh, dWhy, dbh, dby = backward_pass(inputs, targets, xs, hs, ps)
+
+            # ── Gradient clipping ─────────────────────────────────────
+            for dparam in [dWxh, dWhh, dWhy, dbh, dby]:
+                np.clip(dparam, -5, 5, out=dparam)
+
+            # ── Weight update (Adagrad) ───────────────────────────────
+            update_adagrad(dWxh, dWhh, dWhy, dbh, dby)
+
+            # ── Carry hidden state to next chunk ─────────────────────
+            # This is what makes the model "remember" across chunks
+            # without backpropagating through the entire document
+            hprev = hs[len(inputs) - 1]
+
+            # Smooth loss for stable logging
+            smooth_loss = smooth_loss * 0.999 + loss * 0.001
+
+            # ── Log progress ─────────────────────────────────────────
+            if p % log_every < seq_length:
+                print(f"Epoch {epoch}, pos {p}: smooth_loss = {smooth_loss:.4f}, "
+                      f"perplexity = {np.exp(smooth_loss/seq_length):.2f}")
+
+            # Advance window by seq_length (non-overlapping chunks)
+            p += seq_length
+
+# Run training
+train(data, n_epochs=100)</code></pre>
+        </div>
+
+        <!-- Training Flowchart -->
+        <div class="card card-glow">
+          <h4 class="text-sm font-semibold text-heading mb-4">Training Loop Flowchart</h4>
+          <div class="mermaid">
+flowchart TD
+    A([Start Epoch]) --> B[Reset hprev = zeros]
+    B --> C{p &lt; len-seq?}
+    C -- Yes --> D[Slice inputs\ntargets from text]
+    D --> E[Forward Pass\nStores xs,hs,ys,ps\nComputes loss]
+    E --> F[Backward Pass\nBPTT: accumulate\ndWxh,dWhh,dWhy]
+    F --> G[Clip Gradients\n±5 clamp]
+    G --> H[Update Weights\nAdagrad step]
+    H --> I[hprev = hs_last\nCarry state forward]
+    I --> J[p += seq_length]
+    J --> C
+    C -- No --> K{More epochs?}
+    K -- Yes --> A
+    K -- No --> L([Training Complete])
+
+    style A fill:#071a12,stroke:#34d399,color:#34d399
+    style E fill:#0c2233,stroke:#38bdf8,color:#38bdf8
+    style F fill:#200a10,stroke:#fb7185,color:#fb7185
+    style G fill:#1a1400,stroke:#fbbf24,color:#fbbf24
+    style H fill:#110a22,stroke:#a78bfa,color:#a78bfa
+    style I fill:#0a1829,stroke:#38bdf8,color:#64748b
+    style L fill:#071a12,stroke:#34d399,color:#34d399
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 9 -->
+      <div id="step9" class="mb-12">
+        <div class="flex items-center gap-4 mb-5">
+          <div class="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm z-10"
+               style="background:#1a1030; border:2px solid #a78bfa; color:#a78bfa;">9</div>
+          <div>
+            <h3 class="text-xl font-semibold text-heading">Sampling / Prediction</h3>
+            <p class="text-muted text-xs">Generating new sequences from the trained model</p>
+          </div>
+        </div>
+
+        <div class="card card-glow mb-4">
+          <ul class="custom-list text-body text-sm space-y-2 mb-5">
+            <li>Prediction uses <strong class="text-heading">only the forward pass</strong> — no backward pass, no loss computation. Weights are frozen.</li>
+            <li>We start with a seed character, convert it to a one-hot vector, run forward pass to get a probability distribution, then <strong class="text-sky">sample</strong> from that distribution to get the next character.</li>
+            <li><strong class="text-violet">Sampling vs. Argmax:</strong> Argmax always picks the most probable character — produces repetitive, boring text. Sampling from the distribution produces diverse, creative output. Temperature parameter controls this tradeoff.</li>
+            <li>The hidden state carries forward between steps — the model "remembers" the characters it has generated so far, just like during training.</li>
+            <li>The generated character becomes the <em>next input</em> — this is called <strong class="text-amber">autoregressive generation</strong>.</li>
+          </ul>
+          <pre><code class="language-python"># ─────────────────────────────────────────────────────────────────────
+# STEP 9: Sampling / Prediction
+# ─────────────────────────────────────────────────────────────────────
+
+def sample(seed_char, n_chars=200, temperature=1.0):
+    """
+    Generate n_chars characters starting from seed_char.
+    temperature: 1.0 = standard sampling
+                 < 1.0 = more conservative (sharper distribution)
+                 > 1.0 = more creative (flatter distribution)
+    """
+    # Start with the seed character
+    x = one_hot(char_to_ix[seed_char], vocab_size)  # (vocab_size, 1)
+    h = np.zeros((hidden_size, 1))                   # fresh hidden state
+
+    generated = [seed_char]
+
+    for _ in range(n_chars):
+        # ── Forward pass (one step, no loss needed) ──────────────────
+        h = np.tanh(Wxh @ x + Whh @ h + bh)     # update hidden state
+        y = Why @ h + by                          # compute output logits
+
+        # Apply temperature before softmax
+        # temperature < 1: makes distribution sharper (more confident)
+        # temperature > 1: makes distribution flatter (more random)
+        y_scaled = y / temperature
+        exp_y = np.exp(y_scaled - np.max(y_scaled))
+        p = exp_y / np.sum(exp_y)                 # probability distribution
+
+        # ── Sample from distribution ──────────────────────────────────
+        # np.random.choice: draws one index proportional to probability p
+        ix = np.random.choice(range(vocab_size), p=p.ravel())
+
+        # ── Autoregressive: use generated char as next input ──────────
+        x = one_hot(ix, vocab_size)               # next input = sampled char
+        generated.append(ix_to_char[ix])
+
+    return ''.join(generated)
+
+# Example usage after training:
+# result = sample('h', n_chars=100, temperature=0.8)
+# print(result)
+# → "hello world. recurrent neural networks are powerful and...."</code></pre>
+        </div>
+
+        <div class="callout callout-success text-sm">
+          <strong class="text-emerald">Prediction vs. Training Data Flow:</strong> During training, inputs come from the dataset.
+          During prediction, <em>the model's own outputs become its next inputs</em>. This is why the hidden state must carry forward
+          — each generated character needs to be "remembered" to generate the next.
+        </div>
+      </div>
+    </section>
+
+    <div class="section-divider"></div>
+
+    <!-- ════════════════════════════════════
+         PART 4: MENTAL MODELS
+    ════════════════════════════════════ -->
+    <section id="part4">
+      <span class="section-label">Part 4</span>
+      <h2 class="text-3xl font-bold mt-2 mb-2">Mental Models</h2>
+      <p class="text-muted text-sm mb-8">Three perspectives on the same network — structure, training, and prediction.</p>
+
+      <!-- Mental Model 1: Structure -->
+      <div class="card card-glow mb-8">
+        <h3 class="text-xl font-semibold mb-2 text-sky">Model 1 — Network Structure (What exists in memory)</h3>
+        <p class="text-body text-sm mb-5">
+          At any moment, the RNN is just five numpy arrays. There are no "layer objects", no classes (in the simple case),
+          no hidden architecture. The entire network is:
+        </p>
+        <div class="grid md:grid-cols-2 gap-6">
+          <div>
+            <h4 class="text-sm font-semibold text-heading mb-3">Learnable Parameters (weights)</h4>
+            <div class="space-y-2">
+              <div class="flex items-center gap-3 p-2 rounded-lg" style="background:#0c2233; border:1px solid #1e3a5f;">
+                <code class="text-sky text-sm">Wxh</code>
+                <span class="text-muted text-xs flex-1">Input encoder. (hidden × vocab) floats. Transforms x_t.</span>
+                <span class="tag tag-sky text-xs">Learned</span>
+              </div>
+              <div class="flex items-center gap-3 p-2 rounded-lg" style="background:#200a10; border:1px solid #3a1020;">
+                <code class="text-rose text-sm">Whh</code>
+                <span class="text-muted text-xs flex-1">Memory matrix. (hidden × hidden). The recurrence.</span>
+                <span class="tag tag-rose text-xs">Learned</span>
+              </div>
+              <div class="flex items-center gap-3 p-2 rounded-lg" style="background:#071a12; border:1px solid #1a3a25;">
+                <code class="text-emerald text-sm">Why</code>
+                <span class="text-muted text-xs flex-1">Output decoder. (vocab × hidden) floats.</span>
+                <span class="tag tag-emerald text-xs">Learned</span>
+              </div>
+              <div class="flex items-center gap-3 p-2 rounded-lg" style="background:#0d1528; border:1px solid #1e2f50;">
+                <code class="text-muted text-sm">bh, by</code>
+                <span class="text-muted text-xs flex-1">Bias vectors. One per equation.</span>
+                <span class="tag tag-violet text-xs">Learned</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <h4 class="text-sm font-semibold text-heading mb-3">Runtime State</h4>
+            <div class="space-y-2">
+              <div class="flex items-center gap-3 p-2 rounded-lg" style="background:#0a1829; border:1px solid #1e3a5f;">
+                <code class="text-sky text-sm">hprev</code>
+                <span class="text-muted text-xs flex-1">Current hidden state. (hidden × 1). The "memory" vector. Changes every step.</span>
+                <span class="tag tag-sky text-xs">Runtime</span>
+              </div>
+              <div class="flex items-center gap-3 p-2 rounded-lg" style="background:#080f1e; border:1px solid #1e2f50;">
+                <code class="text-muted text-sm">xs,hs,ys,ps</code>
+                <span class="text-muted text-xs flex-1">Cached forward pass values. Only needed during backward. Discarded after update.</span>
+                <span class="tag tag-amber text-xs">Temp</span>
+              </div>
+              <div class="flex items-center gap-3 p-2 rounded-lg" style="background:#080f1e; border:1px solid #1e2f50;">
+                <code class="text-muted text-sm">mWxh,mWhh...</code>
+                <span class="text-muted text-xs flex-1">Adagrad memory. Accumulated squared gradients. Persists across all training steps.</span>
+                <span class="tag tag-violet text-xs">Optimizer</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mental Model 2: Training Flow -->
+      <div class="card card-glow mb-8">
+        <h3 class="text-xl font-semibold mb-2 text-violet">Model 2 — Data Flow During Training</h3>
+        <p class="text-body text-sm mb-5">Trace a single training step through the system:</p>
+        <div class="space-y-3">
+          <div class="flex items-start gap-4">
+            <div class="w-7 h-7 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5" style="background:#0c2233;color:#38bdf8;border:1px solid #38bdf8;">①</div>
+            <div class="text-sm text-body"><strong class="text-heading">Slice text:</strong> grab <span class="inline-code">seq_length</span> characters as input, shift by 1 to get targets. Convert to integer indices.</div>
+          </div>
+          <div class="flex items-start gap-4">
+            <div class="w-7 h-7 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5" style="background:#0c2233;color:#38bdf8;border:1px solid #38bdf8;">②</div>
+            <div class="text-sm text-body"><strong class="text-heading">Forward loop:</strong> for t = 0 to T-1: one-hot encode x_t, compute h_t from x_t and h_{t-1}, compute y_t from h_t, softmax → p_t, accumulate loss.</div>
+          </div>
+          <div class="flex items-start gap-4">
+            <div class="w-7 h-7 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5" style="background:#200a10;color:#fb7185;border:1px solid #fb7185;">③</div>
+            <div class="text-sm text-body"><strong class="text-heading">Backward loop:</strong> for t = T-1 to 0: compute dy_t, backprop through Why and tanh, accumulate dWxh/dWhh/dWhy, pass dhnext to t-1.</div>
+          </div>
+          <div class="flex items-start gap-4">
+            <div class="w-7 h-7 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5" style="background:#1a1400;color:#fbbf24;border:1px solid #fbbf24;">④</div>
+            <div class="text-sm text-body"><strong class="text-heading">Clip:</strong> each gradient element clamped to ±5. Weights unchanged at this point.</div>
+          </div>
+          <div class="flex items-start gap-4">
+            <div class="w-7 h-7 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5" style="background:#110a22;color:#a78bfa;border:1px solid #a78bfa;">⑤</div>
+            <div class="text-sm text-body"><strong class="text-heading">Update:</strong> Wxh, Whh, Why, bh, by each subtracted by their respective (lr * gradient). The <em>same three matrices</em> are updated — no per-step weight updates.</div>
+          </div>
+          <div class="flex items-start gap-4">
+            <div class="w-7 h-7 rounded-full text-xs flex items-center justify-center font-bold flex-shrink-0 mt-0.5" style="background:#071a12;color:#34d399;border:1px solid #34d399;">⑥</div>
+            <div class="text-sm text-body"><strong class="text-heading">Carry forward:</strong> hprev = hs[T-1] — the last hidden state of this chunk becomes the first hidden state of the next chunk. Context persists across chunks.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mental Model 3: Prediction -->
+      <div class="card card-glow mb-8">
+        <h3 class="text-xl font-semibold mb-2 text-emerald">Model 3 — Data Flow During Prediction</h3>
+        <p class="text-body text-sm mb-5">Prediction is simpler — just the forward equations, run autoregressively:</p>
+        <div class="overflow-x-auto">
+          <svg viewBox="0 0 760 160" xmlns="http://www.w3.org/2000/svg" style="min-width:560px; max-width:100%; font-family:'JetBrains Mono',monospace; font-size:10px;">
+            <defs>
+              <marker id="a-sky" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L7,3 L0,6 Z" fill="#38bdf8"/>
+              </marker>
+              <marker id="a-amber" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L7,3 L0,6 Z" fill="#fbbf24"/>
+              </marker>
+              <marker id="a-violet" markerWidth="7" markerHeight="7" refX="6" refY="3" orient="auto">
+                <path d="M0,0 L7,3 L0,6 Z" fill="#a78bfa"/>
+              </marker>
+            </defs>
+
+            <!-- Seed Input -->
+            <rect x="5" y="60" width="80" height="40" rx="6" fill="#1a1400" stroke="#fbbf24" stroke-width="1.5"/>
+            <text x="45" y="78" fill="#fbbf24" text-anchor="middle" font-weight="bold">seed</text>
+            <text x="45" y="91" fill="#fbbf24" text-anchor="middle">'h' → x₀</text>
+
+            <!-- Step 1 -->
+            <rect x="110" y="55" width="90" height="50" rx="6" fill="#0d1528" stroke="#38bdf8" stroke-width="1.5"/>
+            <text x="155" y="76" fill="#38bdf8" text-anchor="middle" font-weight="bold">Forward</text>
+            <text x="155" y="89" fill="#38bdf8" text-anchor="middle">h₁ = tanh(…)</text>
+            <text x="155" y="101" fill="#64748b" text-anchor="middle">y₁ = Why·h₁</text>
+
+            <!-- Arrows -->
+            <line x1="85" y1="80" x2="110" y2="80" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#a-amber)"/>
+            <line x1="200" y1="80" x2="225" y2="80" stroke="#38bdf8" stroke-width="1.5" marker-end="url(#a-sky)"/>
+
+            <!-- Softmax / Sample -->
+            <rect x="225" y="55" width="80" height="50" rx="6" fill="#110a22" stroke="#a78bfa" stroke-width="1.5"/>
+            <text x="265" y="76" fill="#a78bfa" text-anchor="middle" font-weight="bold">Softmax</text>
+            <text x="265" y="89" fill="#a78bfa" text-anchor="middle">p₁ = probs</text>
+            <text x="265" y="101" fill="#64748b" text-anchor="middle">sample ix</text>
+
+            <line x1="305" y1="80" x2="330" y2="80" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#a-violet)"/>
+
+            <!-- Decode -->
+            <rect x="330" y="55" width="80" height="50" rx="6" fill="#071a12" stroke="#34d399" stroke-width="1.5"/>
+            <text x="370" y="76" fill="#34d399" text-anchor="middle" font-weight="bold">Decode</text>
+            <text x="370" y="89" fill="#34d399" text-anchor="middle">ix → char</text>
+            <text x="370" y="101" fill="#34d399" text-anchor="middle">'e'</text>
+
+            <line x1="410" y1="80" x2="435" y2="80" stroke="#34d399" stroke-width="1.5" marker-end="url(#a-sky)"/>
+
+            <!-- Next input -->
+            <rect x="435" y="55" width="80" height="50" rx="6" fill="#1a1400" stroke="#fbbf24" stroke-width="1.5"/>
+            <text x="475" y="76" fill="#fbbf24" text-anchor="middle" font-weight="bold">Next Input</text>
+            <text x="475" y="89" fill="#fbbf24" text-anchor="middle">'e' → x₂</text>
+            <text x="475" y="101" fill="#64748b" text-anchor="middle">one-hot</text>
+
+            <line x1="515" y1="80" x2="540" y2="80" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#a-amber)"/>
+
+            <!-- Continue -->
+            <rect x="540" y="60" width="90" height="40" rx="6" fill="#0d1528" stroke="#38bdf8" stroke-width="1"/>
+            <text x="585" y="78" fill="#38bdf8" text-anchor="middle">Forward →</text>
+            <text x="585" y="91" fill="#64748b" text-anchor="middle">repeat…</text>
+
+            <!-- h feedback arc -->
+            <path d="M 200 55 Q 200 20 155 20 Q 110 20 110 55" stroke="#38bdf870" stroke-width="1.5" stroke-dasharray="4,3" fill="none" marker-end="url(#a-sky)"/>
+            <text x="155" y="14" fill="#38bdf870" text-anchor="middle">h carries forward</text>
+
+            <!-- Labels below -->
+            <text x="45"  y="145" fill="#fbbf2480" text-anchor="middle">Seed char</text>
+            <text x="155" y="145" fill="#38bdf880" text-anchor="middle">RNN step</text>
+            <text x="265" y="145" fill="#a78bfa80" text-anchor="middle">Sample</text>
+            <text x="370" y="145" fill="#34d39980" text-anchor="middle">Decode</text>
+            <text x="475" y="145" fill="#fbbf2480" text-anchor="middle">Autoregressive</text>
+          </svg>
+        </div>
+        <div class="callout callout-insight mt-4 text-sm">
+          <strong class="text-sky">Key difference from training:</strong> No targets, no loss, no backward pass.
+          The only computation is the forward equations. The loop runs for as many characters as you want to generate.
+        </div>
+      </div>
+
+      <!-- Interactive RNN Stepper -->
+      <div class="card card-glow">
+        <h3 class="text-lg font-semibold mb-2 text-amber">Interactive: RNN Step-Through Visualizer</h3>
+        <p class="text-body text-sm mb-5">Step through a forward pass to see how data flows at each time step.</p>
+
+        <div id="rnn-stepper">
+          <div class="flex items-center gap-3 mb-5 flex-wrap">
+            <span class="text-muted text-sm">Sequence:</span>
+            <div id="char-display" class="flex gap-1"></div>
+          </div>
+          <div id="step-info" class="rounded-xl p-4 mb-4" style="background:#080f1e; border:1px solid #1e2f50; min-height:100px;">
+            <p class="text-muted text-sm">Press "Next Step →" to begin stepping through the forward pass.</p>
+          </div>
+          <div id="stepper-visual" class="overflow-x-auto mb-4"></div>
+          <div class="flex gap-3">
+            <button id="btn-prev" onclick="stepperPrev()"
+              class="px-4 py-2 rounded-lg text-sm font-semibold font-montserrat transition-all"
+              style="background:#0d1528;color:#64748b;border:1px solid #1e2f50;"
+              disabled>← Prev</button>
+            <button id="btn-next" onclick="stepperNext()"
+              class="px-4 py-2 rounded-lg text-sm font-semibold font-montserrat transition-all"
+              style="background:#0c2233;color:#38bdf8;border:1px solid #38bdf8;">Next Step →</button>
+            <button onclick="stepperReset()"
+              class="px-4 py-2 rounded-lg text-sm font-semibold font-montserrat"
+              style="background:#1a1400;color:#fbbf24;border:1px solid #fbbf24;">Reset</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="section-divider"></div>
+
+    <!-- ════════════════════════════════════
+         FULL CODE
+    ════════════════════════════════════ -->
+    <section id="full-code">
+      <span class="section-label">Part 5</span>
+      <h2 class="text-3xl font-bold mt-2 mb-2">Complete Working Code</h2>
+      <p class="text-muted text-sm mb-8">All steps assembled into one runnable file. Copy, run, and experiment.</p>
+
+      <div class="card card-glow">
+        <pre><code class="language-python">"""
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Vanilla RNN — Character-Level Language Model
+  Pure NumPy Implementation
+  Based on Andrej Karpathy's min-char-rnn, heavily commented
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"""
+
+import numpy as np
+
+# ══════════════════════════════════════════════════════════════════════
+# 1. DATA PREPARATION
+# ══════════════════════════════════════════════════════════════════════
+
+data = open('input.txt', 'r').read()  # Replace with any text file
+chars = sorted(list(set(data)))
+vocab_size = len(chars)
+char_to_ix = { ch:i for i,ch in enumerate(chars) }
+ix_to_char = { i:ch for i,ch in enumerate(chars) }
+
+print(f"Data has {len(data)} chars, {vocab_size} unique.")
+
+def one_hot(index, size):
+    v = np.zeros((size, 1))
+    v[index] = 1.0
+    return v
+
+# ══════════════════════════════════════════════════════════════════════
+# 2. HYPERPARAMETERS & WEIGHT INITIALIZATION
+# ══════════════════════════════════════════════════════════════════════
+
+hidden_size   = 100
+seq_length    = 25
+learning_rate = 1e-1
+
+# Weight matrices
+Wxh = np.random.randn(hidden_size, vocab_size) * 0.01  # input → hidden
+Whh = np.random.randn(hidden_size, hidden_size) * 0.01 # hidden → hidden (THE key)
+Why = np.random.randn(vocab_size, hidden_size) * 0.01  # hidden → output
+
+# Biases
+bh = np.zeros((hidden_size, 1))
+by = np.zeros((vocab_size, 1))
+
+# Adagrad memory
+mWxh = np.zeros_like(Wxh)
+mWhh = np.zeros_like(Whh)
+mWhy = np.zeros_like(Why)
+mbh  = np.zeros_like(bh)
+mby  = np.zeros_like(by)
+
+# ══════════════════════════════════════════════════════════════════════
+# 3. FORWARD PASS
+# ══════════════════════════════════════════════════════════════════════
+
+def forward_pass(inputs, targets, hprev):
+    xs, hs, ys, ps = {}, {}, {}, {}
+    hs[-1] = np.copy(hprev)
+    loss = 0.0
+
+    for t in range(len(inputs)):
+        xs[t] = one_hot(inputs[t], vocab_size)
+        hs[t] = np.tanh(Wxh @ xs[t] + Whh @ hs[t-1] + bh)   # ← THE RNN EQUATION
+        ys[t] = Why @ hs[t] + by
+        exp_y = np.exp(ys[t] - np.max(ys[t]))
+        ps[t] = exp_y / np.sum(exp_y)
+        loss += -np.log(ps[t][targets[t], 0])
+
+    return loss, xs, hs, ys, ps
+
+# ══════════════════════════════════════════════════════════════════════
+# 4 & 5. BACKWARD PASS (BPTT)
+# ══════════════════════════════════════════════════════════════════════
+
+def backward_pass(inputs, targets, xs, hs, ps):
+    dWxh = np.zeros_like(Wxh)
+    dWhh = np.zeros_like(Whh)
+    dWhy = np.zeros_like(Why)
+    dbh  = np.zeros_like(bh)
+    dby  = np.zeros_like(by)
+    dhnext = np.zeros_like(hs[0])
+
+    for t in reversed(range(len(inputs))):
+        dy = np.copy(ps[t])
+        dy[targets[t]] -= 1                          # softmax + cross-entropy gradient
+
+        dWhy += dy @ hs[t].T
+        dby  += dy
+
+        dh    = Why.T @ dy + dhnext                  # gradient from output + future
+        dhraw = (1 - hs[t] ** 2) * dh               # through tanh
+
+        dbh  += dhraw
+        dWxh += dhraw @ xs[t].T
+        dWhh += dhraw @ hs[t-1].T
+        dhnext = Whh.T @ dhraw                       # pass to previous time step
+
+    # Gradient clipping
+    for dparam in [dWxh, dWhh, dWhy, dbh, dby]:
+        np.clip(dparam, -5, 5, out=dparam)
+
+    return dWxh, dWhh, dWhy, dbh, dby
+
+# ══════════════════════════════════════════════════════════════════════
+# 6 & 7. WEIGHT UPDATE (Adagrad)
+# ══════════════════════════════════════════════════════════════════════
+
+def update_weights(dWxh, dWhh, dWhy, dbh, dby):
+    global Wxh, Whh, Why, bh, by
+    global mWxh, mWhh, mWhy, mbh, mby
+
+    for param, dparam, mem in zip(
+        [Wxh,  Whh,  Why,  bh,  by],
+        [dWxh, dWhh, dWhy, dbh, dby],
+        [mWxh, mWhh, mWhy, mbh, mby]
+    ):
+        mem  += dparam ** 2
+        param -= learning_rate * dparam / np.sqrt(mem + 1e-8)
+
+# ══════════════════════════════════════════════════════════════════════
+# 8. TRAINING LOOP
+# ══════════════════════════════════════════════════════════════════════
+
+def train(n_epochs=100, log_every=500):
+    smooth_loss = -np.log(1.0 / vocab_size) * seq_length
+
+    for epoch in range(n_epochs):
+        hprev = np.zeros((hidden_size, 1))  # reset at epoch start
+        p = 0
+
+        while p < len(data) - seq_length - 1:
+            inputs  = [char_to_ix[ch] for ch in data[p   : p+seq_length  ]]
+            targets = [char_to_ix[ch] for ch in data[p+1 : p+seq_length+1]]
+
+            loss, xs, hs, ys, ps = forward_pass(inputs, targets, hprev)
+            dWxh, dWhh, dWhy, dbh, dby = backward_pass(inputs, targets, xs, hs, ps)
+            update_weights(dWxh, dWhh, dWhy, dbh, dby)
+
+            hprev = hs[len(inputs) - 1]              # carry state to next chunk
+            smooth_loss = smooth_loss * 0.999 + loss * 0.001
+
+            if p % log_every < seq_length:
+                print(f"Epoch {epoch+1:3d} | pos {p:6d} | "
+                      f"loss {smooth_loss:.4f} | "
+                      f"ppl {np.exp(smooth_loss/seq_length):.2f}")
+                print(f"Sample: {sample('T', 80)}\n")
+
+            p += seq_length
+
+# ══════════════════════════════════════════════════════════════════════
+# 9. SAMPLING (PREDICTION)
+# ══════════════════════════════════════════════════════════════════════
+
+def sample(seed_char, n_chars=200, temperature=1.0):
+    x = one_hot(char_to_ix[seed_char], vocab_size)
+    h = np.zeros((hidden_size, 1))
+    result = [seed_char]
+
+    for _ in range(n_chars):
+        h = np.tanh(Wxh @ x + Whh @ h + bh)
+        y = Why @ h + by
+        y_t = y / temperature
+        exp_y = np.exp(y_t - np.max(y_t))
+        p = exp_y / np.sum(exp_y)
+        ix = np.random.choice(range(vocab_size), p=p.ravel())
+        x = one_hot(ix, vocab_size)
+        result.append(ix_to_char[ix])
+
+    return ''.join(result)
+
+# ══════════════════════════════════════════════════════════════════════
+# MAIN
+# ══════════════════════════════════════════════════════════════════════
+
+if __name__ == '__main__':
+    train(n_epochs=50, log_every=1000)</code></pre>
+      </div>
+    </section>
+
+    <!-- Quick Reference -->
+    <section>
+      <span class="section-label">Quick Reference</span>
+      <h2 class="text-2xl font-bold mt-2 mb-6">Implementation Checklist</h2>
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="card">
+          <h4 class="text-sm font-semibold text-heading mb-3">✅ Forward Pass Checklist</h4>
+          <ul class="custom-list text-sm text-body space-y-1">
+            <li>Initialize <span class="inline-code">hs[-1] = hprev</span> before loop</li>
+            <li>Store <span class="inline-code">xs[t]</span> as (vocab_size, 1) column vector</li>
+            <li>Use <span class="inline-code">hs[t-1]</span> in hidden state update</li>
+            <li>Subtract max before softmax for stability</li>
+            <li>Store all xs, hs, ys, ps for backprop</li>
+            <li>Return <span class="inline-code">hs[T-1]</span> as new hprev</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4 class="text-sm font-semibold text-heading mb-3">✅ Backward Pass Checklist</h4>
+          <ul class="custom-list text-sm text-body space-y-1">
+            <li>Initialize dhnext = zeros before loop</li>
+            <li>Loop in <span class="inline-code">reversed(range(T))</span></li>
+            <li>dy = ps[t].copy(); dy[targets[t]] -= 1</li>
+            <li>dh includes BOTH output error AND dhnext</li>
+            <li>dhraw = (1 - hs[t]²) * dh (tanh derivative)</li>
+            <li>Use <span class="inline-code">+=</span> not <span class="inline-code">=</span> for weight gradients (accumulate!)</li>
+            <li>Clip ALL gradients before update</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4 class="text-sm font-semibold text-heading mb-3">✅ Shapes Reference</h4>
+          <ul class="custom-list text-sm text-body space-y-1">
+            <li><span class="inline-code">x_t</span>: (vocab, 1)</li>
+            <li><span class="inline-code">h_t</span>: (hidden, 1)</li>
+            <li><span class="inline-code">y_t</span>: (vocab, 1)</li>
+            <li><span class="inline-code">Wxh</span>: (hidden, vocab)</li>
+            <li><span class="inline-code">Whh</span>: (hidden, hidden)</li>
+            <li><span class="inline-code">Why</span>: (vocab, hidden)</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4 class="text-sm font-semibold text-heading mb-3">✅ Common Mistakes</h4>
+          <ul class="custom-list text-sm text-body space-y-1">
+            <li>Using <span class="inline-code">=</span> instead of <span class="inline-code">+=</span> for dWxh, dWhh — kills gradient accumulation</li>
+            <li>Not passing hprev between chunks — model loses cross-chunk context</li>
+            <li>Forgetting tanh derivative (1 - h²) — wrong BPTT</li>
+            <li>Not clipping gradients — training explodes</li>
+            <li>1D arrays instead of 2D column vectors — shape errors</li>
+            <li>Not storing hs[-1] = hprev — IndexError at t=0</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Footer -->
+  <footer class="mt-20 px-6 md:px-16 py-10 border-t border-border">
+    <div class="max-w-5xl mx-auto xl:ml-0 flex flex-col md:flex-row justify-between items-start gap-4">
+      <div>
+        <h3 class="font-poppins font-bold text-heading">RNN Implementation Guide</h3>
+        <p class="text-muted text-xs mt-1">Pure NumPy · Character-Level LM · BPTT from scratch</p>
+      </div>
+      <div class="text-xs text-muted space-y-1">
+        <p>Further Reading:</p>
+        <p>→ Karpathy: <em>The Unreasonable Effectiveness of RNNs</em></p>
+        <p>→ Goodfellow et al: <em>Deep Learning, Chapter 10</em></p>
+        <p>→ Olah: <em>Understanding LSTMs</em></p>
+      </div>
+    </div>
+  </footer>
+</main>
+
+<script>
+// ── Progress bar ──
+window.addEventListener('scroll', () => {
+  const scrollTop = document.documentElement.scrollTop;
+  const docH = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+  document.getElementById('progress-bar').style.width = (scrollTop / docH * 100) + '%';
+});
+
+// ── Active nav link ──
+const navLinks = document.querySelectorAll('.nav-link');
+const sections = document.querySelectorAll('section[id]');
+window.addEventListener('scroll', () => {
+  let cur = '';
+  sections.forEach(s => { if (window.scrollY >= s.offsetTop - 120) cur = s.id; });
+  navLinks.forEach(a => {
+    a.classList.remove('active');
+    if (a.getAttribute('href') === '#' + cur) a.classList.add('active');
+  });
+});
+
+// ── Mermaid init ──
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'dark',
+  themeVariables: {
+    background: '#060c1a',
+    primaryColor: '#0d1528',
+    primaryTextColor: '#cbd5e1',
+    primaryBorderColor: '#1e2f50',
+    lineColor: '#38bdf8',
+    secondaryColor: '#111d35',
+    tertiaryColor: '#0a0f1e',
+    edgeLabelBackground: '#0d1528',
+    clusterBkg: '#0d1528',
+    titleColor: '#f1f5f9',
+  },
+  flowchart: { curve: 'basis', htmlLabels: true }
+});
+
+// ── Interactive Stepper ──
+const SEQUENCE = "hello";
+let stepperIndex = -1;
+
+const stepDescriptions = [
+  {
+    t: -1,
+    title: "Initialization",
+    color: "#a78bfa",
+    body: `<strong class="text-violet">h₋₁ = zeros(hidden_size, 1)</strong><br>
+      Before the loop begins, we set the initial hidden state to all zeros.<br>
+      This is the "blank slate" — no prior context. In practice, if we're processing
+      a chunk mid-text, this would be the last hidden state from the previous chunk.`,
+    equation: "h₋₁ = [0, 0, 0, ..., 0]ᵀ   (shape: hidden_size × 1)"
+  },
+  ...Array.from(SEQUENCE).map((ch, i) => ({
+    t: i,
+    title: `Time Step t = ${i}  →  Input: '${ch}'`,
+    color: "#38bdf8",
+    body: `<strong class="text-sky">Processing character '${ch}'</strong><br>
+      <b>1.</b> One-hot encode '${ch}' → x[${i}], a (vocab_size × 1) vector with a single 1.<br>
+      <b>2.</b> Compute h[${i}] = tanh( <span style="color:#38bdf8">Wxh</span> @ x[${i}] + <span style="color:#fb7185">Whh</span> @ h[${i-1}] + bh )<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;↳ Wxh transforms the current input into hidden space<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;↳ Whh transforms the PREVIOUS hidden state (rollover!)<br>
+      <b>3.</b> y[${i}] = Why @ h[${i}] + by  →  raw logits<br>
+      <b>4.</b> p[${i}] = softmax(y[${i}])  →  probability distribution over vocab`,
+    equation: `h[${i}] = tanh( Wxh·x[${i}] + Whh·h[${i-1}] + bh )`
+  })),
+  {
+    t: SEQUENCE.length,
+    title: "Forward Pass Complete",
+    color: "#34d399",
+    body: `<strong class="text-emerald">All ${SEQUENCE.length} time steps processed.</strong><br>
+      We now have: xs[0…${SEQUENCE.length-1}], hs[0…${SEQUENCE.length-1}], ps[0…${SEQUENCE.length-1}] all cached.<br>
+      Total loss = sum of -log(p[t][target[t]]) across all steps.<br>
+      Next: run backward_pass() going RIGHT-TO-LEFT through the same stored values to compute gradients.`,
+    equation: `L = Σₜ -log(p[t][target[t]]),   hprev_next = h[${SEQUENCE.length-1}]`
+  }
+];
+
+function renderStepperChars() {
+  const el = document.getElementById('char-display');
+  el.innerHTML = Array.from(SEQUENCE).map((ch, i) => `
+    <div id="sc-${i}" class="w-8 h-8 rounded-lg flex items-center justify-center font-mono font-bold text-sm transition-all"
+         style="background:#0d1528; border:1px solid #1e2f50; color:#64748b;">${ch}</div>
+  `).join('');
+}
+
+function stepperNext() {
+  stepperIndex = Math.min(stepperIndex + 1, stepDescriptions.length - 1);
+  renderStep();
+  document.getElementById('btn-prev').disabled = false;
+  if (stepperIndex === stepDescriptions.length - 1) {
+    document.getElementById('btn-next').disabled = true;
+  }
+}
+
+function stepperPrev() {
+  stepperIndex = Math.max(stepperIndex - 1, 0);
+  renderStep();
+  document.getElementById('btn-next').disabled = false;
+  if (stepperIndex === 0) document.getElementById('btn-prev').disabled = true;
+}
+
+function stepperReset() {
+  stepperIndex = -1;
+  renderStepperChars();
+  document.getElementById('step-info').innerHTML = '<p class="text-muted text-sm">Press "Next Step →" to begin stepping through the forward pass.</p>';
+  document.getElementById('stepper-visual').innerHTML = '';
+  document.getElementById('btn-prev').disabled = true;
+  document.getElementById('btn-next').disabled = false;
+}
+
+function renderStep() {
+  if (stepperIndex < 0) return;
+  const step = stepDescriptions[stepperIndex];
+
+  // Highlight current char
+  Array.from(SEQUENCE).forEach((ch, i) => {
+    const el = document.getElementById('sc-' + i);
+    if (!el) return;
+    if (i < stepperIndex - 1) {
+      el.style.background = '#071a12'; el.style.borderColor = '#34d399'; el.style.color = '#34d399';
+    } else if (i === stepperIndex - 1) {
+      el.style.background = '#0c2233'; el.style.borderColor = '#38bdf8'; el.style.color = '#38bdf8';
+      el.style.boxShadow = '0 0 12px rgba(56,189,248,0.4)';
+    } else {
+      el.style.background = '#0d1528'; el.style.borderColor = '#1e2f50'; el.style.color = '#64748b';
+      el.style.boxShadow = '';
+    }
+  });
+
+  document.getElementById('step-info').innerHTML = `
+    <div class="flex items-center gap-2 mb-2">
+      <span class="tag" style="background:#0d1528;border:1px solid ${step.color};color:${step.color};">Step ${stepperIndex + 1} / ${stepDescriptions.length}</span>
+      <h4 class="font-semibold text-heading text-sm">${step.title}</h4>
+    </div>
+    <p class="text-body text-sm mb-3">${step.body}</p>
+    <div style="background:#060c1a;border:1px solid ${step.color}30;border-left:3px solid ${step.color};border-radius:0 6px 6px 0;padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:${step.color};">
+      ${step.equation}
+    </div>
+  `;
+}
+
+// Init stepper
+renderStepperChars();
+
+// Smooth reveal on scroll
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.style.opacity = '1';
+      e.target.style.transform = 'translateY(0)';
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.card').forEach(card => {
+  card.style.opacity = '0';
+  card.style.transform = 'translateY(16px)';
+  card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+  observer.observe(card);
+});
+</script>
+</body>
+</html>

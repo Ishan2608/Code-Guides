@@ -1,0 +1,1910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autoencoders & GANs</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #10101a;
+    --surface2: #16162a;
+    --border: #1e1e3a;
+    --accent: #6c63ff;
+    --accent2: #ff6584;
+    --accent3: #43e97b;
+    --text: #e8e8f0;
+    --muted: #7878a0;
+    --code-bg: #0d0d1a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 19px;
+    line-height: 1.75;
+    overflow-x: hidden;
+  }
+  h1 { font-family: 'Syne', sans-serif; font-weight: 800; }
+  h2, h3, h4, h5 { font-family: 'Syne', sans-serif; font-weight: 700; }
+  code, pre { font-family: 'JetBrains Mono', monospace; }
+
+  /* ─── Layout ─── */
+  .page { max-width: 900px; margin: 0 auto; padding: 4rem 2rem 10rem; }
+
+  /* ─── Title Block ─── */
+  .title-block {
+    padding: 5rem 0 4rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 5rem;
+    position: relative;
+  }
+  .title-block::before {
+    content: '';
+    position: absolute;
+    top: -2rem; left: -4rem; right: -4rem;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+  .tag-pill {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 0.2rem 0.8rem;
+    border-radius: 2px;
+    margin-bottom: 1.5rem;
+  }
+  .main-title {
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #fff 30%, var(--accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1.5rem;
+  }
+  .subtitle {
+    font-size: 1.2rem;
+    color: var(--muted);
+    font-style: italic;
+    max-width: 600px;
+  }
+
+  /* ─── Chapter Divider ─── */
+  .chapter-header {
+    margin: 6rem 0 3rem;
+    position: relative;
+  }
+  .chapter-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    display: block;
+  }
+  .chapter-title {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: #fff;
+    border-left: 3px solid var(--accent);
+    padding-left: 1.2rem;
+  }
+  .chapter-title.gan { border-color: var(--accent2); }
+  .chapter-title.gen { border-color: var(--accent3); }
+
+  /* ─── Section ─── */
+  .section { margin: 3.5rem 0; }
+  .section-title {
+    font-size: 1.5rem;
+    color: #fff;
+    margin-bottom: 1.2rem;
+    letter-spacing: -0.01em;
+  }
+  .subsection { margin: 2rem 0 2rem 1.5rem; }
+  .subsection-title {
+    font-size: 1.15rem;
+    color: var(--accent);
+    font-family: 'Syne', sans-serif;
+    margin-bottom: 0.7rem;
+  }
+  .subsection-title.red { color: var(--accent2); }
+  .subsection-title.green { color: var(--accent3); }
+
+  /* ─── Prose ─── */
+  p { margin-bottom: 1.2rem; color: #cccce0; }
+  strong { color: #fff; font-weight: 600; }
+  em { color: #b0b0d0; }
+
+  /* ─── Callout Boxes ─── */
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: var(--surface);
+    padding: 1.2rem 1.5rem;
+    margin: 2rem 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.95rem;
+  }
+  .callout.intuition { border-color: var(--accent3); }
+  .callout.warning { border-color: var(--accent2); }
+  .callout.math { border-color: #f0c040; background: #0f0e08; }
+  .callout-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    color: var(--accent);
+  }
+  .callout.intuition .callout-label { color: var(--accent3); }
+  .callout.warning .callout-label { color: var(--accent2); }
+  .callout.math .callout-label { color: #f0c040; }
+
+  /* ─── Math / Equation ─── */
+  .eq {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    padding: 1rem 1.5rem;
+    margin: 1.5rem 0;
+    border-radius: 4px;
+    color: #f0c040;
+    overflow-x: auto;
+    line-height: 2;
+  }
+  .eq .comment { color: var(--muted); font-size: 0.8rem; }
+
+  /* ─── Code Block ─── */
+  .code-block {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    margin: 2rem 0;
+    overflow: hidden;
+  }
+  .code-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .code-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .code-lang {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-left: auto;
+  }
+  pre {
+    padding: 1.5rem;
+    overflow-x: auto;
+    font-size: 0.82rem;
+    line-height: 1.8;
+  }
+  .kw { color: #c792ea; }
+  .fn { color: #82aaff; }
+  .st { color: #c3e88d; }
+  .cm { color: #546e7a; font-style: italic; }
+  .nm { color: #f78c6c; }
+  .op { color: #89ddff; }
+
+  /* ─── Diagram Containers ─── */
+  .diagram-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2rem 1rem;
+    margin: 2.5rem 0;
+    text-align: center;
+    overflow-x: auto;
+  }
+  .diagram-caption {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--muted);
+    margin-top: 1rem;
+    letter-spacing: 0.05em;
+  }
+
+  /* ─── Table ─── */
+  .table-wrap { overflow-x: auto; margin: 2rem 0; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+    padding: 0.7rem 1rem;
+    text-align: left;
+  }
+  td { padding: 0.7rem 1rem; border-bottom: 1px solid #16162a; color: #c0c0d8; }
+  tr:hover td { background: var(--surface); }
+
+  /* ─── Chart ─── */
+  .chart-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 2.5rem 0;
+  }
+  .chart-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 1rem;
+  }
+
+  /* ─── Horizontal Rule ─── */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 4rem 0;
+  }
+
+  /* ─── TOC ─── */
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 2rem;
+    margin: 3rem 0;
+  }
+  .toc-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.2rem;
+  }
+  .toc ul { list-style: none; }
+  .toc > ul > li { margin-bottom: 0.8rem; }
+  .toc > ul > li > a {
+    color: #ddd;
+    text-decoration: none;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: color 0.2s;
+  }
+  .toc > ul > li > a:hover { color: var(--accent); }
+  .toc ul ul { margin-top: 0.3rem; margin-left: 1.2rem; }
+  .toc ul ul li { margin-bottom: 0.2rem; }
+  .toc ul ul a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-family: 'Crimson Pro', serif;
+    transition: color 0.2s;
+  }
+  .toc ul ul a:hover { color: var(--accent); }
+
+  /* ─── List ─── */
+  ul.prose-list, ol.prose-list {
+    margin: 1rem 0 1.2rem 1.5rem;
+    color: #cccce0;
+  }
+  ul.prose-list li, ol.prose-list li { margin-bottom: 0.5rem; }
+  ul.prose-list li::marker { color: var(--accent); }
+
+  /* ─── Glowing section separator ─── */
+  .glow-sep {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    margin: 5rem 0;
+    opacity: 0.5;
+  }
+  .glow-sep.red { background: linear-gradient(90deg, transparent, var(--accent2), transparent); }
+  .glow-sep.green { background: linear-gradient(90deg, transparent, var(--accent3), transparent); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  /* Animated entrance */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .title-block { animation: fadeUp 0.8s ease both; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ═══════════════════════════════════════════════════ TITLE -->
+  <div class="title-block">
+    <div class="tag-pill">Deep Learning · Generative Models</div>
+    <h1 class="main-title">Autoencoders<br>& Generative<br>Adversarial Networks</h1>
+    <p class="subtitle">A progressive, in-depth tutorial covering the theory, mathematics, architecture design, training dynamics, and practical implementation of two foundational families of generative models.</p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════ TOC -->
+  <div class="toc">
+    <div class="toc-title">// Table of Contents</div>
+    <ul>
+      <li><a href="#part1">Part I — Autoencoders</a>
+        <ul>
+          <li><a href="#ae-intuition">1.1 The Core Intuition</a></li>
+          <li><a href="#ae-architecture">1.2 Architecture Deep Dive</a></li>
+          <li><a href="#ae-loss">1.3 The Loss Function & Optimization</a></li>
+          <li><a href="#ae-latent">1.4 The Latent Space</a></li>
+          <li><a href="#ae-types">1.5 Variants of Autoencoders</a></li>
+          <li><a href="#vae">1.6 Variational Autoencoders (VAE)</a></li>
+          <li><a href="#ae-code">1.7 Implementation in PyTorch</a></li>
+          <li><a href="#ae-applications">1.8 Applications</a></li>
+        </ul>
+      </li>
+      <li><a href="#part2">Part II — Generative Adversarial Networks</a>
+        <ul>
+          <li><a href="#gan-intuition">2.1 The Adversarial Idea</a></li>
+          <li><a href="#gan-architecture">2.2 Generator & Discriminator Architecture</a></li>
+          <li><a href="#gan-theory">2.3 The Minimax Game & Theory</a></li>
+          <li><a href="#gan-training">2.4 Training Dynamics & Instabilities</a></li>
+          <li><a href="#gan-problems">2.5 Mode Collapse & Other Failure Modes</a></li>
+          <li><a href="#gan-variants">2.6 Major GAN Variants</a></li>
+          <li><a href="#gan-code">2.7 Implementation in PyTorch</a></li>
+          <li><a href="#gan-applications">2.8 Applications & Modern Impact</a></li>
+        </ul>
+      </li>
+      <li><a href="#part3">Part III — Comparison & Synthesis</a></li>
+    </ul>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- PART I: AUTOENCODERS                                               -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div id="part1" class="chapter-header">
+    <span class="chapter-num">// Part I</span>
+    <h2 class="chapter-title">Autoencoders</h2>
+  </div>
+
+  <!-- 1.1 Intuition -->
+  <div id="ae-intuition" class="section">
+    <h3 class="section-title">1.1 The Core Intuition</h3>
+
+    <p>Imagine you are asked to compress a photograph into a 100-word description, and then hand that description to someone else — who must reconstruct the photograph from those words alone. The reconstructed image will not be pixel-perfect, but if the description captures the essential features (the subject, composition, dominant colors, textures), the reconstruction will be recognizably close to the original. This thought experiment is, at its heart, what an autoencoder does.</p>
+
+    <p>An <strong>autoencoder</strong> is a neural network trained to reconstruct its own input. It consists of two halves working in tandem: an <strong>encoder</strong> that compresses the input into a compact, lower-dimensional representation, and a <strong>decoder</strong> that expands that compressed representation back to the original dimensionality. The training objective is simply: make the output as similar to the input as possible.</p>
+
+    <div class="callout intuition">
+      <div class="callout-label">Intuition</div>
+      Think of the autoencoder as a funnel with a narrow middle. Data pours in at the top (encoder), gets squeezed through the narrow bottleneck, and must emerge from the other side (decoder) in its original form. The network is forced to learn which features are truly essential — only the most information-dense representation can pass through the bottleneck intact.
+    </div>
+
+    <p>There is something philosophically interesting here: autoencoders are trained with <strong>no labels whatsoever</strong>. The target is the input itself. This makes autoencoders a powerful form of <strong>unsupervised learning</strong> — the network discovers structure in data without being told what that structure is.</p>
+
+    <p>This forces a beautiful constraint: the network cannot simply memorize data (it has fewer hidden units than input dimensions), so it must learn a <em>meaningful compression</em> — a representation that captures the true underlying structure of the data distribution.</p>
+  </div>
+
+  <!-- 1.2 Architecture -->
+  <div id="ae-architecture" class="section">
+    <h3 class="section-title">1.2 Architecture Deep Dive</h3>
+
+    <p>An autoencoder has three distinct regions: the <strong>encoder</strong>, the <strong>bottleneck (latent space)</strong>, and the <strong>decoder</strong>. Let us examine each precisely.</p>
+
+    <!-- SVG Diagram: Autoencoder Architecture -->
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 820 200" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;font-family:'JetBrains Mono',monospace;">
+        <!-- Background glow for bottleneck -->
+        <defs>
+          <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#6c63ff" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#6c63ff" stop-opacity="0"/>
+          </radialGradient>
+          <marker id="arrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L6,3 z" fill="#6c63ff"/>
+          </marker>
+        </defs>
+        <!-- Input Layer -->
+        <g>
+          <rect x="10" y="20" width="28" height="160" rx="4" fill="#1e1e3a" stroke="#6c63ff" stroke-width="1"/>
+          <text x="24" y="210" text-anchor="middle" fill="#7878a0" font-size="9">Input x</text>
+          <!-- nodes -->
+          <circle cx="24" cy="40" r="5" fill="#6c63ff" opacity="0.9"/>
+          <circle cx="24" cy="60" r="5" fill="#6c63ff" opacity="0.9"/>
+          <circle cx="24" cy="80" r="5" fill="#6c63ff" opacity="0.9"/>
+          <circle cx="24" cy="100" r="5" fill="#6c63ff" opacity="0.9"/>
+          <circle cx="24" cy="120" r="5" fill="#6c63ff" opacity="0.9"/>
+          <circle cx="24" cy="140" r="5" fill="#6c63ff" opacity="0.9"/>
+          <circle cx="24" cy="160" r="5" fill="#6c63ff" opacity="0.9"/>
+          <text x="24" y="180" text-anchor="middle" fill="#6c63ff" font-size="8">784</text>
+        </g>
+
+        <!-- Encoder layers (shrinking) -->
+        <g>
+          <rect x="65" y="40" width="22" height="120" rx="4" fill="#1a1a30" stroke="#6c63ff" stroke-width="1" opacity="0.8"/>
+          <circle cx="76" cy="55" r="4" fill="#6c63ff" opacity="0.7"/>
+          <circle cx="76" cy="75" r="4" fill="#6c63ff" opacity="0.7"/>
+          <circle cx="76" cy="95" r="4" fill="#6c63ff" opacity="0.7"/>
+          <circle cx="76" cy="115" r="4" fill="#6c63ff" opacity="0.7"/>
+          <circle cx="76" cy="135" r="4" fill="#6c63ff" opacity="0.7"/>
+          <text x="76" y="175" text-anchor="middle" fill="#6c63ff" font-size="8">512</text>
+        </g>
+        <g>
+          <rect x="112" y="60" width="18" height="80" rx="4" fill="#1a1a30" stroke="#6c63ff" stroke-width="1" opacity="0.6"/>
+          <circle cx="121" cy="75" r="4" fill="#6c63ff" opacity="0.6"/>
+          <circle cx="121" cy="95" r="4" fill="#6c63ff" opacity="0.6"/>
+          <circle cx="121" cy="115" r="4" fill="#6c63ff" opacity="0.6"/>
+          <text x="121" y="155" text-anchor="middle" fill="#6c63ff" font-size="8">256</text>
+        </g>
+
+        <!-- Arrow: Encoder -->
+        <text x="90" y="12" text-anchor="middle" fill="#6c63ff" font-size="9" letter-spacing="1">ENCODER  f(x)</text>
+        <line x1="38" y1="100" x2="62" y2="100" stroke="#6c63ff" stroke-width="1" stroke-dasharray="3,2" opacity="0.4"/>
+        <line x1="87" y1="100" x2="109" y2="100" stroke="#6c63ff" stroke-width="1" stroke-dasharray="3,2" opacity="0.4"/>
+
+        <!-- Bottleneck -->
+        <circle cx="170" cy="100" r="28" fill="url(#glow)"/>
+        <circle cx="170" cy="100" r="22" fill="#10101a" stroke="#6c63ff" stroke-width="2"/>
+        <circle cx="170" cy="88" r="4" fill="#6c63ff"/>
+        <circle cx="170" cy="100" r="4" fill="#6c63ff"/>
+        <circle cx="170" cy="112" r="4" fill="#6c63ff"/>
+        <text x="170" y="135" text-anchor="middle" fill="#fff" font-size="8" font-weight="bold">z (32)</text>
+        <text x="170" y="145" text-anchor="middle" fill="#7878a0" font-size="7.5">Latent Space</text>
+        <line x1="134" y1="100" x2="145" y2="100" stroke="#6c63ff" stroke-width="1" stroke-dasharray="3,2" opacity="0.4"/>
+
+        <!-- Decoder layers (growing) -->
+        <g>
+          <rect x="204" y="60" width="18" height="80" rx="4" fill="#1a2a1a" stroke="#43e97b" stroke-width="1" opacity="0.6"/>
+          <circle cx="213" cy="75" r="4" fill="#43e97b" opacity="0.6"/>
+          <circle cx="213" cy="95" r="4" fill="#43e97b" opacity="0.6"/>
+          <circle cx="213" cy="115" r="4" fill="#43e97b" opacity="0.6"/>
+          <text x="213" y="155" text-anchor="middle" fill="#43e97b" font-size="8">256</text>
+        </g>
+        <g>
+          <rect x="237" y="40" width="22" height="120" rx="4" fill="#1a2a1a" stroke="#43e97b" stroke-width="1" opacity="0.8"/>
+          <circle cx="248" cy="55" r="4" fill="#43e97b" opacity="0.7"/>
+          <circle cx="248" cy="75" r="4" fill="#43e97b" opacity="0.7"/>
+          <circle cx="248" cy="95" r="4" fill="#43e97b" opacity="0.7"/>
+          <circle cx="248" cy="115" r="4" fill="#43e97b" opacity="0.7"/>
+          <circle cx="248" cy="135" r="4" fill="#43e97b" opacity="0.7"/>
+          <text x="248" y="175" text-anchor="middle" fill="#43e97b" font-size="8">512</text>
+        </g>
+        <line x1="195" y1="100" x2="201" y2="100" stroke="#43e97b" stroke-width="1" stroke-dasharray="3,2" opacity="0.4"/>
+        <line x1="222" y1="100" x2="234" y2="100" stroke="#43e97b" stroke-width="1" stroke-dasharray="3,2" opacity="0.4"/>
+
+        <!-- Output Layer -->
+        <g>
+          <rect x="274" y="20" width="28" height="160" rx="4" fill="#1a2a1a" stroke="#43e97b" stroke-width="1"/>
+          <circle cx="288" cy="40" r="5" fill="#43e97b" opacity="0.9"/>
+          <circle cx="288" cy="60" r="5" fill="#43e97b" opacity="0.9"/>
+          <circle cx="288" cy="80" r="5" fill="#43e97b" opacity="0.9"/>
+          <circle cx="288" cy="100" r="5" fill="#43e97b" opacity="0.9"/>
+          <circle cx="288" cy="120" r="5" fill="#43e97b" opacity="0.9"/>
+          <circle cx="288" cy="140" r="5" fill="#43e97b" opacity="0.9"/>
+          <circle cx="288" cy="160" r="5" fill="#43e97b" opacity="0.9"/>
+          <text x="288" y="210" text-anchor="middle" fill="#7878a0" font-size="9">Output x̂</text>
+          <text x="288" y="180" text-anchor="middle" fill="#43e97b" font-size="8">784</text>
+        </g>
+        <line x1="259" y1="100" x2="271" y2="100" stroke="#43e97b" stroke-width="1" stroke-dasharray="3,2" opacity="0.4"/>
+
+        <!-- Decoder label -->
+        <text x="240" y="12" text-anchor="middle" fill="#43e97b" font-size="9" letter-spacing="1">DECODER  g(z)</text>
+
+        <!-- Loss arrow -->
+        <line x1="320" y1="40" x2="320" y2="160" stroke="#ff6584" stroke-width="1" opacity="0.4"/>
+        <text x="420" y="90" fill="#ff6584" font-size="9">Reconstruction Loss</text>
+        <text x="420" y="104" fill="#ff6584" font-size="9">L = || x - x̂ ||²</text>
+        <line x1="38" y1="100" x2="310" y2="100" stroke="#ff6584" stroke-width="0.5" stroke-dasharray="4,3" opacity="0.2"/>
+
+        <!-- x label -->
+        <text x="24" y="222" text-anchor="middle" fill="#7878a0" font-size="8">Original</text>
+        <text x="288" y="222" text-anchor="middle" fill="#7878a0" font-size="8">Reconstructed</text>
+
+        <!-- Big gradient bracket for encoder/decoder -->
+        <text x="155" y="228" text-anchor="middle" fill="#6c63ff" font-size="7.5">z = f(x)</text>
+        <text x="230" y="228" text-anchor="middle" fill="#43e97b" font-size="7.5">x̂ = g(z)</text>
+      </svg>
+      <div class="diagram-caption">Fig 1.1 — Autoencoder architecture. The encoder f(x) compresses input x into latent code z. The decoder g(z) reconstructs x̂ ≈ x. The bottleneck forces meaningful compression.</div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">The Encoder</div>
+      <p>The encoder is a function <strong>f : ℝⁿ → ℝᵈ</strong> where <em>d ≪ n</em>. It maps the high-dimensional input to a low-dimensional representation. In practice, this is a stack of fully-connected layers (or convolutional layers for images), each followed by a nonlinear activation function (ReLU, leaky ReLU). Each successive layer typically halves the previous layer's width, creating a progressively compressed representation.</p>
+      <p>The encoder is doing something profound: it is learning a <em>feature extractor</em> without supervision. The internal representations it builds must be maximally informative about the input — otherwise the decoder cannot reconstruct the input faithfully.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">The Bottleneck / Latent Space</div>
+      <p>The bottleneck layer <strong>z = f(x)</strong> is where the magic lives. This is a vector of real numbers — typically far smaller than the input dimension — that encodes the "essence" of the input. A 28×28 MNIST image (784 pixels) might be compressed to a vector of just 32 numbers. Those 32 numbers must contain enough information to reconstruct all 784 pixel values.</p>
+      <p>This layer is also called the <strong>latent representation</strong> or <strong>code</strong>. The space of all possible latent vectors is the <strong>latent space</strong> — a continuous, structured manifold where similar inputs end up in nearby regions. We will explore this deeply in section 1.4.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">The Decoder</div>
+      <p>The decoder is a function <strong>g : ℝᵈ → ℝⁿ</strong>. It mirrors the encoder in structure — symmetric layers that progressively expand the latent code back to the original dimensionality. The final layer's activation depends on the data: a <strong>sigmoid</strong> for binary or normalized pixel data (output in [0,1]), a <strong>tanh</strong> for data in [-1,1], or a <strong>linear</strong> activation for unbounded continuous data.</p>
+    </div>
+
+    <div class="callout">
+      <div class="callout-label">Technical Note</div>
+      The encoder and decoder do not need to be symmetric, though they often are in practice. An asymmetric autoencoder might use a deep encoder with many layers (complex compression) but a shallow decoder (simple reconstruction). The architectural choice shapes what kind of representations the latent space learns to encode.
+    </div>
+  </div>
+
+  <!-- 1.3 Loss Function -->
+  <div id="ae-loss" class="section">
+    <h3 class="section-title">1.3 The Loss Function & Optimization</h3>
+
+    <p>The autoencoder is trained end-to-end using a <strong>reconstruction loss</strong> — a function that measures how different the output is from the input. The choice of loss function is a critical design decision that implicitly defines what "good reconstruction" means.</p>
+
+    <div class="subsection">
+      <div class="subsection-title">Mean Squared Error (MSE) — For Continuous Data</div>
+      <p>The most common loss for continuous-valued inputs (like normalized images) is the <strong>Mean Squared Error</strong>:</p>
+      <div class="eq">
+        L_MSE(x, x̂) = (1/n) · Σᵢ (xᵢ - x̂ᵢ)²
+        <br>
+        <span class="comment">// where xᵢ are input pixels, x̂ᵢ are reconstructed pixels, n is total pixels</span>
+      </div>
+      <p>MSE penalizes large errors heavily (quadratic), making it sensitive to outliers. A critical property: MSE-trained autoencoders often produce <em>blurry</em> reconstructions. This is because MSE is minimized by predicting the mean of possible outputs — when the model is uncertain between two plausible pixel values, it "hedges" toward the average, producing blurriness. This is a fundamental limitation, not a bug.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Binary Cross-Entropy — For Binary Data</div>
+      <p>For images treated as pixel-probability distributions (with values in [0,1]):</p>
+      <div class="eq">
+        L_BCE(x, x̂) = −(1/n) · Σᵢ [ xᵢ log(x̂ᵢ) + (1 − xᵢ) log(1 − x̂ᵢ) ]
+        <span class="comment">// treats each pixel as a Bernoulli random variable</span>
+      </div>
+      <p>BCE has a nice probabilistic interpretation: maximizing the log-likelihood of the input data under the model's output distribution. It tends to produce slightly sharper reconstructions than MSE for image data.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Optimization</div>
+      <p>The full optimization objective is:</p>
+      <div class="eq">
+        θ* = argmin<sub>θ</sub> E<sub>x~p_data</sub> [ L(x, g_θ(f_θ(x))) ]
+        <span class="comment">// θ are all parameters of encoder AND decoder — they are trained jointly</span>
+      </div>
+      <p>Both the encoder and decoder are trained <em>jointly</em> via standard backpropagation with gradient descent (typically Adam optimizer). The gradient of the loss flows backward through the decoder, through the bottleneck, and into the encoder — the entire pipeline learns together. This is a key insight: the encoder learns to compress <em>because</em> the decoder needs to reconstruct, and the decoder learns to reconstruct <em>because</em> the encoder provides compressed codes.</p>
+    </div>
+  </div>
+
+  <!-- 1.4 Latent Space -->
+  <div id="ae-latent" class="section">
+    <h3 class="section-title">1.4 The Latent Space — Where the Intelligence Lives</h3>
+
+    <p>The latent space is arguably the most fascinating part of an autoencoder. It is a continuous, low-dimensional coordinate system where the network has organized all of its knowledge about the data. Understanding the latent space unlocks every advanced application of autoencoders.</p>
+
+    <p>Consider an autoencoder trained on handwritten digits (MNIST). After training, if you take 10,000 test images and project each one to its latent code <strong>z</strong>, then visualize those codes in 2D (using t-SNE or UMAP), you will see something remarkable: <strong>digits naturally cluster by class</strong>. The network was never told there are 10 classes. It discovered this structure purely from the reconstruction objective.</p>
+
+    <!-- Latent Space Visualization -->
+    <div class="diagram-wrap">
+      <canvas id="latentCanvas" width="500" height="300" style="max-width:100%"></canvas>
+      <div class="diagram-caption">Fig 1.2 — Simulated 2D latent space of an autoencoder trained on MNIST. Each color represents a digit class (0–9). The network discovers class-like clustering without supervision.</div>
+    </div>
+
+    <p>Crucially, the latent space is <strong>continuous and interpolatable</strong>. If you take two valid latent codes z₁ and z₂ (corresponding to, say, a "3" and a "7"), and linearly interpolate between them — computing z_t = (1−t)·z₁ + t·z₂ for t ∈ [0,1] — and then decode each z_t, you get a smooth morphing sequence from one digit to another. This is only possible because the encoder has learned a geometrically structured representation.</p>
+
+    <div class="callout intuition">
+      <div class="callout-label">Intuition — Latent Space as a Map</div>
+      Imagine the latent space as a high-dimensional map of "data geography." Nearby points on the map correspond to similar inputs. The encoder is a GPS that translates any input into coordinates on this map. The decoder is a renderer that turns coordinates back into the full image. Autoencoders learn this map entirely from data — they discover the hidden topology of the data distribution.
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Why Dimensionality Matters</div>
+      <p>The bottleneck dimension is the most important hyperparameter. Too small, and the network cannot store enough information — reconstructions will be poor and the latent space will discard important variation. Too large, and the compression is trivial — the network might simply pass information through without learning structure (this is called an <strong>overcomplete autoencoder</strong>, discussed next).</p>
+      <p>The sweet spot is a bottleneck that forces the network to discover the true <strong>intrinsic dimensionality</strong> of the data — the minimum number of factors needed to explain all meaningful variation. For MNIST, the intrinsic dimensionality is roughly 10-20 (digit class, rotation, stroke width, etc.), despite the raw pixel space being 784-dimensional.</p>
+    </div>
+  </div>
+
+  <!-- 1.5 Variants -->
+  <div id="ae-types" class="section">
+    <h3 class="section-title">1.5 Variants of Autoencoders</h3>
+
+    <p>The basic autoencoder has spawned a rich family of variants, each addressing a specific limitation or extending the basic idea in a powerful direction.</p>
+
+    <div class="subsection">
+      <div class="subsection-title">1.5.1 Undercomplete Autoencoders</div>
+      <p>The standard autoencoder described above is "undercomplete" — the latent dimension is strictly smaller than the input. The bottleneck constraint is the primary regularization mechanism. This is the foundational variant: everything else is built on top of or beside this idea.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">1.5.2 Overcomplete Autoencoders & The Problem They Create</div>
+      <p>What happens if you make the latent dimension <em>larger</em> than the input? Without any additional constraint, the network has a trivial solution: learn the identity function. Copy input to latent space, copy latent space to output. No compression, no meaningful representation. This is useless — which is why overcomplete autoencoders require explicit regularization to be useful. The next three variants address this.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">1.5.3 Sparse Autoencoders</div>
+      <p>A sparse autoencoder adds an <strong>L1 penalty</strong> on the activations of the hidden layer, forcing most neurons to be near zero at any given time:</p>
+      <div class="eq">
+        L_sparse = L_recon(x, x̂) + λ · Σⱼ |hⱼ|
+        <span class="comment">// hⱼ = activations of hidden neurons. λ controls sparsity strength.</span>
+      </div>
+      <p>Sparse autoencoders can be overcomplete (more hidden units than inputs) yet still learn meaningful, <strong>disentangled features</strong>. Each hidden neuron specializes in detecting a specific, sparse feature — similar to how V1 neurons in the visual cortex respond to oriented edges. The network learns a <em>dictionary</em> of features where each data point is a sparse linear combination.</p>
+      <p>This is deeply connected to the idea of <strong>sparse coding</strong> in neuroscience and signal processing (like JPEG compression). The learned features tend to be interpretable — in image models, individual neurons activate for edges, corners, textures, or specific patterns.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">1.5.4 Denoising Autoencoders (DAE)</div>
+      <p>A denoising autoencoder (DAE), introduced by Vincent et al. (2008), takes a <em>corrupted</em> input and learns to reconstruct the clean original. The training procedure is:</p>
+      <ul class="prose-list">
+        <li>Take a clean input <strong>x</strong></li>
+        <li>Create a corrupted version <strong>x̃</strong> by adding noise (Gaussian noise, salt-and-pepper noise) or by randomly masking pixels (dropout-style)</li>
+        <li>Feed the corrupted <strong>x̃</strong> through the autoencoder</li>
+        <li>Compute the reconstruction loss against the <strong>clean x</strong> (not the corrupted version!)</li>
+      </ul>
+      <div class="eq">
+        L_DAE = E[L(x, g(f(x̃)))]
+        <span class="comment">// The network learns: given corrupted input, predict clean input</span>
+      </div>
+      <p>This forces the network to learn the true data manifold, not just memorize the training data. The learned representation captures which directions in input space are "informative" (the network learns to correct those) versus "noise" (which the network learns to ignore). DAEs are also the conceptual precursor to <strong>diffusion models</strong> — modern state-of-the-art generative models trained as iterative denoisers.</p>
+      <div class="callout intuition">
+        <div class="callout-label">Intuition</div>
+        If you drop a marble on a curved surface, it rolls to the lowest point. DAEs teach the network to find the "closest point on the data manifold" for any corrupted input — the clean reconstruction is the nearest valid data point. This makes the network highly robust to real-world noise.
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">1.5.5 Contractive Autoencoders (CAE)</div>
+      <p>Contractive autoencoders add a regularizer based on the <strong>Frobenius norm of the Jacobian</strong> of the encoder with respect to the input:</p>
+      <div class="eq">
+        L_CAE = L_recon(x, x̂) + λ · || ∂f(x)/∂x ||²_F
+        <span class="comment">// Penalizes sensitivity of the latent code to small input perturbations</span>
+      </div>
+      <p>This penalty forces the encoder to learn representations that are <strong>insensitive to small input variations</strong>. The Jacobian measures "how much does the latent code change when the input changes slightly?" By minimizing this, the network learns representations that vary only along the true directions of variation in the data (the data manifold), while ignoring directions that are just noise. CAEs are closely related to DAEs — both learn to project onto the data manifold, but via different mechanisms.</p>
+    </div>
+  </div>
+
+  <!-- 1.6 VAE -->
+  <div id="vae" class="section">
+    <h3 class="section-title">1.6 Variational Autoencoders (VAE) — The Generative Leap</h3>
+
+    <p>The Variational Autoencoder, introduced by Kingma & Welling in 2013, is where autoencoders transform from a representation learning tool into a <strong>full generative model</strong>. It is one of the most important papers in deep learning — a masterpiece that connects neural networks, Bayesian inference, and information theory.</p>
+
+    <div class="subsection">
+      <div class="subsection-title">The Problem with Standard Autoencoders as Generators</div>
+      <p>You might imagine using a standard autoencoder to generate new data: just sample a random latent vector <strong>z</strong> and decode it. The problem is that the latent space of a standard autoencoder is <strong>unstructured and irregular</strong>. There are "holes" — regions of the latent space that the encoder never maps any input to, and therefore the decoder has never learned to decode. Sampling from these holes produces garbage.</p>
+      <p>Furthermore, nearby points in latent space may decode to completely different and unrelated outputs. The standard autoencoder has no incentive to organize its latent space smoothly — it only needs to reconstruct the training data, not to generalize to arbitrary latent codes.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">The VAE Idea: A Probabilistic Encoder</div>
+      <p>The VAE's key insight is to make the encoder <em>probabilistic</em>. Instead of mapping input <strong>x</strong> to a single latent vector <strong>z</strong>, the encoder maps x to a <strong>probability distribution</strong> over z — specifically, a Gaussian:</p>
+      <div class="eq">
+        Standard AE:   z = f(x)   <span class="comment">// deterministic</span>
+        <br>
+        VAE Encoder:   q(z|x) = N(μ(x), σ²(x))   <span class="comment">// probabilistic — outputs mean and variance</span>
+      </div>
+      <p>The encoder now outputs two vectors: <strong>μ(x)</strong> (the mean) and <strong>σ(x)</strong> (the standard deviation) of a Gaussian distribution. The latent code z is then <em>sampled</em> from this distribution: z ~ N(μ(x), σ²(x)). This introduces stochasticity into the bottleneck.</p>
+    </div>
+
+    <!-- VAE Diagram -->
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 820 220" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;font-family:'JetBrains Mono',monospace;font-size:9px;">
+        <!-- Encoder block -->
+        <rect x="10" y="60" width="120" height="100" rx="6" fill="#1e1e3a" stroke="#6c63ff" stroke-width="1.5"/>
+        <text x="70" y="80" text-anchor="middle" fill="#6c63ff" font-size="8" letter-spacing="1">ENCODER</text>
+        <text x="70" y="93" text-anchor="middle" fill="#7878a0">q(z|x)</text>
+        <circle cx="30" cy="115" r="5" fill="#6c63ff" opacity="0.8"/>
+        <circle cx="50" cy="105" r="5" fill="#6c63ff" opacity="0.8"/>
+        <circle cx="50" cy="125" r="5" fill="#6c63ff" opacity="0.8"/>
+        <circle cx="70" cy="110" r="5" fill="#6c63ff" opacity="0.8"/>
+        <circle cx="70" cy="130" r="5" fill="#6c63ff" opacity="0.8"/>
+        <text x="70" y="175" text-anchor="middle" fill="#7878a0">Input x</text>
+
+        <!-- Outputs μ and σ -->
+        <line x1="130" y1="100" x2="200" y2="80" stroke="#6c63ff" stroke-width="1" stroke-dasharray="3,2"/>
+        <line x1="130" y1="120" x2="200" y2="140" stroke="#f0c040" stroke-width="1" stroke-dasharray="3,2"/>
+        <rect x="200" y="65" width="70" height="30" rx="4" fill="#10101a" stroke="#6c63ff" stroke-width="1"/>
+        <text x="235" y="83" text-anchor="middle" fill="#6c63ff">μ(x)</text>
+        <rect x="200" y="125" width="70" height="30" rx="4" fill="#10101a" stroke="#f0c040" stroke-width="1"/>
+        <text x="235" y="143" text-anchor="middle" fill="#f0c040">σ(x)</text>
+
+        <!-- Reparameterization trick -->
+        <rect x="300" y="85" width="120" height="50" rx="6" fill="#0d0d1a" stroke="#ff6584" stroke-width="1.5"/>
+        <text x="360" y="103" text-anchor="middle" fill="#ff6584" font-size="8">REPARAMETRIZE</text>
+        <text x="360" y="118" text-anchor="middle" fill="#ccc">z = μ + σ · ε</text>
+        <text x="360" y="130" text-anchor="middle" fill="#7878a0">ε ~ N(0,I)</text>
+        <line x1="270" y1="80" x2="298" y2="108" stroke="#6c63ff" stroke-width="1"/>
+        <line x1="270" y1="140" x2="298" y2="112" stroke="#f0c040" stroke-width="1"/>
+        <!-- ε arrow -->
+        <text x="345" y="68" text-anchor="middle" fill="#7878a0">ε ~ N(0,1)</text>
+        <line x1="355" y1="72" x2="355" y2="84" stroke="#7878a0" stroke-width="1" stroke-dasharray="2,2"/>
+
+        <!-- z -->
+        <line x1="420" y1="110" x2="460" y2="110" stroke="#43e97b" stroke-width="1.5"/>
+        <text x="440" y="106" text-anchor="middle" fill="#43e97b">z</text>
+
+        <!-- Decoder -->
+        <rect x="460" y="60" width="120" height="100" rx="6" fill="#1a2a1a" stroke="#43e97b" stroke-width="1.5"/>
+        <text x="520" y="80" text-anchor="middle" fill="#43e97b" font-size="8" letter-spacing="1">DECODER</text>
+        <text x="520" y="93" text-anchor="middle" fill="#7878a0">p(x|z)</text>
+        <circle cx="480" cy="110" r="5" fill="#43e97b" opacity="0.8"/>
+        <circle cx="500" cy="105" r="5" fill="#43e97b" opacity="0.8"/>
+        <circle cx="500" cy="125" r="5" fill="#43e97b" opacity="0.8"/>
+        <circle cx="520" cy="115" r="5" fill="#43e97b" opacity="0.8"/>
+        <text x="520" y="175" text-anchor="middle" fill="#7878a0">Output x̂</text>
+
+        <!-- ELBO -->
+        <rect x="10" y="185" width="570" height="28" rx="4" fill="#0d0d1a" stroke="#f0c040" stroke-width="1"/>
+        <text x="295" y="199" text-anchor="middle" fill="#f0c040">ELBO Loss = E[log p(x|z)] − KL[q(z|x) || p(z)]</text>
+        <text x="295" y="211" text-anchor="middle" fill="#7878a0">Reconstruction term                    KL Regularization term</text>
+      </svg>
+      <div class="diagram-caption">Fig 1.3 — VAE architecture. The encoder outputs distribution parameters (μ, σ). The reparameterization trick allows gradients to flow. ELBO combines reconstruction and KL divergence.</div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">The Reparameterization Trick — Making Sampling Differentiable</div>
+      <p>There is a fundamental problem: sampling <strong>z ~ N(μ, σ²)</strong> is a stochastic operation. Stochastic operations have no gradient — backpropagation cannot flow through a random sample. The VAE's elegant solution is the <strong>reparameterization trick</strong>:</p>
+      <div class="eq">
+        Instead of:  z ~ N(μ(x), σ²(x))    <span class="comment">// non-differentiable</span>
+        <br>
+        Write as:    z = μ(x) + σ(x) · ε,  where  ε ~ N(0, I)    <span class="comment">// differentiable w.r.t. μ and σ</span>
+      </div>
+      <p>The randomness is now isolated in <strong>ε</strong>, which is sampled from a fixed standard normal distribution — it is not a learnable parameter. The operations involving the learnable parameters μ and σ are now deterministic and differentiable. Gradients can flow from the reconstruction loss all the way back through z to μ and σ, and then into the encoder weights. Simple, elegant, powerful.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">The VAE Loss: The ELBO</div>
+      <p>The VAE is derived from a principled probabilistic framework. We want to maximize the likelihood of the data p(x) under our generative model. Using variational inference, this leads to maximizing the <strong>Evidence Lower BOund (ELBO)</strong>:</p>
+      <div class="eq">
+        ELBO = E<sub>q(z|x)</sub>[log p(x|z)] − KL[q(z|x) || p(z)]
+        <br><br>
+        Term 1: Reconstruction  <span class="comment">// How well does the decoder reconstruct x from sampled z?</span>
+        <br>
+        Term 2: KL Divergence  <span class="comment">// How close is q(z|x) to the prior p(z) = N(0,I)?</span>
+      </div>
+      <p>The <strong>KL divergence term</strong> is the VAE's secret weapon. It regularizes the latent space by penalizing the encoder whenever its output distribution q(z|x) deviates from the standard normal prior N(0, I). This forces the latent space to be <em>filled in</em> — all latent codes cluster near the origin with unit variance. There are no "holes" in the latent space.</p>
+      <p>For Gaussian distributions, the KL term has a beautiful closed form:</p>
+      <div class="eq">
+        KL[N(μ, σ²) || N(0,1)] = −(1/2) · Σⱼ (1 + log σⱼ² − μⱼ² − σⱼ²)
+        <span class="comment">// Exactly computable, no sampling needed for this term</span>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">The β-VAE: Disentanglement</div>
+      <p>A natural extension, β-VAE (Higgins et al., 2017), adds a weight β > 1 to the KL term:</p>
+      <div class="eq">
+        L_β-VAE = E[log p(x|z)] − β · KL[q(z|x) || p(z)]
+      </div>
+      <p>A larger β pushes harder for the latent space to be standard normal. This over-regularization forces individual latent dimensions to encode <em>independent factors of variation</em> — so-called <strong>disentangled representations</strong>. In a β-VAE trained on faces, one dimension might control "face angle," another "lighting direction," another "smile intensity" — independently adjustable. This is a landmark result for interpretable representation learning.</p>
+    </div>
+  </div>
+
+  <!-- 1.7 Code -->
+  <div id="ae-code" class="section">
+    <h3 class="section-title">1.7 Implementation in PyTorch</h3>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dot" style="background:#ff6584"></div>
+        <div class="code-dot" style="background:#f0c040"></div>
+        <div class="code-dot" style="background:#43e97b"></div>
+        <span class="code-lang">python · standard autoencoder</span>
+      </div>
+      <pre><span class="kw">import</span> torch
+<span class="kw">import</span> torch.nn <span class="kw">as</span> nn
+<span class="kw">import</span> torch.optim <span class="kw">as</span> optim
+
+<span class="kw">class</span> <span class="fn">Encoder</span>(nn.Module):
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="op">self</span>, input_dim=<span class="nm">784</span>, latent_dim=<span class="nm">32</span>):
+        <span class="kw">super</span>().__init__()
+        <span class="op">self</span>.net = nn.Sequential(
+            nn.Linear(input_dim, <span class="nm">512</span>),
+            nn.ReLU(),
+            nn.Linear(<span class="nm">512</span>, <span class="nm">256</span>),
+            nn.ReLU(),
+            nn.Linear(<span class="nm">256</span>, latent_dim)   <span class="cm"># bottleneck — no activation</span>
+        )
+    <span class="kw">def</span> <span class="fn">forward</span>(<span class="op">self</span>, x):
+        <span class="kw">return</span> <span class="op">self</span>.net(x)   <span class="cm"># returns z</span>
+
+<span class="kw">class</span> <span class="fn">Decoder</span>(nn.Module):
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="op">self</span>, latent_dim=<span class="nm">32</span>, output_dim=<span class="nm">784</span>):
+        <span class="kw">super</span>().__init__()
+        <span class="op">self</span>.net = nn.Sequential(
+            nn.Linear(latent_dim, <span class="nm">256</span>),
+            nn.ReLU(),
+            nn.Linear(<span class="nm">256</span>, <span class="nm">512</span>),
+            nn.ReLU(),
+            nn.Linear(<span class="nm">512</span>, output_dim),
+            nn.Sigmoid()   <span class="cm"># pixel values in [0, 1]</span>
+        )
+    <span class="kw">def</span> <span class="fn">forward</span>(<span class="op">self</span>, z):
+        <span class="kw">return</span> <span class="op">self</span>.net(z)   <span class="cm"># returns x_hat</span>
+
+<span class="kw">class</span> <span class="fn">Autoencoder</span>(nn.Module):
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="op">self</span>, input_dim=<span class="nm">784</span>, latent_dim=<span class="nm">32</span>):
+        <span class="kw">super</span>().__init__()
+        <span class="op">self</span>.encoder = Encoder(input_dim, latent_dim)
+        <span class="op">self</span>.decoder = Decoder(latent_dim, input_dim)
+
+    <span class="kw">def</span> <span class="fn">forward</span>(<span class="op">self</span>, x):
+        z = <span class="op">self</span>.encoder(x)       <span class="cm"># compress</span>
+        x_hat = <span class="op">self</span>.decoder(z)   <span class="cm"># reconstruct</span>
+        <span class="kw">return</span> x_hat, z
+
+<span class="cm"># ─── Training Loop ───────────────────────────────────────────</span>
+model = Autoencoder(input_dim=<span class="nm">784</span>, latent_dim=<span class="nm">32</span>)
+optimizer = optim.Adam(model.parameters(), lr=<span class="nm">1e-3</span>)
+criterion = nn.MSELoss()
+
+<span class="kw">for</span> epoch <span class="kw">in</span> <span class="fn">range</span>(<span class="nm">50</span>):
+    <span class="kw">for</span> x_batch, _ <span class="kw">in</span> dataloader:   <span class="cm"># labels ignored — unsupervised</span>
+        x_flat = x_batch.view(-<span class="nm">1</span>, <span class="nm">784</span>)   <span class="cm"># flatten 28x28 → 784</span>
+        x_hat, z = model(x_flat)
+        
+        loss = criterion(x_hat, x_flat)   <span class="cm"># reconstruct original, not labels</span>
+        
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()</pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dot" style="background:#ff6584"></div>
+        <div class="code-dot" style="background:#f0c040"></div>
+        <div class="code-dot" style="background:#43e97b"></div>
+        <span class="code-lang">python · variational autoencoder (VAE)</span>
+      </div>
+      <pre><span class="kw">class</span> <span class="fn">VAE</span>(nn.Module):
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="op">self</span>, input_dim=<span class="nm">784</span>, latent_dim=<span class="nm">32</span>):
+        <span class="kw">super</span>().__init__()
+        <span class="cm"># Encoder backbone</span>
+        <span class="op">self</span>.enc_hidden = nn.Sequential(
+            nn.Linear(input_dim, <span class="nm">512</span>), nn.ReLU(),
+            nn.Linear(<span class="nm">512</span>, <span class="nm">256</span>), nn.ReLU()
+        )
+        <span class="cm"># Two heads: one for μ, one for log σ² (log-variance for stability)</span>
+        <span class="op">self</span>.fc_mu  = nn.Linear(<span class="nm">256</span>, latent_dim)
+        <span class="op">self</span>.fc_var = nn.Linear(<span class="nm">256</span>, latent_dim)
+
+        <span class="cm"># Decoder</span>
+        <span class="op">self</span>.decoder = nn.Sequential(
+            nn.Linear(latent_dim, <span class="nm">256</span>), nn.ReLU(),
+            nn.Linear(<span class="nm">256</span>, <span class="nm">512</span>), nn.ReLU(),
+            nn.Linear(<span class="nm">512</span>, input_dim), nn.Sigmoid()
+        )
+
+    <span class="kw">def</span> <span class="fn">encode</span>(<span class="op">self</span>, x):
+        h = <span class="op">self</span>.enc_hidden(x)
+        mu, log_var = <span class="op">self</span>.fc_mu(h), <span class="op">self</span>.fc_var(h)
+        <span class="kw">return</span> mu, log_var
+
+    <span class="kw">def</span> <span class="fn">reparameterize</span>(<span class="op">self</span>, mu, log_var):
+        std = torch.exp(<span class="nm">0.5</span> * log_var)   <span class="cm"># σ = exp(0.5 · log σ²)</span>
+        eps = torch.randn_like(std)        <span class="cm"># ε ~ N(0, I) — not tracked by autograd</span>
+        <span class="kw">return</span> mu + eps * std              <span class="cm"># z = μ + σ · ε</span>
+
+    <span class="kw">def</span> <span class="fn">forward</span>(<span class="op">self</span>, x):
+        mu, log_var = <span class="op">self</span>.encode(x)
+        z = <span class="op">self</span>.reparameterize(mu, log_var)
+        x_hat = <span class="op">self</span>.decoder(z)
+        <span class="kw">return</span> x_hat, mu, log_var
+
+<span class="kw">def</span> <span class="fn">vae_loss</span>(x, x_hat, mu, log_var, beta=<span class="nm">1.0</span>):
+    <span class="cm"># Reconstruction: sum over pixels (or mean — convention varies)</span>
+    recon = nn.functional.binary_cross_entropy(x_hat, x, reduction=<span class="st">'sum'</span>)
+    
+    <span class="cm"># KL divergence: closed form for Gaussian vs N(0,I)</span>
+    <span class="cm"># KL = -0.5 * sum(1 + log σ² - μ² - σ²)</span>
+    kl = -<span class="nm">0.5</span> * torch.sum(<span class="nm">1</span> + log_var - mu.pow(<span class="nm">2</span>) - log_var.exp())
+
+    <span class="kw">return</span> recon + beta * kl   <span class="cm"># beta=1 for VAE, beta>1 for β-VAE</span></pre>
+    </div>
+
+    <!-- Reconstruction loss chart -->
+    <div class="chart-wrap">
+      <div class="chart-title">// Simulated Training Curves: Autoencoder vs VAE</div>
+      <canvas id="aeTrainChart" height="200"></canvas>
+    </div>
+  </div>
+
+  <!-- 1.8 Applications -->
+  <div id="ae-applications" class="section">
+    <h3 class="section-title">1.8 Applications of Autoencoders</h3>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Application</th><th>Type of AE</th><th>How It Works</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Dimensionality Reduction</strong></td>
+            <td>Standard / Undercomplete</td>
+            <td>Nonlinear alternative to PCA. Latent codes are used as features for downstream tasks.</td>
+          </tr>
+          <tr>
+            <td><strong>Image Denoising</strong></td>
+            <td>Denoising (DAE)</td>
+            <td>Train on (noisy, clean) pairs. Apply to corrupted images at inference time.</td>
+          </tr>
+          <tr>
+            <td><strong>Anomaly Detection</strong></td>
+            <td>Standard / Sparse</td>
+            <td>Train on normal data only. Anomalies have high reconstruction error at test time.</td>
+          </tr>
+          <tr>
+            <td><strong>Data Generation</strong></td>
+            <td>VAE</td>
+            <td>Sample z ~ N(0, I) and decode. Generate infinitely many novel samples.</td>
+          </tr>
+          <tr>
+            <td><strong>Image Inpainting</strong></td>
+            <td>Denoising / VAE</td>
+            <td>Mask part of the image, reconstruct — the network fills in missing regions.</td>
+          </tr>
+          <tr>
+            <td><strong>Latent Interpolation</strong></td>
+            <td>VAE</td>
+            <td>Smoothly morph between two data points by interpolating their latent codes.</td>
+          </tr>
+          <tr>
+            <td><strong>Drug Discovery</strong></td>
+            <td>VAE (molecular)</td>
+            <td>Encode chemical structures to latent space; optimize latent codes for desired properties.</td>
+          </tr>
+          <tr>
+            <td><strong>Pre-training / Self-Supervision</strong></td>
+            <td>Masked AE (MAE)</td>
+            <td>Mask input patches, reconstruct — used to pre-train transformers (He et al., 2022).</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="glow-sep red"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- PART II: GANs                                                      -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div id="part2" class="chapter-header">
+    <span class="chapter-num">// Part II</span>
+    <h2 class="chapter-title gan">Generative Adversarial Networks</h2>
+  </div>
+
+  <!-- 2.1 Intuition -->
+  <div id="gan-intuition" class="section">
+    <h3 class="section-title">2.1 The Adversarial Idea</h3>
+
+    <p>In 2014, Ian Goodfellow and colleagues published a paper that Yann LeCun called "the most interesting idea in the last 10 years in machine learning." The idea is almost laughably simple to state, yet leads to one of the most powerful generative frameworks ever devised.</p>
+
+    <p>Imagine a <strong>counterfeiter</strong> who is trying to produce fake currency so convincing that even experts cannot tell it from the real thing. And imagine a <strong>detective</strong> who is constantly trying to distinguish real bills from fakes. As the counterfeiter gets better, the detective must sharpen their skills. As the detective gets better, the counterfeiter must improve their forgeries. Over time, this adversarial competition pushes both parties to their limits — and the counterfeiter eventually produces money that is indistinguishable from real.</p>
+
+    <p>This is, in exact analogy, a <strong>Generative Adversarial Network</strong>. Two neural networks are placed in opposition:</p>
+    <ul class="prose-list">
+      <li>The <strong>Generator G</strong> — the counterfeiter. Takes random noise as input and produces synthetic data samples.</li>
+      <li>The <strong>Discriminator D</strong> — the detective. Takes a sample (either real or generated) and outputs the probability that it is real.</li>
+    </ul>
+
+    <div class="callout intuition">
+      <div class="callout-label">Intuition</div>
+      The generator never sees real data directly. It only receives feedback from the discriminator — "this was too fake" or "this fooled me." Through this indirect signal, it learns to produce increasingly realistic data. The discriminator, in turn, is trained on both real and generated samples, constantly improving its ability to detect fakes.
+    </div>
+
+    <p>The key insight is that the discriminator provides a <strong>learned, adaptive loss function</strong> for the generator. Instead of manually designing a loss that captures "what real data looks like" (an impossibly hard task for complex data like photographs), the GAN learns this loss automatically through the discriminator. This is why GANs can produce startlingly realistic outputs that other models struggle to match.</p>
+  </div>
+
+  <!-- 2.2 Architecture -->
+  <div id="gan-architecture" class="section">
+    <h3 class="section-title">2.2 Generator & Discriminator Architecture</h3>
+
+    <!-- GAN Architecture Diagram -->
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 820 230" xmlns="http://www.w3.org/2000/svg" style="max-width:100%;font-family:'JetBrains Mono',monospace;font-size:9px;">
+        <!-- Noise input -->
+        <rect x="5" y="90" width="65" height="50" rx="5" fill="#1a1020" stroke="#ff6584" stroke-width="1.5" stroke-dasharray="4,2"/>
+        <text x="37" y="111" text-anchor="middle" fill="#ff6584">z ~ N(0,I)</text>
+        <text x="37" y="124" text-anchor="middle" fill="#7878a0">Noise</text>
+
+        <!-- Arrow to G -->
+        <line x1="70" y1="115" x2="110" y2="115" stroke="#ff6584" stroke-width="1.5" marker-end="url(#arr2)"/>
+        <defs>
+          <marker id="arr2" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L6,3 z" fill="#ff6584"/>
+          </marker>
+          <marker id="arr3" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L6,3 z" fill="#43e97b"/>
+          </marker>
+          <marker id="arr4" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L6,3 z" fill="#f0c040"/>
+          </marker>
+        </defs>
+
+        <!-- Generator Box -->
+        <rect x="110" y="60" width="160" height="110" rx="8" fill="#1a0a0a" stroke="#ff6584" stroke-width="2"/>
+        <text x="190" y="82" text-anchor="middle" fill="#ff6584" font-size="10" letter-spacing="1">GENERATOR</text>
+        <text x="190" y="96" text-anchor="middle" fill="#7878a0">G(z; θ_G)</text>
+        <!-- internal nodes -->
+        <circle cx="130" cy="115" r="4" fill="#ff6584" opacity="0.6"/>
+        <circle cx="155" cy="105" r="4" fill="#ff6584" opacity="0.7"/>
+        <circle cx="155" cy="125" r="4" fill="#ff6584" opacity="0.7"/>
+        <circle cx="180" cy="110" r="4" fill="#ff6584" opacity="0.8"/>
+        <circle cx="180" cy="130" r="4" fill="#ff6584" opacity="0.8"/>
+        <circle cx="205" cy="115" r="4" fill="#ff6584" opacity="0.9"/>
+        <text x="190" y="152" text-anchor="middle" fill="#7878a0">Upsample layers</text>
+        <text x="190" y="164" text-anchor="middle" fill="#7878a0">ConvTranspose2D</text>
+
+        <!-- Generated sample -->
+        <line x1="270" y1="115" x2="310" y2="115" stroke="#ff6584" stroke-width="1.5" marker-end="url(#arr2)"/>
+        <rect x="310" y="75" width="70" height="80" rx="5" fill="#200a0a" stroke="#ff6584" stroke-width="1.5"/>
+        <text x="345" y="107" text-anchor="middle" fill="#ff6584">Fake</text>
+        <text x="345" y="120" text-anchor="middle" fill="#ff6584">Sample</text>
+        <text x="345" y="133" text-anchor="middle" fill="#ff6584">G(z)</text>
+
+        <!-- Real data -->
+        <rect x="310" y="10" width="70" height="55" rx="5" fill="#0a200a" stroke="#43e97b" stroke-width="1.5"/>
+        <text x="345" y="32" text-anchor="middle" fill="#43e97b">Real</text>
+        <text x="345" y="46" text-anchor="middle" fill="#43e97b">Data</text>
+        <text x="345" y="59" text-anchor="middle" fill="#43e97b">x ~ p_data</text>
+
+        <!-- Both feed to Discriminator -->
+        <line x1="380" y1="38" x2="430" y2="80" stroke="#43e97b" stroke-width="1.5" marker-end="url(#arr3)"/>
+        <line x1="380" y1="115" x2="430" y2="110" stroke="#ff6584" stroke-width="1.5" marker-end="url(#arr2)"/>
+
+        <!-- Discriminator -->
+        <rect x="430" y="60" width="160" height="110" rx="8" fill="#0a1a0a" stroke="#43e97b" stroke-width="2"/>
+        <text x="510" y="82" text-anchor="middle" fill="#43e97b" font-size="10" letter-spacing="1">DISCRIMINATOR</text>
+        <text x="510" y="96" text-anchor="middle" fill="#7878a0">D(x; θ_D)</text>
+        <circle cx="455" cy="115" r="4" fill="#43e97b" opacity="0.6"/>
+        <circle cx="480" cy="105" r="4" fill="#43e97b" opacity="0.7"/>
+        <circle cx="480" cy="125" r="4" fill="#43e97b" opacity="0.7"/>
+        <circle cx="510" cy="110" r="4" fill="#43e97b" opacity="0.8"/>
+        <circle cx="540" cy="115" r="4" fill="#43e97b" opacity="0.9"/>
+        <text x="510" y="152" text-anchor="middle" fill="#7878a0">Downsample layers</text>
+        <text x="510" y="164" text-anchor="middle" fill="#7878a0">Strided Conv2D</text>
+
+        <!-- Output: Real or Fake -->
+        <line x1="590" y1="115" x2="640" y2="115" stroke="#f0c040" stroke-width="1.5" marker-end="url(#arr4)"/>
+        <rect x="640" y="90" width="80" height="50" rx="5" fill="#1a1400" stroke="#f0c040" stroke-width="1.5"/>
+        <text x="680" y="112" text-anchor="middle" fill="#f0c040">D(x) ∈</text>
+        <text x="680" y="126" text-anchor="middle" fill="#f0c040">[0, 1]</text>
+
+        <!-- Feedback arrows -->
+        <!-- D loss feedback to D -->
+        <path d="M680 140 Q680 200 510 200 Q440 200 440 170" stroke="#43e97b" stroke-width="1" fill="none" stroke-dasharray="3,2" opacity="0.6"/>
+        <text x="550" y="215" text-anchor="middle" fill="#43e97b">∂L_D / ∂θ_D</text>
+        <!-- G loss feedback through D to G -->
+        <path d="M680 140 Q680 210 190 210 Q140 210 140 170" stroke="#ff6584" stroke-width="1" fill="none" stroke-dasharray="3,2" opacity="0.6"/>
+        <text x="250" y="220" text-anchor="middle" fill="#ff6584">∂L_G / ∂θ_G  (backprop through D)</text>
+      </svg>
+      <div class="diagram-caption">Fig 2.1 — GAN architecture. The Generator produces fake samples from noise z. The Discriminator classifies real vs fake. Gradients from D's loss train both networks alternately.</div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Generator Architecture</div>
+      <p>The generator takes a random noise vector <strong>z</strong> (sampled from a simple distribution like N(0, I)) and produces a synthetic data sample. For images, this typically involves <strong>transposed convolutions</strong> (also called deconvolutions or fractionally-strided convolutions) that progressively upsample a small spatial feature map into a full-resolution image.</p>
+      <p>A typical image generator starts with a dense layer that reshapes the latent noise into a small 3D feature volume (e.g., 512 channels × 4×4 spatial), then applies a series of <strong>ConvTranspose2d</strong> layers, each doubling the spatial resolution while halving the channel count, until reaching the target output size (e.g., 3 channels × 64×64).</p>
+      <p>Each layer except the last uses <strong>Batch Normalization</strong> followed by <strong>ReLU</strong>. The output layer uses <strong>tanh</strong> (to produce values in [-1, 1], matching normalized real images).</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Discriminator Architecture</div>
+      <p>The discriminator is a standard binary image classifier. It uses <strong>strided convolutions</strong> (instead of max-pooling) to progressively downsample the input image into a single scalar probability. Each layer uses <strong>Leaky ReLU</strong> (not ReLU — the leaky variant prevents "dead neurons" in the discriminator and provides better gradient flow). The output is a single value passed through a sigmoid, representing "probability of being real."</p>
+      <p>Notably, the discriminator typically does <strong>not</strong> use batch normalization in the first layer, as it distorts the scale of real vs. fake data statistics in ways that can destabilize training.</p>
+    </div>
+
+    <div class="callout warning">
+      <div class="callout-label">Important Design Note</div>
+      Unlike autoencoders, GANs have no explicit encoder. The generator learns a mapping FROM latent space TO data space, but there is no inverse mapping from data to latent space (unless you add one separately — see BiGAN/ALI). The discriminator is a <em>critic</em>, not an inverse generator — it exists only to train the generator and is discarded at inference time.
+    </div>
+  </div>
+
+  <!-- 2.3 Theory -->
+  <div id="gan-theory" class="section">
+    <h3 class="section-title">2.3 The Minimax Game & Theoretical Foundations</h3>
+
+    <p>The GAN training objective is formulated as a <strong>two-player zero-sum minimax game</strong>. The discriminator D tries to maximize its ability to distinguish real from fake. The generator G tries to minimize D's ability to do so. Formally:</p>
+
+    <div class="eq">
+        min<sub>G</sub> max<sub>D</sub>  V(G, D) = E<sub>x~p_data</sub>[log D(x)] + E<sub>z~p_z</sub>[log(1 − D(G(z)))]
+        <br><br>
+        <span class="comment">// Term 1: D should output 1 (real) for real data x — log D(x) is maximized when D(x)→1</span>
+        <br>
+        <span class="comment">// Term 2: D should output 0 (fake) for G(z) — log(1−D(G(z))) is maximized when D(G(z))→0</span>
+        <br>
+        <span class="comment">// G wants to minimize this: it wants D(G(z))→1, making log(1−D(G(z)))→−∞</span>
+    </div>
+
+    <p>Let us break down what each player is optimizing during their respective update steps:</p>
+
+    <div class="subsection">
+      <div class="subsection-title">Discriminator Update (fix G, optimize D)</div>
+      <div class="eq">
+        max<sub>D</sub>  E<sub>x~p_data</sub>[log D(x)] + E<sub>z~p_z</sub>[log(1 − D(G(z)))]
+        <br><br>
+        <span class="comment">// In practice: maximize → minimize the negative → binary cross-entropy loss</span>
+        <br>
+        L_D = −E[log D(x_real)] − E[log(1 − D(x_fake))]
+      </div>
+      <p>The discriminator is trained as a standard binary classifier: real samples get label 1, generated samples get label 0. This is simply binary cross-entropy. The discriminator is updated for k steps (often k=1 or k=5) per generator step.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Generator Update (fix D, optimize G)</div>
+      <div class="eq">
+        min<sub>G</sub>  E<sub>z~p_z</sub>[log(1 − D(G(z)))]
+        <br><br>
+        <span class="comment">// Problem: when D is confident (D(G(z))≈0), log(1−D(G(z)))≈0 → gradient vanishes!</span>
+        <br><br>
+        <span class="comment">// Non-saturating alternative (Goodfellow's practical fix):</span>
+        L_G = −E<sub>z~p_z</sub>[log D(G(z))]   <span class="comment">// maximize log D(G(z)) instead</span>
+      </div>
+      <p>The <strong>non-saturating generator loss</strong> is a crucial practical trick. The original minimax loss for G has a vanishing gradient problem early in training: when D is strong and confidently rejects all fakes, the gradient of the original loss is essentially zero. By instead maximizing log D(G(z)) (same Nash equilibrium, different gradients), we get strong gradients even when D is powerful. This is the version used in virtually all practical GAN implementations.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">The Theoretical Optimum: Nash Equilibrium</div>
+      <p>Goodfellow et al. proved that the global optimum of the GAN game is achieved when the generator's distribution matches the data distribution: <strong>p_G = p_data</strong>. At this point, the discriminator cannot do better than random guessing: D*(x) = 1/2 for all x. The value of the game at optimum is log(4).</p>
+      <p>Furthermore, the optimal discriminator for any fixed generator G is:</p>
+      <div class="eq">
+        D*(x) = p_data(x) / (p_data(x) + p_G(x))
+        <span class="comment">// Ratio of data density to total density at x</span>
+      </div>
+      <p>Plugging this back into V(G, D*) shows that the GAN objective is equivalent (up to a constant) to minimizing the <strong>Jensen-Shannon divergence</strong> between p_data and p_G:</p>
+      <div class="eq">
+        C(G) = −log(4) + 2 · JSD(p_data || p_G)
+        <span class="comment">// JSD ≥ 0, with equality iff p_data = p_G — the global minimum</span>
+      </div>
+      <p>This is a deep result: the GAN is implicitly minimizing a measure of distance between the real data distribution and the learned generative distribution. Training the GAN is a form of <strong>distribution matching</strong>, learning to transform noise into samples from p_data.</p>
+    </div>
+  </div>
+
+  <!-- 2.4 Training Dynamics -->
+  <div id="gan-training" class="section">
+    <h3 class="section-title">2.4 Training Dynamics & The Art of Balance</h3>
+
+    <p>In theory, the minimax game converges to a beautiful global equilibrium. In practice, training a GAN is notoriously tricky — sometimes called "black magic" in the community. The fundamental challenge is maintaining balance between the two networks.</p>
+
+    <div class="subsection">
+      <div class="subsection-title">The Alternating Update Procedure</div>
+      <p>GAN training proceeds by alternating between updating D and updating G:</p>
+      <ol class="prose-list" style="list-style-type: decimal;">
+        <li>Sample a batch of real data <strong>x ~ p_data</strong></li>
+        <li>Sample noise <strong>z ~ p_z</strong> and generate fakes <strong>x_fake = G(z)</strong></li>
+        <li>Update D: maximize V(G, D) — improve discrimination ability</li>
+        <li>Sample fresh noise <strong>z ~ p_z</strong></li>
+        <li>Update G: minimize V(G, D) — improve generation quality</li>
+        <li>Repeat from step 1</li>
+      </ol>
+      <p>Steps 3 and 5 each consist of a forward pass, loss computation, and backpropagation. When updating G in step 5, the discriminator's weights are <em>frozen</em> — gradients flow through D to compute the signal, but D's weights are not updated.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">The Balance Problem</div>
+      <p>If the discriminator becomes too strong too fast, it provides near-zero gradients to the generator (it rejects everything with near-100% confidence, and the loss landscape becomes flat). The generator cannot learn. If the generator becomes too strong, the discriminator is fooled completely and also cannot learn. The two must improve at roughly equal rates.</p>
+
+      <div class="chart-wrap">
+        <div class="chart-title">// Ideal vs Pathological GAN Training Dynamics</div>
+        <canvas id="ganTrainChart" height="220"></canvas>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Practical Training Stabilization Techniques</div>
+
+      <p><strong>Label Smoothing:</strong> Instead of training D with hard labels (1 for real, 0 for fake), use soft labels (e.g., 0.9 for real, 0.0–0.1 for fake). This prevents D from becoming overconfident and prevents vanishing gradients for G.</p>
+
+      <p><strong>Different Learning Rates:</strong> Often the discriminator uses a slightly higher learning rate than the generator (or is updated more frequently), ensuring it stays slightly ahead and provides useful signal without becoming too dominant.</p>
+
+      <p><strong>Gradient Penalty:</strong> Introduced in WGAN-GP — adds a penalty on the gradient norm of D's outputs with respect to its inputs, enforcing Lipschitz continuity. This dramatically stabilizes training.</p>
+
+      <p><strong>Spectral Normalization:</strong> Normalize each weight matrix in D by its largest singular value (the spectral norm). This bounds the Lipschitz constant of D, providing stable gradients without the computational overhead of gradient penalty.</p>
+
+      <p><strong>Minibatch Discrimination:</strong> Allows D to look at multiple samples simultaneously and detect if the generator is producing the same thing repeatedly (mode collapse). D computes statistics across a minibatch as part of its features.</p>
+
+      <p><strong>Progressive Growing:</strong> Used in ProGAN — start with tiny images (4×4) and gradually increase resolution as training progresses. Both G and D grow together. This decomposes the hard problem into easier subproblems.</p>
+    </div>
+  </div>
+
+  <!-- 2.5 Problems -->
+  <div id="gan-problems" class="section">
+    <h3 class="section-title">2.5 Mode Collapse & Other Failure Modes</h3>
+
+    <p>GAN training is famously unstable. Understanding the failure modes is essential for debugging and for appreciating why newer GAN variants were developed.</p>
+
+    <div class="subsection">
+      <div class="subsection-title">Mode Collapse — The Most Common Failure</div>
+      <p><strong>Mode collapse</strong> occurs when the generator learns to produce only a small subset of the possible outputs — "modes" of the data distribution. For example, a GAN trained on MNIST might learn to generate only the digit "1" — perfectly — while ignoring the other 9 digits. The discriminator eventually catches on and rejects "1"s, so the generator switches to generating only "7"s. This cycle repeats. Neither network makes real progress, and the generator never learns to cover the full distribution.</p>
+      <p>Mode collapse happens because the minimax objective provides no explicit incentive for diversity. The generator only needs to fool the current discriminator. If one mode is easy to generate convincingly, the generator exploits this.</p>
+      <div class="callout warning">
+        <div class="callout-label">Technical Root Cause</div>
+        Mode collapse is related to the JSD's behavior. When p_G and p_data have disjoint support (as often happens in early training with high-dimensional data), JSD = log(2) constantly — its maximum value. The gradient of JSD is zero, and the generator receives no useful training signal about which direction to improve. The generator is stuck.
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Vanishing Gradients</div>
+      <p>When the discriminator is too good, the generator's loss saturates. For the original minimax G loss, when D perfectly rejects all fakes (D(G(z)) ≈ 0), log(1 − D(G(z))) ≈ 0 and its gradient is negligible. The non-saturating loss (−log D(G(z))) partially addresses this but does not eliminate the problem — which is why WGAN (discussed next) was developed.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Training Oscillation & Non-convergence</div>
+      <p>Even without mode collapse, GAN training can oscillate indefinitely — the generator and discriminator cycle through the same states without converging to an equilibrium. Standard gradient descent is not guaranteed to converge in a two-player game (it's designed for single-objective optimization). The game-theoretic landscape has no guarantee of reaching the Nash equilibrium with gradient descent.</p>
+    </div>
+  </div>
+
+  <!-- 2.6 Variants -->
+  <div id="gan-variants" class="section">
+    <h3 class="section-title">2.6 Major GAN Variants</h3>
+
+    <p>The original GAN paper spawned hundreds of variants. The following are the most influential:</p>
+
+    <div class="subsection">
+      <div class="subsection-title">DCGAN — Deep Convolutional GAN (Radford et al., 2015)</div>
+      <p>DCGAN established the architectural blueprint that became the de facto standard for image GANs. Key innovations: replace all pooling layers with strided convolutions (D) and transposed convolutions (G); use batch normalization in both G and D; use ReLU in G, LeakyReLU in D; use tanh in G's output, sigmoid in D's output; remove all fully-connected hidden layers. DCGAN could generate high-quality bedroom and face images for the first time and showed that latent space arithmetic works (e.g., "smiling woman" − "neutral woman" + "neutral man" = "smiling man").</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title red">WGAN — Wasserstein GAN (Arjovsky et al., 2017)</div>
+      <p>WGAN replaced the JSD-based objective with the <strong>Wasserstein-1 distance</strong> (Earth Mover's Distance), which measures "how much work is needed to transport mass from p_G to p_data." The Wasserstein distance has a crucial property: it is continuous and differentiable even when p_G and p_data have disjoint support — solving the vanishing gradient problem fundamentally.</p>
+      <div class="eq">
+        W(p_data, p_G) = sup<sub>||f||_L ≤ 1</sub> E<sub>x~p_data</sub>[f(x)] − E<sub>x~p_G</sub>[f(x)]
+        <br><br>
+        <span class="comment">// f must be 1-Lipschitz. In practice: clip D weights to [−0.01, 0.01] (original WGAN)</span>
+        <br>
+        <span class="comment">// Better: gradient penalty ||∇f||² ≈ 1 (WGAN-GP by Gulrajani et al., 2017)</span>
+      </div>
+      <p>The discriminator in WGAN becomes a "<strong>critic</strong>" — it no longer outputs a probability but an unbounded real number (the Wasserstein distance estimate). The loss correlates with generation quality — a first in GAN history. WGAN/WGAN-GP dramatically improved training stability and became the dominant training objective for years.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Conditional GAN (cGAN) — Controlling Generation</div>
+      <p>The original GAN generates samples without control — you cannot specify "generate a cat" versus "generate a dog." Conditional GANs (Mirza & Osindero, 2014) add conditioning information <strong>y</strong> (class label, text, another image) to both G and D:</p>
+      <div class="eq">
+        G(z, y)  →  generates samples conditioned on class y
+        <br>
+        D(x, y)  →  discriminates whether x is real AND belongs to class y
+      </div>
+      <p>The conditioning vector y is typically concatenated to the noise input for G, and to an intermediate layer of D (using class embedding). cGANs enable precise control over generated content, which is essential for practical applications.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Pix2Pix — Image-to-Image Translation (Isola et al., 2017)</div>
+      <p>Pix2Pix learns to translate between paired images (e.g., sketch → photo, map → satellite, black-and-white → color). It combines a <strong>cGAN loss</strong> with an <strong>L1 reconstruction loss</strong>:</p>
+      <div class="eq">
+        G* = argmin<sub>G</sub> max<sub>D</sub> L_cGAN(G,D) + λ · L_L1(G)
+        <span class="comment">// L1 encourages globally correct structure; cGAN encourages local realism</span>
+      </div>
+      <p>The generator uses a <strong>U-Net architecture</strong> — an encoder-decoder with skip connections that preserve spatial structure. Pix2Pix remains one of the most practically useful GAN applications.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">CycleGAN — Unpaired Image Translation (Zhu et al., 2017)</div>
+      <p>Pix2Pix requires paired training data (each input image has a matched target). CycleGAN eliminates this requirement. It uses <em>two</em> generator-discriminator pairs and a <strong>cycle consistency loss</strong>:</p>
+      <div class="eq">
+        G: X → Y  (e.g., horse → zebra)
+        <br>
+        F: Y → X  (e.g., zebra → horse)
+        <br><br>
+        L_cycle = E[||F(G(x)) − x||₁] + E[||G(F(y)) − y||₁]
+        <span class="comment">// Translating to Y and back should recover the original X</span>
+      </div>
+      <p>Cycle consistency enforces that the two generators are approximately inverse functions of each other — even without paired data, the network must learn meaningful mappings. CycleGAN produced stunning results: converting horses to zebras, apples to oranges, summer to winter, photos to paintings in the style of Monet — all without any paired examples.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">StyleGAN — State-of-the-Art Realistic Faces</div>
+      <p>StyleGAN (Karras et al., NVIDIA, 2019) and its successors revolutionized high-fidelity image generation. Key architectural innovations:</p>
+      <ul class="prose-list">
+        <li><strong>Mapping network:</strong> The input noise z is first passed through an 8-layer MLP to produce an intermediate latent code w. This disentangles the latent space — different aspects of style are controlled by different dimensions of w.</li>
+        <li><strong>Adaptive Instance Normalization (AdaIN):</strong> Instead of conditioning via input concatenation, the style w is injected at every layer of the generator via learned per-channel scale and bias: AdaIN(x, y) = y_s · (x − μ(x))/σ(x) + y_b. This allows fine-grained style control at each scale.</li>
+        <li><strong>Progressive growing:</strong> Training starts at 4×4 and grows to 1024×1024 progressively.</li>
+        <li><strong>Stochastic variation:</strong> Per-pixel noise is added after each AdaIN, allowing the network to model fine-grained stochastic details (hair, pores, freckles) separately from coarse structure.</li>
+      </ul>
+      <p>StyleGAN2 further improved by replacing AdaIN with weight demodulation, eliminating characteristic "blob" artifacts. StyleGAN2 produces photorealistic human faces at 1024×1024 that are indistinguishable from photographs — the "This Person Does Not Exist" website runs on StyleGAN2.</p>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Variant</th><th>Year</th><th>Key Innovation</th><th>Best For</th></tr></thead>
+        <tbody>
+          <tr><td>Vanilla GAN</td><td>2014</td><td>Adversarial training concept</td><td>Conceptual foundation</td></tr>
+          <tr><td>DCGAN</td><td>2015</td><td>Convolutional architecture blueprint</td><td>Image generation baseline</td></tr>
+          <tr><td>cGAN</td><td>2014</td><td>Class conditioning</td><td>Controlled generation</td></tr>
+          <tr><td>WGAN / WGAN-GP</td><td>2017</td><td>Wasserstein distance, stable training</td><td>When stability matters most</td></tr>
+          <tr><td>Pix2Pix</td><td>2017</td><td>Paired image-to-image translation</td><td>Image transformation tasks</td></tr>
+          <tr><td>CycleGAN</td><td>2017</td><td>Cycle consistency, unpaired translation</td><td>Domain transfer without paired data</td></tr>
+          <tr><td>ProGAN</td><td>2018</td><td>Progressive training, high resolution</td><td>HD image generation</td></tr>
+          <tr><td>StyleGAN2</td><td>2020</td><td>Style injection, disentangled latent</td><td>Photorealistic face generation</td></tr>
+          <tr><td>BigGAN</td><td>2019</td><td>Scale (class-conditional, 512 channels)</td><td>ImageNet generation at scale</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 2.7 Code -->
+  <div id="gan-code" class="section">
+    <h3 class="section-title">2.7 Implementation in PyTorch (DCGAN-style)</h3>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dot" style="background:#ff6584"></div>
+        <div class="code-dot" style="background:#f0c040"></div>
+        <div class="code-dot" style="background:#43e97b"></div>
+        <span class="code-lang">python · DCGAN — Generator</span>
+      </div>
+      <pre><span class="kw">import</span> torch
+<span class="kw">import</span> torch.nn <span class="kw">as</span> nn
+
+<span class="kw">class</span> <span class="fn">Generator</span>(nn.Module):
+    <span class="cm">"""
+    Generates 64x64 RGB images from a latent vector z.
+    Architecture: z(100) → 4x4 → 8x8 → 16x16 → 32x32 → 64x64
+    """</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="op">self</span>, latent_dim=<span class="nm">100</span>, feature_maps=<span class="nm">64</span>):
+        <span class="kw">super</span>().__init__()
+        nf = feature_maps
+        <span class="op">self</span>.net = nn.Sequential(
+            <span class="cm"># Input: z (latent_dim,) → reshape to (nf*8, 4, 4)</span>
+            nn.ConvTranspose2d(latent_dim, nf*<span class="nm">8</span>, <span class="nm">4</span>, <span class="nm">1</span>, <span class="nm">0</span>, bias=<span class="kw">False</span>),  <span class="cm"># → (512, 4, 4)</span>
+            nn.BatchNorm2d(nf*<span class="nm">8</span>),
+            nn.ReLU(<span class="kw">True</span>),
+
+            nn.ConvTranspose2d(nf*<span class="nm">8</span>, nf*<span class="nm">4</span>, <span class="nm">4</span>, <span class="nm">2</span>, <span class="nm">1</span>, bias=<span class="kw">False</span>),  <span class="cm"># → (256, 8, 8)</span>
+            nn.BatchNorm2d(nf*<span class="nm">4</span>),
+            nn.ReLU(<span class="kw">True</span>),
+
+            nn.ConvTranspose2d(nf*<span class="nm">4</span>, nf*<span class="nm">2</span>, <span class="nm">4</span>, <span class="nm">2</span>, <span class="nm">1</span>, bias=<span class="kw">False</span>),  <span class="cm"># → (128, 16, 16)</span>
+            nn.BatchNorm2d(nf*<span class="nm">2</span>),
+            nn.ReLU(<span class="kw">True</span>),
+
+            nn.ConvTranspose2d(nf*<span class="nm">2</span>, nf, <span class="nm">4</span>, <span class="nm">2</span>, <span class="nm">1</span>, bias=<span class="kw">False</span>),    <span class="cm"># → (64, 32, 32)</span>
+            nn.BatchNorm2d(nf),
+            nn.ReLU(<span class="kw">True</span>),
+
+            nn.ConvTranspose2d(nf, <span class="nm">3</span>, <span class="nm">4</span>, <span class="nm">2</span>, <span class="nm">1</span>, bias=<span class="kw">False</span>),        <span class="cm"># → (3, 64, 64)</span>
+            nn.Tanh()   <span class="cm"># output in [-1, 1] (match normalized real images)</span>
+        )
+
+    <span class="kw">def</span> <span class="fn">forward</span>(<span class="op">self</span>, z):
+        <span class="cm"># z shape: (batch, latent_dim, 1, 1)</span>
+        <span class="kw">return</span> <span class="op">self</span>.net(z.unsqueeze(-<span class="nm">1</span>).unsqueeze(-<span class="nm">1</span>))
+
+
+<span class="kw">class</span> <span class="fn">Discriminator</span>(nn.Module):
+    <span class="cm">"""
+    Classifies 64x64 RGB images as real or fake.
+    Architecture: 64x64 → 32x32 → 16x16 → 8x8 → 4x4 → scalar
+    """</span>
+    <span class="kw">def</span> <span class="fn">__init__</span>(<span class="op">self</span>, feature_maps=<span class="nm">64</span>):
+        <span class="kw">super</span>().__init__()
+        nf = feature_maps
+        <span class="op">self</span>.net = nn.Sequential(
+            <span class="cm"># No BN in first layer — preserves real/fake input statistics</span>
+            nn.Conv2d(<span class="nm">3</span>, nf, <span class="nm">4</span>, <span class="nm">2</span>, <span class="nm">1</span>, bias=<span class="kw">False</span>),              <span class="cm"># → (64, 32, 32)</span>
+            nn.LeakyReLU(<span class="nm">0.2</span>, inplace=<span class="kw">True</span>),
+
+            nn.Conv2d(nf, nf*<span class="nm">2</span>, <span class="nm">4</span>, <span class="nm">2</span>, <span class="nm">1</span>, bias=<span class="kw">False</span>),           <span class="cm"># → (128, 16, 16)</span>
+            nn.BatchNorm2d(nf*<span class="nm">2</span>),
+            nn.LeakyReLU(<span class="nm">0.2</span>, inplace=<span class="kw">True</span>),
+
+            nn.Conv2d(nf*<span class="nm">2</span>, nf*<span class="nm">4</span>, <span class="nm">4</span>, <span class="nm">2</span>, <span class="nm">1</span>, bias=<span class="kw">False</span>),         <span class="cm"># → (256, 8, 8)</span>
+            nn.BatchNorm2d(nf*<span class="nm">4</span>),
+            nn.LeakyReLU(<span class="nm">0.2</span>, inplace=<span class="kw">True</span>),
+
+            nn.Conv2d(nf*<span class="nm">4</span>, nf*<span class="nm">8</span>, <span class="nm">4</span>, <span class="nm">2</span>, <span class="nm">1</span>, bias=<span class="kw">False</span>),         <span class="cm"># → (512, 4, 4)</span>
+            nn.BatchNorm2d(nf*<span class="nm">8</span>),
+            nn.LeakyReLU(<span class="nm">0.2</span>, inplace=<span class="kw">True</span>),
+
+            nn.Conv2d(nf*<span class="nm">8</span>, <span class="nm">1</span>, <span class="nm">4</span>, <span class="nm">1</span>, <span class="nm">0</span>, bias=<span class="kw">False</span>),             <span class="cm"># → (1, 1, 1) — scalar</span>
+            nn.Sigmoid()   <span class="cm"># output in [0,1]: probability of being real</span>
+        )
+
+    <span class="kw">def</span> <span class="fn">forward</span>(<span class="op">self</span>, x):
+        <span class="kw">return</span> <span class="op">self</span>.net(x).view(-<span class="nm">1</span>)  <span class="cm"># flatten to (batch,)</span></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header">
+        <div class="code-dot" style="background:#ff6584"></div>
+        <div class="code-dot" style="background:#f0c040"></div>
+        <div class="code-dot" style="background:#43e97b"></div>
+        <span class="code-lang">python · GAN Training Loop</span>
+      </div>
+      <pre><span class="kw">def</span> <span class="fn">train_gan</span>(G, D, dataloader, n_epochs=<span class="nm">50</span>, lr=<span class="nm">2e-4</span>, latent_dim=<span class="nm">100</span>):
+    device = <span class="st">'cuda'</span> <span class="kw">if</span> torch.cuda.is_available() <span class="kw">else</span> <span class="st">'cpu'</span>
+    G, D = G.to(device), D.to(device)
+
+    opt_G = optim.Adam(G.parameters(), lr=lr, betas=(<span class="nm">0.5</span>, <span class="nm">0.999</span>))  <span class="cm"># β₁=0.5 for GANs</span>
+    opt_D = optim.Adam(D.parameters(), lr=lr, betas=(<span class="nm">0.5</span>, <span class="nm">0.999</span>))
+    criterion = nn.BCELoss()
+
+    <span class="kw">for</span> epoch <span class="kw">in</span> <span class="fn">range</span>(n_epochs):
+        <span class="kw">for</span> real_imgs, _ <span class="kw">in</span> dataloader:
+            batch_size = real_imgs.size(<span class="nm">0</span>)
+            real_imgs = real_imgs.to(device)
+
+            <span class="cm"># ── Step 1: Train Discriminator ────────────────────────────</span>
+            D.zero_grad()
+
+            <span class="cm"># Real images: D should output ~1 (label smoothing: 0.9)</span>
+            real_labels = torch.full((batch_size,), <span class="nm">0.9</span>, device=device)
+            d_real = D(real_imgs)
+            loss_D_real = criterion(d_real, real_labels)
+
+            <span class="cm"># Fake images: D should output ~0</span>
+            z = torch.randn(batch_size, latent_dim, device=device)
+            fake_imgs = G(z).detach()  <span class="cm"># detach: no grad to G in this step</span>
+            fake_labels = torch.zeros(batch_size, device=device)
+            d_fake = D(fake_imgs)
+            loss_D_fake = criterion(d_fake, fake_labels)
+
+            loss_D = loss_D_real + loss_D_fake
+            loss_D.backward()
+            opt_D.step()
+
+            <span class="cm"># ── Step 2: Train Generator ────────────────────────────────</span>
+            G.zero_grad()
+
+            <span class="cm"># G wants D to classify its output as real (label = 1)</span>
+            z = torch.randn(batch_size, latent_dim, device=device)
+            fake_imgs = G(z)
+            g_output = D(fake_imgs)  <span class="cm"># gradients flow into G this time</span>
+            real_labels_for_G = torch.ones(batch_size, device=device)
+            loss_G = criterion(g_output, real_labels_for_G)  <span class="cm"># −log D(G(z))</span>
+
+            loss_G.backward()
+            opt_G.step()
+
+        <span class="fn">print</span>(<span class="st">f"Epoch {epoch}: D_loss={loss_D.item():.4f}, G_loss={loss_G.item():.4f}"</span>)</pre>
+    </div>
+
+    <div class="callout math">
+      <div class="callout-label">Key Hyperparameter Note</div>
+      The Adam optimizer uses <strong>β₁ = 0.5</strong> (not the default 0.9) for GAN training. The standard β₁=0.9 causes momentum to build up and creates unstable oscillations during the adversarial game. β₁=0.5 reduces momentum, making each update more responsive to the current loss landscape — critical for the alternating optimization to converge.
+    </div>
+  </div>
+
+  <!-- 2.8 Applications -->
+  <div id="gan-applications" class="section">
+    <h3 class="section-title">2.8 Applications & Modern Impact</h3>
+
+    <p>GANs have had an extraordinary real-world impact across a wide range of domains:</p>
+
+    <div class="subsection">
+      <div class="subsection-title green">Image Synthesis & Art</div>
+      <p>GANs can generate photorealistic human faces (StyleGAN2), create art in specific styles, synthesize virtual product images for e-commerce, generate training data for other ML models, and produce film-quality visual effects. The creative industry uses GANs for concept art, texture generation, and virtual wardrobe try-on.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title green">Medical Imaging & Data Augmentation</div>
+      <p>Medical datasets are often small due to privacy and annotation costs. GANs can synthesize realistic medical images (MRI scans, histopathology slides, X-rays) to augment training datasets. They can also perform modality translation (CT → MRI), generate rare disease presentations for training classifiers, and create privacy-preserving synthetic patient records.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title green">Video & Temporal GANs</div>
+      <p>Extensions like VideoGAN, TGAN, and MoCoGAN apply the adversarial framework to video generation, producing temporally coherent sequences. Applications include video prediction, motion transfer, talking head synthesis, and frame interpolation for slow-motion effects.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title green">Beyond Images: Text, Audio, Molecules</div>
+      <p>GANs have been extended to text (though with difficulty, due to the discrete nature of text), music generation (MuseGAN, WaveGAN), voice conversion, drug molecule design (MolGAN), 3D shape generation, and protein structure synthesis.</p>
+    </div>
+  </div>
+
+  <div class="glow-sep green"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <!-- PART III: COMPARISON                                               -->
+  <!-- ═══════════════════════════════════════════════════════════════════ -->
+  <div id="part3" class="chapter-header">
+    <span class="chapter-num">// Part III</span>
+    <h2 class="chapter-title gen">Comparison & Synthesis</h2>
+  </div>
+
+  <div class="section">
+    <h3 class="section-title">3.1 Autoencoders vs GANs — A Principled Comparison</h3>
+
+    <p>Both autoencoders and GANs are concerned with learning the structure of data, but they approach this from fundamentally different angles and excel at different tasks. Understanding their differences — and their complementarity — is essential for choosing the right tool.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Dimension</th>
+            <th>Autoencoder / VAE</th>
+            <th>GAN</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Primary Goal</strong></td>
+            <td>Representation learning; reconstruction</td>
+            <td>Realistic sample generation</td>
+          </tr>
+          <tr>
+            <td><strong>Loss Function</strong></td>
+            <td>Reconstruction loss (MSE/BCE) + optional KL</td>
+            <td>Adversarial minimax game</td>
+          </tr>
+          <tr>
+            <td><strong>Output Quality</strong></td>
+            <td>Blurry (MSE averages modes)</td>
+            <td>Sharp, photorealistic</td>
+          </tr>
+          <tr>
+            <td><strong>Latent Space</strong></td>
+            <td>Explicit, structured, continuous (VAE)</td>
+            <td>Implicit; exists but unstructured by default</td>
+          </tr>
+          <tr>
+            <td><strong>Generation Method</strong></td>
+            <td>Sample z from prior, decode</td>
+            <td>Sample z from noise, generate</td>
+          </tr>
+          <tr>
+            <td><strong>Encoder Required?</strong></td>
+            <td>Yes — central to the architecture</td>
+            <td>No — optional (BiGAN adds one)</td>
+          </tr>
+          <tr>
+            <td><strong>Training Stability</strong></td>
+            <td>Stable — standard gradient descent</td>
+            <td>Notoriously unstable — game dynamics</td>
+          </tr>
+          <tr>
+            <td><strong>Density Estimation</strong></td>
+            <td>VAE provides explicit ELBO bound</td>
+            <td>No explicit density estimate</td>
+          </tr>
+          <tr>
+            <td><strong>Mode Coverage</strong></td>
+            <td>Good — optimizes full reconstruction</td>
+            <td>Risk of mode collapse</td>
+          </tr>
+          <tr>
+            <td><strong>Evaluation</strong></td>
+            <td>ELBO, reconstruction error</td>
+            <td>FID, IS, precision/recall</td>
+          </tr>
+          <tr>
+            <td><strong>Best Applications</strong></td>
+            <td>Compression, anomaly detection, representation, denoising</td>
+            <td>Image synthesis, style transfer, data augmentation</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3 class="section-title">3.2 Hybrid Models — Combining Both Worlds</h3>
+
+    <p>Some of the most powerful modern architectures combine insights from both families:</p>
+
+    <div class="subsection">
+      <div class="subsection-title">VAE-GAN</div>
+      <p>Replace the reconstruction loss in a VAE with a GAN-based perceptual loss. The decoder becomes the GAN generator, and a discriminator is added to enforce realism. This gives the structured, continuous latent space of VAE with the sharp, perceptually realistic outputs of a GAN — the best of both worlds.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">BiGAN / ALI</div>
+      <p>Bidirectional GAN adds an encoder to a GAN: the discriminator now looks at both (x, E(x)) pairs and (G(z), z) pairs. This allows learning an encoder for the GAN's latent space — something the original GAN cannot do. BiGAN can be used for unsupervised feature learning with GAN-quality latent representations.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Latent Diffusion Models (LDM / Stable Diffusion)</div>
+      <p>Modern state-of-the-art generative models combine <em>autoencoder compression</em> with <em>diffusion model generation</em>. Stable Diffusion trains a VQ-VAE (vector-quantized autoencoder) to compress images to a 4× smaller latent space, then trains a diffusion model to generate in that compressed latent space. This gives the structured representation of autoencoders with generation quality exceeding GANs — and better stability than either.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3 class="section-title">3.3 Evaluation Metrics — How Do We Measure Quality?</h3>
+
+    <p>Evaluating generative models is genuinely hard — unlike discriminative models, there is no single ground-truth label to compare against. The field has developed several standard metrics:</p>
+
+    <div class="subsection">
+      <div class="subsection-title">Fréchet Inception Distance (FID)</div>
+      <p>The most widely used metric for GANs. It computes the Fréchet distance between the distribution of Inception-v3 features of real images and generated images, modeled as multivariate Gaussians. <strong>Lower FID = better generation quality and diversity.</strong> FID is sensitive to both quality (sharp, realistic samples) and diversity (covers all modes of the data).</p>
+      <div class="eq">
+        FID = ||μ_r − μ_g||² + Tr(Σ_r + Σ_g − 2(Σ_r Σ_g)^{1/2})
+        <span class="comment">// μ_r, Σ_r: mean/covariance of real feature distributions</span>
+        <span class="comment">// μ_g, Σ_g: mean/covariance of generated feature distributions</span>
+      </div>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">Inception Score (IS)</div>
+      <p>Measures sharpness (high conditional class probability) and diversity (high marginal class entropy) using an Inception classifier. Higher IS = better. However, IS does not compare to real data — a generator that produces one perfect example per class gets a high IS. FID is generally preferred.</p>
+    </div>
+
+    <div class="subsection">
+      <div class="subsection-title">ELBO (for VAEs)</div>
+      <p>The Evidence Lower Bound provides a principled probabilistic measure of how well the VAE models the data distribution. Unlike GAN metrics, ELBO can be computed analytically, making VAE evaluation more tractable and theoretically grounded.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3 class="section-title">3.4 Where Do These Models Stand in 2024–2025?</h3>
+
+    <p>Both autoencoders and GANs remain highly active areas of research, though the broader landscape has shifted significantly:</p>
+
+    <p><strong>Diffusion models</strong> (DALL-E, Stable Diffusion, Midjourney, Sora) have largely surpassed GANs as the dominant paradigm for high-quality image and video generation. They offer better mode coverage, more stable training, and better text-conditional generation. However, GANs remain competitive for tasks requiring speed (diffusion models are slow at inference), fine-grained control (StyleGAN still leads for face editing), and real-time applications.</p>
+
+    <p><strong>Autoencoders</strong> are more central than ever — as the compression backbone of almost every modern large-scale generative model. VQ-VAE, used in DALL-E 1 and many video generation models, is an autoencoder variant. The encoder in Stable Diffusion is a VAE. The concept of learning compressed representations is foundational to virtually all modern generative AI.</p>
+
+    <p>Understanding autoencoders and GANs is therefore not merely historical — it is foundational to understanding all of modern generative AI. Every cutting-edge system builds upon these concepts in some form.</p>
+
+    <div class="callout intuition">
+      <div class="callout-label">Closing Thought</div>
+      Autoencoders teach us about the geometry of data — the intrinsic structure hiding in high-dimensional spaces. GANs teach us about adversarial learning — using competition to achieve what no single objective function could directly optimize for. Together, they represent two of the most productive ideas in the history of machine learning. Every practitioner working in generative AI stands on the shoulders of these foundational frameworks.
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- References -->
+  <div class="section">
+    <h3 class="section-title" style="font-size:1.1rem;color:var(--muted)">Key References</h3>
+    <ul class="prose-list" style="font-size:0.85rem;color:var(--muted);">
+      <li>Rumelhart, Hinton & Williams (1986) — Learning representations by back-propagating errors</li>
+      <li>Vincent et al. (2008) — Extracting and composing robust features with denoising autoencoders</li>
+      <li>Kingma & Welling (2013) — Auto-Encoding Variational Bayes (VAE)</li>
+      <li>Goodfellow et al. (2014) — Generative Adversarial Networks</li>
+      <li>Radford et al. (2015) — Unsupervised Representation Learning with DCGAN</li>
+      <li>Arjovsky et al. (2017) — Wasserstein GAN</li>
+      <li>Zhu et al. (2017) — Unpaired Image-to-Image Translation using CycleGAN</li>
+      <li>Higgins et al. (2017) — β-VAE: Learning Basic Visual Concepts with a Constrained Variational Framework</li>
+      <li>Karras et al. (2019, 2020) — A Style-Based Generator Architecture (StyleGAN, StyleGAN2)</li>
+      <li>He et al. (2022) — Masked Autoencoders Are Scalable Vision Learners</li>
+      <li>Rombach et al. (2022) — High-Resolution Image Synthesis with Latent Diffusion Models</li>
+    </ul>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+// ── Latent Space Canvas (simulated MNIST-like clusters) ────────────────
+const canvas = document.getElementById('latentCanvas');
+const ctx = canvas.getContext('2d');
+const colors = [
+  '#6c63ff','#ff6584','#43e97b','#f0c040','#38bdf8',
+  '#fb923c','#a78bfa','#34d399','#f472b6','#fbbf24'
+];
+const clusterCenters = [
+  [120, 80], [260, 120], [200, 200], [80, 190], [350, 80],
+  [310, 210], [160, 150], [380, 160], [90, 120], [270, 60]
+];
+
+function drawLatentSpace() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = '#10101a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Draw grid
+  ctx.strokeStyle = '#1e1e3a';
+  ctx.lineWidth = 0.5;
+  for (let x = 0; x < canvas.width; x += 40) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+  }
+  for (let y = 0; y < canvas.height; y += 40) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+  }
+
+  // Draw axes
+  ctx.strokeStyle = '#2a2a4a';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(canvas.width/2, 0); ctx.lineTo(canvas.width/2, canvas.height); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0, canvas.height/2); ctx.lineTo(canvas.width, canvas.height/2); ctx.stroke();
+
+  // Draw clusters
+  for (let d = 0; d < 10; d++) {
+    const [cx, cy] = clusterCenters[d];
+    const n = 60 + Math.floor(Math.random() * 20);
+    for (let i = 0; i < n; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const r = Math.random() * 28 + Math.random() * 12;
+      const x = cx + Math.cos(angle) * r;
+      const y = cy + Math.sin(angle) * r;
+      ctx.beginPath();
+      ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = colors[d] + 'cc';
+      ctx.fill();
+    }
+    // Label
+    ctx.fillStyle = colors[d];
+    ctx.font = 'bold 11px JetBrains Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(d.toString(), cx, cy - 32);
+  }
+
+  // Axes labels
+  ctx.fillStyle = '#3a3a6a';
+  ctx.font = '10px JetBrains Mono, monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText('z₁ →', canvas.width - 5, canvas.height/2 - 5);
+  ctx.textAlign = 'center';
+  ctx.fillText('↑ z₂', canvas.width/2 + 15, 12);
+}
+drawLatentSpace();
+
+// ── AE Training Chart ──────────────────────────────────────────────────
+const epochs = Array.from({length: 50}, (_, i) => i + 1);
+function expDecay(start, end, n, noise = 0.02) {
+  return Array.from({length: n}, (_, i) => {
+    const t = i / (n - 1);
+    const v = start * Math.exp(-4 * t) + end;
+    return v + (Math.random() - 0.5) * noise * v;
+  });
+}
+
+const aeCtx = document.getElementById('aeTrainChart').getContext('2d');
+new Chart(aeCtx, {
+  type: 'line',
+  data: {
+    labels: epochs,
+    datasets: [
+      {
+        label: 'AE Reconstruction Loss',
+        data: expDecay(0.9, 0.04, 50, 0.05),
+        borderColor: '#6c63ff',
+        backgroundColor: '#6c63ff15',
+        borderWidth: 2,
+        pointRadius: 0,
+        fill: true,
+        tension: 0.4
+      },
+      {
+        label: 'VAE Total Loss (ELBO)',
+        data: expDecay(1.4, 0.12, 50, 0.06),
+        borderColor: '#43e97b',
+        backgroundColor: '#43e97b15',
+        borderWidth: 2,
+        pointRadius: 0,
+        fill: true,
+        tension: 0.4
+      },
+      {
+        label: 'VAE KL Term',
+        data: expDecay(0.0, 0.08, 50, 0.03).map((v, i) => v * (i / 50) * 1.2),
+        borderColor: '#f0c040',
+        borderWidth: 1.5,
+        borderDash: [4, 2],
+        pointRadius: 0,
+        tension: 0.4
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        labels: { color: '#7878a0', font: { family: 'JetBrains Mono', size: 11 } }
+      }
+    },
+    scales: {
+      x: {
+        title: { display: true, text: 'Epoch', color: '#7878a0', font: { family: 'JetBrains Mono', size: 11 } },
+        ticks: { color: '#444466', font: { family: 'JetBrains Mono', size: 10 } },
+        grid: { color: '#1e1e3a' }
+      },
+      y: {
+        title: { display: true, text: 'Loss', color: '#7878a0', font: { family: 'JetBrains Mono', size: 11 } },
+        ticks: { color: '#444466', font: { family: 'JetBrains Mono', size: 10 } },
+        grid: { color: '#1e1e3a' }
+      }
+    }
+  }
+});
+
+// ── GAN Training Chart ─────────────────────────────────────────────────
+const ganCtx = document.getElementById('ganTrainChart').getContext('2d');
+
+// Ideal: D loss around 0.69 (log2), G loss similar
+// Pathological: oscillating wildly
+const nGan = 80;
+function idealD() {
+  return Array.from({length: nGan}, (_, i) => {
+    return 0.69 + (Math.random() - 0.5) * 0.15;
+  });
+}
+function idealG() {
+  return Array.from({length: nGan}, (_, i) => {
+    const base = 0.8 * Math.exp(-1.5 * i / nGan) + 0.69;
+    return base + (Math.random() - 0.5) * 0.12;
+  });
+}
+function collapseG() {
+  // G quickly drives to near-0 loss (mode collapse: fools D easily, then D recovers, oscillates)
+  return Array.from({length: nGan}, (_, i) => {
+    const osc = Math.sin(i * 0.4) * 0.6;
+    return Math.abs(osc) + 0.1 + (Math.random() - 0.5) * 0.2;
+  });
+}
+function collapseD() {
+  return Array.from({length: nGan}, (_, i) => {
+    const osc = Math.cos(i * 0.4) * 0.5;
+    return Math.abs(osc) + 0.2 + (Math.random() - 0.5) * 0.2;
+  });
+}
+
+const ganEpochs = Array.from({length: nGan}, (_, i) => i + 1);
+
+new Chart(ganCtx, {
+  type: 'line',
+  data: {
+    labels: ganEpochs,
+    datasets: [
+      {
+        label: 'D Loss (healthy)',
+        data: idealD(),
+        borderColor: '#43e97b',
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.4
+      },
+      {
+        label: 'G Loss (healthy)',
+        data: idealG(),
+        borderColor: '#6c63ff',
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.4
+      },
+      {
+        label: 'D Loss (mode collapse)',
+        data: collapseD(),
+        borderColor: '#ff6584',
+        borderWidth: 1.5,
+        borderDash: [5, 3],
+        pointRadius: 0,
+        tension: 0.3
+      },
+      {
+        label: 'G Loss (mode collapse)',
+        data: collapseG(),
+        borderColor: '#f0c040',
+        borderWidth: 1.5,
+        borderDash: [5, 3],
+        pointRadius: 0,
+        tension: 0.3
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: {
+        labels: { color: '#7878a0', font: { family: 'JetBrains Mono', size: 11 } }
+      },
+      annotation: {}
+    },
+    scales: {
+      x: {
+        title: { display: true, text: 'Training Step', color: '#7878a0', font: { family: 'JetBrains Mono', size: 11 } },
+        ticks: { color: '#444466', font: { family: 'JetBrains Mono', size: 10 } },
+        grid: { color: '#1e1e3a' }
+      },
+      y: {
+        title: { display: true, text: 'Loss', color: '#7878a0', font: { family: 'JetBrains Mono', size: 11 } },
+        ticks: { color: '#444466', font: { family: 'JetBrains Mono', size: 10 } },
+        grid: { color: '#1e1e3a' },
+        min: 0,
+        max: 2
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>

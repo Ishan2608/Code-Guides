@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Data Visualization in Python — A Field Guide</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #080a0f;
+    --surface: #0e1119;
+    --card: #131620;
+    --border: #1e2235;
+    --accent: #6c63ff;
+    --accent2: #26c980;
+    --accent3: #f7b955;
+    --accent4: #f76a6a;
+    --accent5: #5de8c1;
+    --text: #d4d5e8;
+    --dim: #606280;
+    --dim2: #3a3d5c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Montserrat', sans-serif;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  code, pre, .mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* --- NAV --- */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(8,10,15,0.88);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+    padding: 0.7rem 2rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .nav-brand {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+  }
+
+  .nav-links a {
+    font-size: 0.72rem;
+    color: var(--dim);
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    font-weight: 600;
+    transition: color 0.2s;
+    white-space: nowrap;
+  }
+
+  .nav-links a:hover { color: var(--accent); }
+
+  /* --- HERO --- */
+  .hero {
+    padding: 5rem 2rem 4rem;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .eyebrow {
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 700;
+    margin-bottom: 1.2rem;
+  }
+
+  h1.headline {
+    font-size: clamp(2.4rem, 5vw, 3.8rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    color: #fff;
+    margin-bottom: 1.5rem;
+  }
+
+  h1.headline span { color: var(--accent); }
+
+  .hero-lead {
+    font-size: 1.05rem;
+    color: var(--dim);
+    max-width: 680px;
+    line-height: 1.8;
+  }
+
+  /* --- SECTIONS --- */
+  .page-section {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+  }
+
+  .section-title {
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 0.4rem;
+    letter-spacing: -0.02em;
+  }
+
+  .section-sub {
+    font-size: 0.88rem;
+    color: var(--dim);
+    margin-bottom: 2rem;
+    line-height: 1.7;
+  }
+
+  .section-divider {
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent) 0%, transparent 100%);
+    margin-bottom: 2.5rem;
+    opacity: 0.35;
+  }
+
+  /* --- CARDS --- */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.6rem 1.8rem;
+    margin-bottom: 1.4rem;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--dim2); }
+
+  .card-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.5rem;
+  }
+
+  .card-body {
+    font-size: 0.88rem;
+    color: var(--dim);
+    line-height: 1.8;
+  }
+
+  /* --- CODE BLOCKS --- */
+  pre {
+    background: #070911;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.2rem 1.4rem;
+    overflow-x: auto;
+    font-size: 0.8rem;
+    line-height: 1.7;
+    margin: 1rem 0;
+    color: #c9d1e0;
+  }
+
+  .kw { color: #9d87f7; }
+  .fn { color: #5de8c1; }
+  .st { color: #f7b955; }
+  .cm { color: #454870; }
+  .nm { color: #f76a6a; }
+  .op { color: #888aaa; }
+  .param { color: #26c980; }
+
+  /* --- HIGHLIGHT BOXES --- */
+  .callout {
+    border-left: 3px solid var(--accent);
+    background: #10121e;
+    border-radius: 0 8px 8px 0;
+    padding: 1rem 1.3rem;
+    margin: 1.2rem 0;
+    font-size: 0.86rem;
+    color: var(--text);
+  }
+
+  .callout.green { border-color: var(--accent2); }
+  .callout.amber { border-color: var(--accent3); }
+  .callout.red   { border-color: var(--accent4); }
+  .callout.teal  { border-color: var(--accent5); }
+
+  .callout-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 0.35rem;
+    color: var(--accent);
+  }
+  .callout.green .callout-label { color: var(--accent2); }
+  .callout.amber .callout-label { color: var(--accent3); }
+  .callout.red   .callout-label { color: var(--accent4); }
+  .callout.teal  .callout-label { color: var(--accent5); }
+
+  /* --- GRID LAYOUTS --- */
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+
+  @media (max-width: 700px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+
+  /* --- BADGES --- */
+  .badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    margin-bottom: 0.6rem;
+  }
+  .badge-purple { background: rgba(108,99,255,0.15); color: var(--accent); }
+  .badge-green  { background: rgba(38,201,128,0.12); color: var(--accent2); }
+  .badge-amber  { background: rgba(247,185,85,0.12); color: var(--accent3); }
+  .badge-red    { background: rgba(247,106,106,0.12); color: var(--accent4); }
+  .badge-teal   { background: rgba(93,232,193,0.12); color: var(--accent5); }
+
+  /* --- MENTAL MODEL DIAGRAM --- */
+  .mm-diagram {
+    background: #070911;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    margin: 1.5rem 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .mm-box {
+    border-radius: 8px;
+    padding: 0.6rem 1.6rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+    text-align: center;
+  }
+
+  .mm-arrow {
+    font-size: 1rem;
+    color: var(--dim2);
+  }
+
+  .mm-row {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  /* --- COMPARISON TABLE --- */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.83rem;
+    margin: 1rem 0;
+  }
+
+  th {
+    background: #0a0c14;
+    color: var(--accent);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.7rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 0.65rem 1rem;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.6;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* --- SECTION ANCHORS --- */
+  [id] { scroll-margin-top: 70px; }
+
+  /* --- PROGRESS PILLS --- */
+  .pill-track {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+
+  .pill {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.3rem 0.8rem;
+    border-radius: 100px;
+    border: 1px solid var(--border);
+    color: var(--dim);
+  }
+
+  /* --- GLOW ACCENTS --- */
+  .glow-line {
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent5), transparent);
+    border-radius: 2px;
+    margin-bottom: 3rem;
+    opacity: 0.6;
+  }
+
+  /* --- INLINE CODE --- */
+  .ic {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.82em;
+    background: rgba(108,99,255,0.12);
+    color: #a89bff;
+    padding: 0.1em 0.4em;
+    border-radius: 3px;
+  }
+
+  p { margin-bottom: 0.8rem; }
+  p:last-child { margin-bottom: 0; }
+
+  .sub-heading {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #c8cae8;
+    margin: 1.8rem 0 0.7rem;
+    letter-spacing: -0.01em;
+  }
+
+  .annotation {
+    font-size: 0.76rem;
+    color: var(--dim);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: -0.5rem;
+    margin-bottom: 0.8rem;
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">Viz Field Guide</div>
+  <div class="nav-links">
+    <a href="#mental-model">Mental Model</a>
+    <a href="#matplotlib-deep">Matplotlib Deep</a>
+    <a href="#datetime-axis">Date Axis</a>
+    <a href="#subplots">Subplots</a>
+    <a href="#mplfinance">mplfinance</a>
+    <a href="#plotly">Plotly</a>
+    <a href="#seaborn">Seaborn</a>
+    <a href="#patterns">Patterns</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="eyebrow">Python Data Visualization — A Field Guide</div>
+  <h1 class="headline">From <span>plt.plot()</span><br/>to Production Charts</h1>
+  <p class="hero-lead">
+    You already know lines and pies. This guide covers everything past that — the mental models, the shared vocabulary, and the mechanics behind every chart type found in the YFinance EDA notebook.
+  </p>
+</div>
+
+<div class="glow-line" style="max-width:960px; margin:0 auto 0;"></div>
+
+<!-- ════════════════════════════════════════════════
+     SECTION 1 — THE MENTAL MODEL
+═══════════════════════════════════════════════════ -->
+<section class="page-section" id="mental-model">
+  <div class="eyebrow">Section 01</div>
+  <h2 class="section-title">Build the Mental Model First</h2>
+  <p class="section-sub">Before touching any library, understand the three-layer structure that every Python visualization sits inside. Get this wrong and even simple charts become confusing.</p>
+  <div class="section-divider"></div>
+
+  <p style="color:var(--dim); font-size:0.9rem; margin-bottom:1.5rem;">
+    Think of a chart the same way you'd think about a physical painting. There is a <strong style="color:var(--text)">canvas (Figure)</strong>, a <strong style="color:var(--text)">painted panel on the canvas (Axes)</strong>, and the <strong style="color:var(--text)">actual drawing inside that panel</strong>. You almost never draw directly on the canvas — you get a panel first, then you work inside it.
+  </p>
+
+  <div class="mm-diagram">
+    <div class="mm-box" style="background:rgba(108,99,255,0.1); color:var(--accent); border:1px solid rgba(108,99,255,0.3); width:90%; max-width:500px;">
+      Figure &nbsp; <span style="color:var(--dim); font-weight:400">— the entire window / image file</span>
+    </div>
+    <div class="mm-arrow">↓ contains one or more</div>
+    <div class="mm-box" style="background:rgba(38,201,128,0.08); color:var(--accent2); border:1px solid rgba(38,201,128,0.3); width:80%; max-width:440px;">
+      Axes &nbsp; <span style="color:var(--dim); font-weight:400">— a single chart panel with its own X and Y</span>
+    </div>
+    <div class="mm-arrow">↓ contains</div>
+    <div class="mm-row">
+      <div class="mm-box" style="background:rgba(247,185,85,0.08); color:var(--accent3); border:1px solid rgba(247,185,85,0.25); font-size:0.75rem;">Lines</div>
+      <div class="mm-box" style="background:rgba(247,185,85,0.08); color:var(--accent3); border:1px solid rgba(247,185,85,0.25); font-size:0.75rem;">Bars</div>
+      <div class="mm-box" style="background:rgba(247,185,85,0.08); color:var(--accent3); border:1px solid rgba(247,185,85,0.25); font-size:0.75rem;">Fills</div>
+      <div class="mm-box" style="background:rgba(247,185,85,0.08); color:var(--accent3); border:1px solid rgba(247,185,85,0.25); font-size:0.75rem;">Scatter</div>
+      <div class="mm-box" style="background:rgba(247,185,85,0.08); color:var(--accent3); border:1px solid rgba(247,185,85,0.25); font-size:0.75rem;">Ticks / Labels</div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="callout-label">Key Insight</div>
+    When you write <span class="ic">fig, ax = plt.subplots()</span>, you are creating one Figure and one Axes simultaneously, getting references to both so you can control them independently. The <span class="ic">ax</span> object is where 95% of your work happens.
+  </div>
+
+  <h3 class="sub-heading">Two Ways to Write Matplotlib</h3>
+  <p style="color:var(--dim); font-size:0.88rem;">You will see both styles in the wild. Always prefer the object-oriented (OOP) style — it is explicit and scales to multi-panel charts.</p>
+
+  <div class="grid-2">
+    <div>
+      <div class="badge badge-red">Avoid — pyplot style</div>
+      <pre><span class="cm"># "Stateful" — matplotlib tracks a hidden current figure</span>
+<span class="fn">plt</span>.plot(x, y)
+<span class="fn">plt</span>.xlabel(<span class="st">"Date"</span>)
+<span class="fn">plt</span>.title(<span class="st">"My Chart"</span>)
+<span class="fn">plt</span>.show()</pre>
+      <div class="annotation">Simple, but breaks down with multiple panels</div>
+    </div>
+    <div>
+      <div class="badge badge-green">Use This — OOP style</div>
+      <pre><span class="cm"># Explicit — you control every object directly</span>
+fig, ax = <span class="fn">plt</span>.subplots()
+ax.plot(x, y)
+ax.set_xlabel(<span class="st">"Date"</span>)
+ax.set_title(<span class="st">"My Chart"</span>)
+<span class="fn">plt</span>.show()</pre>
+      <div class="annotation">Works whether you have 1 panel or 10</div>
+    </div>
+  </div>
+
+  <h3 class="sub-heading">The rcParams — Global Style Configuration</h3>
+  <p style="color:var(--dim); font-size:0.88rem; margin-bottom:1rem;">
+    Instead of setting colors and fonts on every single chart, <span class="ic">plt.rcParams</span> is a global dictionary that sets defaults for your entire session. Think of it as a CSS stylesheet for all your matplotlib plots. In the notebook, this is done once at the top to establish the dark terminal theme.
+  </p>
+  <pre><span class="cm"># Set once. Applies to ALL subsequent charts in the session.</span>
+<span class="fn">plt</span>.rcParams.update({
+    <span class="st">"figure.facecolor"</span> : <span class="st">"#0e0f14"</span>,  <span class="cm"># background of the Figure</span>
+    <span class="st">"axes.facecolor"</span>   : <span class="st">"#15161d"</span>,  <span class="cm"># background of each Axes panel</span>
+    <span class="st">"axes.grid"</span>        : <span class="kw">True</span>,
+    <span class="st">"grid.color"</span>       : <span class="st">"#1e1f2e"</span>,
+    <span class="st">"text.color"</span>       : <span class="st">"#d4d5e8"</span>,
+    <span class="st">"figure.dpi"</span>       : <span class="nm">150</span>,       <span class="cm"># higher = crisper image output</span>
+    <span class="st">"font.family"</span>      : <span class="st">"monospace"</span>,
+})</pre>
+</section>
+
+
+<!-- ════════════════════════════════════════════════
+     SECTION 2 — MATPLOTLIB DEEP DIVE
+═══════════════════════════════════════════════════ -->
+<section class="page-section" id="matplotlib-deep">
+  <div class="eyebrow">Section 02</div>
+  <h2 class="section-title">Matplotlib Deep Dive</h2>
+  <p class="section-sub">The building blocks that appear in almost every single chart. Master these and every plot becomes a remix of the same parts.</p>
+  <div class="section-divider"></div>
+
+  <!-- fill_between -->
+  <div class="card">
+    <div class="badge badge-purple">Core Method</div>
+    <div class="card-title">ax.fill_between() — Shaded Regions</div>
+    <p class="card-body" style="margin-bottom:0.8rem;">
+      Simple version: fill the area between a line and a flat baseline (e.g. the bottom of the chart). The power version: fill between two lines, but only <em>where a condition is true</em>. This creates the bull/bear zone coloring in the notebook.
+    </p>
+    <pre><span class="cm"># Basic: fill area under a price line</span>
+ax.fill_between(
+    df.index,           <span class="cm"># X values (dates)</span>
+    df[<span class="st">"Close"</span>].min(), <span class="cm"># bottom boundary (a flat number)</span>
+    df[<span class="st">"Close"</span>],       <span class="cm"># top boundary (the line itself)</span>
+    <span class="param">alpha</span>=<span class="nm">0.18</span>,         <span class="cm"># transparency: 0.0 = invisible, 1.0 = solid</span>
+    <span class="param">color</span>=<span class="st">"#7c6af7"</span>
+)
+
+<span class="cm"># Conditional: fill between MA20 and MA50 only when MA20 is higher</span>
+ax.fill_between(
+    df.index, df[<span class="st">"MA20"</span>], df[<span class="st">"MA50"</span>],
+    <span class="param">where</span>=df[<span class="st">"MA20"</span>] &gt; df[<span class="st">"MA50"</span>],  <span class="cm"># boolean Series — the key parameter</span>
+    <span class="param">alpha</span>=<span class="nm">0.08</span>,
+    <span class="param">color</span>=<span class="st">"#26c980"</span>,
+    <span class="param">label</span>=<span class="st">"Bull Zone"</span>
+)</pre>
+    <div class="callout green">
+      <div class="callout-label">Plain English</div>
+      "Paint the area between these two things, but only in the spots where this condition is true." The <span class="ic">where</span> parameter accepts any boolean array with the same length as your data.
+    </div>
+  </div>
+
+  <!-- axhline / axvline -->
+  <div class="card">
+    <div class="badge badge-teal">Core Method</div>
+    <div class="card-title">ax.axhline() / ax.axvline() — Reference Lines</div>
+    <p class="card-body" style="margin-bottom:0.8rem;">
+      Draw a horizontal or vertical line that spans the full width/height of the chart. Used extensively for threshold lines (RSI 70/30, zero line on MACD) and median reference lines.
+    </p>
+    <pre><span class="cm"># RSI overbought threshold</span>
+ax.axhline(<span class="nm">70</span>, <span class="param">color</span>=<span class="st">"#f76a6a"</span>, <span class="param">lw</span>=<span class="nm">0.8</span>, <span class="param">linestyle</span>=<span class="st">"--"</span>, <span class="param">alpha</span>=<span class="nm">0.7</span>)
+
+<span class="cm"># Vertical line at a specific date event</span>
+ax.axvline(<span class="st">"2024-04-09"</span>, <span class="param">color</span>=<span class="st">"#f7b955"</span>, <span class="param">lw</span>=<span class="nm">1.0</span>, <span class="param">linestyle</span>=<span class="st">":"</span>)</pre>
+  </div>
+
+  <!-- annotate / text -->
+  <div class="card">
+    <div class="badge badge-amber">Core Method</div>
+    <div class="card-title">ax.annotate() / ax.text() — Labels on the Chart</div>
+    <p class="card-body" style="margin-bottom:0.8rem;">
+      <span class="ic">ax.text(x, y, "string")</span> places text at absolute chart coordinates. <span class="ic">ax.annotate()</span> is more powerful — it places text relative to a point and can optionally draw an arrow pointing at that point.
+    </p>
+    <pre><span class="cm"># Simple text label at a data point</span>
+ax.text(
+    years[i], value + <span class="nm">0.5</span>,  <span class="cm"># x, y position</span>
+    <span class="st">f"{value:.1f}%"</span>,          <span class="cm"># the string to show</span>
+    <span class="param">ha</span>=<span class="st">"center"</span>,             <span class="cm"># horizontal alignment</span>
+    <span class="param">va</span>=<span class="st">"bottom"</span>,             <span class="cm"># vertical alignment</span>
+    <span class="param">fontsize</span>=<span class="nm">7</span>,
+    <span class="param">color</span>=<span class="st">"#d4d5e8"</span>
+)
+
+<span class="cm"># Annotate with offset — useful when the point is crowded</span>
+ax.annotate(
+    <span class="st">f"{value:.0f}"</span>,
+    <span class="param">xy</span>=(date, value),              <span class="cm"># the point you're labeling</span>
+    <span class="param">xytext</span>=(<span class="nm">5</span>, <span class="nm">0</span>),               <span class="cm"># offset in points from xy</span>
+    <span class="param">textcoords</span>=<span class="st">"offset points"</span>, <span class="cm"># unit of xytext offset</span>
+    <span class="param">color</span>=<span class="st">"#5de8c1"</span>,
+    <span class="param">fontsize</span>=<span class="nm">8</span>,
+    <span class="param">va</span>=<span class="st">"center"</span>
+)</pre>
+  </div>
+
+  <!-- bar annotations -->
+  <div class="card">
+    <div class="badge badge-amber">Pattern</div>
+    <div class="card-title">Annotating Bar Charts — The Standard Pattern</div>
+    <p class="card-body" style="margin-bottom:0.8rem;">
+      Placing value labels on top of each bar is a pattern you will use constantly. You iterate over the bars object returned by <span class="ic">ax.bar()</span> to get the position and height of each bar.
+    </p>
+    <pre>bars = ax.bar(years, values, <span class="param">color</span>=colors)
+
+<span class="kw">for</span> bar, val <span class="kw">in</span> <span class="fn">zip</span>(bars, values):
+    ax.text(
+        bar.get_x() + bar.get_width() / <span class="nm">2</span>,  <span class="cm"># center of bar on X</span>
+        bar.get_height() * <span class="nm">1.01</span>,            <span class="cm"># just above the bar top</span>
+        <span class="st">f"{val:.1f}%"</span>,
+        <span class="param">ha</span>=<span class="st">"center"</span>,
+        <span class="param">fontsize</span>=<span class="nm">7.5</span>
+    )</pre>
+  </div>
+
+  <!-- Grouped bars -->
+  <div class="card">
+    <div class="badge badge-green">Pattern</div>
+    <div class="card-title">Grouped Bar Charts — The offset trick</div>
+    <p class="card-body" style="margin-bottom:0.8rem;">
+      To place multiple bar groups side-by-side (like Revenue, Gross Profit, Net Income per year), you shift each group's X position by a fraction of the bar width. NumPy's <span class="ic">arange()</span> gives you integer positions, then you add or subtract offsets.
+    </p>
+    <pre><span class="kw">import</span> numpy <span class="kw">as</span> np
+x = np.arange(<span class="fn">len</span>(years))  <span class="cm"># [0, 1, 2, 3] — integer positions</span>
+width = <span class="nm">0.25</span>               <span class="cm"># width of each individual bar</span>
+
+ax.bar(x - width,  revenue,  width, <span class="param">label</span>=<span class="st">"Revenue"</span>,     <span class="param">color</span>=C_LINE)
+ax.bar(x,          gross_p,  width, <span class="param">label</span>=<span class="st">"Gross Profit"</span>, <span class="param">color</span>=C_MA50)
+ax.bar(x + width,  net_inc,  width, <span class="param">label</span>=<span class="st">"Net Income"</span>,   <span class="param">color</span>=C_UP)
+
+ax.set_xticks(x)            <span class="cm"># place ticks at integer positions</span>
+ax.set_xticklabels(years)   <span class="cm"># replace integers with year strings</span></pre>
+    <div class="callout amber">
+      <div class="callout-label">Mental Model</div>
+      The numbers 0, 1, 2, 3 are just positions on a ruler. You then manually glue year labels onto those positions with <span class="ic">set_xticklabels()</span>. This lets you precisely control spacing between groups.
+    </div>
+  </div>
+
+  <!-- spines -->
+  <div class="card">
+    <div class="badge badge-red">Styling</div>
+    <div class="card-title">Spines — The Chart Border Lines</div>
+    <p class="card-body" style="margin-bottom:0.8rem;">
+      Every chart has four border lines — top, right, left, bottom. These are called "spines". Most modern chart styles remove all of them except the bottom, giving a cleaner open look. The notebook defines a helper function for this.
+    </p>
+    <pre><span class="kw">def</span> <span class="fn">clean_spines</span>(ax, keep=<span class="kw">None</span>):
+    keep = keep <span class="kw">or</span> []
+    <span class="kw">for</span> spine <span class="kw">in</span> [<span class="st">"top"</span>, <span class="st">"right"</span>, <span class="st">"left"</span>, <span class="st">"bottom"</span>]:
+        ax.spines[spine].set_visible(spine <span class="kw">in</span> keep)
+
+<span class="cm"># Usage examples</span>
+clean_spines(ax, keep=[<span class="st">"bottom"</span>])         <span class="cm"># most charts in the notebook</span>
+clean_spines(ax, keep=[<span class="st">"bottom"</span>, <span class="st">"left"</span>]) <span class="cm"># scatter plots</span>
+clean_spines(ax)                            <span class="cm"># remove all spines</span></pre>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════
+     SECTION 3 — DATE AXIS (Locators & Formatters)
+═══════════════════════════════════════════════════ -->
+<section class="page-section" id="datetime-axis">
+  <div class="eyebrow">Section 03</div>
+  <h2 class="section-title">The Date Axis — Locators &amp; Formatters</h2>
+  <p class="section-sub">This is the part that feels most magical and confusing at first. Demystified below.</p>
+  <div class="section-divider"></div>
+
+  <p style="color:var(--dim); font-size:0.9rem; margin-bottom:1.5rem;">
+    When your X axis contains dates, matplotlib needs to answer two questions: <strong style="color:var(--text)">(1) where to put the tick marks</strong> (which dates get a line?) and <strong style="color:var(--text)">(2) how to label them</strong> (what text to show?). These are two separate jobs done by two separate objects.
+  </p>
+
+  <div class="mm-diagram">
+    <div class="mm-row">
+      <div class="mm-box" style="background:rgba(108,99,255,0.1); color:var(--accent); border:1px solid rgba(108,99,255,0.3);">
+        Locator<br/><span style="color:var(--dim); font-size:0.72rem; font-weight:400">answers WHERE</span>
+      </div>
+      <div style="color:var(--dim);">+</div>
+      <div class="mm-box" style="background:rgba(93,232,193,0.08); color:var(--accent5); border:1px solid rgba(93,232,193,0.25);">
+        Formatter<br/><span style="color:var(--dim); font-size:0.72rem; font-weight:400">answers WHAT TEXT</span>
+      </div>
+      <div style="color:var(--dim);">→</div>
+      <div class="mm-box" style="background:rgba(247,185,85,0.08); color:var(--accent3); border:1px solid rgba(247,185,85,0.25);">
+        Readable X axis<br/><span style="color:var(--dim); font-size:0.72rem; font-weight:400">Jan '24, Mar '24...</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:1rem;">
+    <div class="card">
+      <div class="badge badge-purple">Locators — WHERE to put ticks</div>
+      <pre style="font-size:0.76rem;"><span class="kw">import</span> matplotlib.dates <span class="kw">as</span> mdates
+
+<span class="cm"># Tick every 2 months</span>
+ax.xaxis.set_major_locator(
+    mdates.MonthLocator(<span class="param">interval</span>=<span class="nm">2</span>)
+)
+
+<span class="cm"># Tick every year</span>
+ax.xaxis.set_major_locator(
+    mdates.YearLocator()
+)
+
+<span class="cm"># Tick every week</span>
+ax.xaxis.set_major_locator(
+    mdates.WeekdayLocator()
+)</pre>
+    </div>
+    <div class="card">
+      <div class="badge badge-teal">Formatters — WHAT TEXT to show</div>
+      <pre style="font-size:0.76rem;"><span class="cm"># Format codes are standard Python strftime</span>
+<span class="cm"># %b = abbreviated month (Jan, Feb...)</span>
+<span class="cm"># %Y = 4-digit year    %y = 2-digit year</span>
+
+<span class="cm"># Shows: "Jan '24"</span>
+ax.xaxis.set_major_formatter(
+    mdates.DateFormatter(<span class="st">"%b '%y"</span>)
+)
+
+<span class="cm"># Shows: "Jan, 24" (with comma)</span>
+ax.xaxis.set_major_formatter(
+    mdates.DateFormatter(<span class="st">"%b, %y"</span>)
+)</pre>
+    </div>
+  </div>
+
+  <h3 class="sub-heading">The Y-Axis — FuncFormatter for Custom Labels</h3>
+  <p style="color:var(--dim); font-size:0.88rem; margin-bottom:1rem;">
+    For the Y-axis (price, volume, etc.), you use a different module: <span class="ic">matplotlib.ticker</span>. The most flexible tool is <span class="ic">FuncFormatter</span> — you give it a Python function, and it calls that function on every tick value to produce the label string.
+  </p>
+
+  <pre><span class="kw">import</span> matplotlib.ticker <span class="kw">as</span> mticker
+
+<span class="cm"># FuncFormatter takes a function(value, position) -> string</span>
+<span class="cm"># The 'position' argument is tick index — you usually ignore it (use _)</span>
+
+<span class="cm"># Show prices with ₹ and comma formatting: 3500.0 → "₹3,500"</span>
+ax.yaxis.set_major_formatter(
+    mticker.FuncFormatter(<span class="kw">lambda</span> x, _: <span class="st">f"₹{x:,.0f}"</span>)
+)
+
+<span class="cm"># Show volume in millions: 5000000 → "5M"</span>
+ax.yaxis.set_major_formatter(
+    mticker.FuncFormatter(<span class="kw">lambda</span> x, _: <span class="st">f"{x:.0f}M"</span>)
+)
+
+<span class="cm"># Show percentages: 0.245 → "24.5%"</span>
+ax.yaxis.set_major_formatter(
+    mticker.FuncFormatter(<span class="kw">lambda</span> x, _: <span class="st">f"{x*100:.1f}%"</span>)
+)</pre>
+
+  <div class="callout">
+    <div class="callout-label">Plain English</div>
+    "For every tick mark on the Y axis, call my function with the raw number, and use whatever string my function returns as the label." This is why you can show "₹3,500" instead of "3500.0" — you're literally formatting the number yourself inside that lambda.
+  </div>
+
+  <h3 class="sub-heading">Hiding Tick Labels Between Linked Panels</h3>
+  <p style="color:var(--dim); font-size:0.88rem; margin-bottom:1rem;">
+    When you have a price chart above a volume chart, you share the X axis (<span class="ic">sharex=ax_price</span>). This keeps both panels in sync when you zoom. You then hide the date labels on the top panel because the bottom panel already shows them — avoiding duplication.
+  </p>
+  <pre><span class="cm"># Hide x-tick labels on the price panel (top) — bottom panel shows them</span>
+<span class="fn">plt</span>.setp(ax_price.get_xticklabels(), <span class="param">visible</span>=<span class="kw">False</span>)</pre>
+</section>
+
+
+<!-- ════════════════════════════════════════════════
+     SECTION 4 — SUBPLOTS & GRIDSPEC
+═══════════════════════════════════════════════════ -->
+<section class="page-section" id="subplots">
+  <div class="eyebrow">Section 04</div>
+  <h2 class="section-title">Multi-Panel Layouts — subplots vs GridSpec</h2>
+  <p class="section-sub">Two tools for placing multiple charts inside one Figure. Choose based on whether you need equal or unequal panel sizes.</p>
+  <div class="section-divider"></div>
+
+  <div class="grid-2">
+    <div>
+      <div class="badge badge-green">plt.subplots() — Equal panels</div>
+      <p style="color:var(--dim); font-size:0.85rem; margin-bottom:0.7rem;">When all panels should be the same size. Returns a 2D array of Axes objects.</p>
+      <pre style="font-size:0.78rem;"><span class="cm"># 1 row, 2 columns → 2 charts side by side</span>
+fig, (ax_left, ax_right) = <span class="fn">plt</span>.subplots(
+    <span class="nm">1</span>, <span class="nm">2</span>,
+    <span class="param">figsize</span>=(<span class="nm">16</span>, <span class="nm">8</span>)
+)
+
+<span class="cm"># 2 rows, 3 columns → 6 charts in a grid</span>
+fig, axes = <span class="fn">plt</span>.subplots(<span class="nm">2</span>, <span class="nm">3</span>, <span class="param">figsize</span>=(<span class="nm">16</span>, <span class="nm">8</span>))
+axes[<span class="nm">0</span>, <span class="nm">0</span>]  <span class="cm"># top-left</span>
+axes[<span class="nm">1</span>, <span class="nm">2</span>]  <span class="cm"># bottom-right</span></pre>
+    </div>
+    <div>
+      <div class="badge badge-purple">GridSpec — Unequal panels</div>
+      <p style="color:var(--dim); font-size:0.85rem; margin-bottom:0.7rem;">When panels should have different sizes — price chart 3x taller than volume, for example.</p>
+      <pre style="font-size:0.78rem;"><span class="kw">from</span> matplotlib.gridspec <span class="kw">import</span> GridSpec
+
+<span class="cm"># Think of it as a 4-row grid</span>
+fig = <span class="fn">plt</span>.figure(<span class="param">figsize</span>=(<span class="nm">14</span>, <span class="nm">7</span>))
+gs = GridSpec(<span class="nm">4</span>, <span class="nm">1</span>, <span class="param">figure</span>=fig, <span class="param">hspace</span>=<span class="nm">0.05</span>)
+
+<span class="cm"># Price takes rows 0-2, volume takes row 3</span>
+ax_price = fig.add_subplot(gs[:<span class="nm">3</span>, <span class="nm">0</span>])
+ax_vol   = fig.add_subplot(gs[<span class="nm">3</span>, <span class="nm">0</span>],
+                            <span class="param">sharex</span>=ax_price)</pre>
+    </div>
+  </div>
+
+  <div class="callout amber">
+    <div class="callout-label">GridSpec Mental Model</div>
+    GridSpec is like defining a grid of rows and columns — then you say "give me a panel that spans rows 0 to 3 in column 0." The slice notation <span class="ic">gs[:3, 0]</span> is exactly Python list slicing — take rows 0, 1, 2 and column 0. This lets one panel occupy multiple grid cells, making it bigger than others.
+  </div>
+
+  <h3 class="sub-heading">The hspace / wspace Parameters</h3>
+  <p style="color:var(--dim); font-size:0.88rem;">
+    <span class="ic">hspace</span> controls vertical space between rows. <span class="ic">wspace</span> controls horizontal space between columns. In the notebook, <span class="ic">hspace=0.05</span> makes panels nearly touching — creating the "unified dashboard" look. <span class="ic">plt.tight_layout()</span> then automatically adjusts all margins to prevent label overlap.
+  </p>
+
+  <h3 class="sub-heading">The Technical Dashboard Pattern</h3>
+  <p style="color:var(--dim); font-size:0.88rem; margin-bottom:0.8rem;">
+    The 4-panel technical analysis chart (Price/Bollinger, RSI, MACD, ATR) uses a 10-row GridSpec so each indicator gets a proportional number of rows:
+  </p>
+  <pre><span class="cm"># 10-row grid: price gets 4 rows, each indicator gets 2 rows</span>
+gs = GridSpec(<span class="nm">10</span>, <span class="nm">1</span>, <span class="param">figure</span>=fig, <span class="param">hspace</span>=<span class="nm">0.06</span>)
+
+ax1 = fig.add_subplot(gs[:<span class="nm">4</span>])          <span class="cm"># rows 0–3  (40%)</span>
+ax2 = fig.add_subplot(gs[<span class="nm">4</span>:<span class="nm">6</span>], <span class="param">sharex</span>=ax1)  <span class="cm"># rows 4–5  (20%)</span>
+ax3 = fig.add_subplot(gs[<span class="nm">6</span>:<span class="nm">8</span>], <span class="param">sharex</span>=ax1)  <span class="cm"># rows 6–7  (20%)</span>
+ax4 = fig.add_subplot(gs[<span class="nm">8</span>:],  <span class="param">sharex</span>=ax1)  <span class="cm"># rows 8–9  (20%)</span>
+
+<span class="cm"># All panels share the same X axis → synced zooming</span></pre>
+</section>
+
+
+<!-- ════════════════════════════════════════════════
+     SECTION 5 — MPLFINANCE
+═══════════════════════════════════════════════════ -->
+<section class="page-section" id="mplfinance">
+  <div class="eyebrow">Section 05</div>
+  <h2 class="section-title">mplfinance — Candlestick Charts</h2>
+  <p class="section-sub">A specialized library built on top of matplotlib specifically for financial OHLCV charts. It handles candlestick rendering so you don't have to draw each candle manually.</p>
+  <div class="section-divider"></div>
+
+  <div class="callout teal">
+    <div class="callout-label">What is a Candlestick?</div>
+    Each "candle" represents one time period. The body shows Open and Close. The thin lines (wicks/shadows) extend to the High and Low. Green body = price went up that period. Red body = price went down. This packs four values into one visual element.
+  </div>
+
+  <h3 class="sub-heading">How mplfinance Works</h3>
+  <p style="color:var(--dim); font-size:0.88rem; margin-bottom:1rem;">
+    Unlike raw matplotlib where you manually call <span class="ic">ax.plot()</span> for everything, mplfinance has a single main function <span class="ic">mpf.plot()</span> that does all the heavy lifting. You pass it your DataFrame and a style object, and it generates the chart.
+  </p>
+
+  <div class="card">
+    <div class="badge badge-teal">Step 1 — Create the color scheme</div>
+    <pre><span class="cm"># marketcolors defines what each part of a candle looks like</span>
+mc = mpf.make_marketcolors(
+    <span class="param">up</span>=<span class="st">"#26c980"</span>,    <span class="cm"># color of green (up) candles</span>
+    <span class="param">down</span>=<span class="st">"#f76a6a"</span>,  <span class="cm"># color of red (down) candles</span>
+    <span class="param">wick</span>={<span class="st">"up"</span>: <span class="st">"#26c980"</span>, <span class="st">"down"</span>: <span class="st">"#f76a6a"</span>},
+    <span class="param">volume</span>={<span class="st">"up"</span>: <span class="st">"#26c980"</span>, <span class="st">"down"</span>: <span class="st">"#f76a6a"</span>},
+    <span class="param">edge</span>=<span class="st">"none"</span>       <span class="cm"># no border around candle body</span>
+)</pre>
+  </div>
+
+  <div class="card">
+    <div class="badge badge-teal">Step 2 — Create the full style</div>
+    <pre><span class="cm"># make_mpf_style bundles marketcolors + background colors + fonts</span>
+custom_style = mpf.make_mpf_style(
+    <span class="param">base_mpl_style</span>=<span class="st">"dark_background"</span>, <span class="cm"># start from a built-in theme</span>
+    <span class="param">marketcolors</span>=mc,                  <span class="cm"># apply our candle colors</span>
+    <span class="param">facecolor</span>=<span class="st">"#0e0f14"</span>,              <span class="cm"># axes background</span>
+    <span class="param">figcolor</span>=<span class="st">"#0e0f14"</span>,               <span class="cm"># figure background</span>
+    <span class="param">gridcolor</span>=<span class="st">"#1e1f2e"</span>,
+    <span class="param">gridstyle</span>=<span class="st">"--"</span>
+)</pre>
+  </div>
+
+  <div class="card">
+    <div class="badge badge-teal">Step 3 — Plot</div>
+    <pre><span class="cm"># df_3mo must have columns: Open, High, Low, Close, Volume</span>
+<span class="cm"># and a DatetimeIndex — exactly what yfinance gives you</span>
+fig, axes = mpf.plot(
+    df_3mo,
+    <span class="param">type</span>=<span class="st">"candle"</span>,       <span class="cm"># "candle", "ohlc", "line", "renko"</span>
+    <span class="param">style</span>=custom_style,
+    <span class="param">mav</span>=(<span class="nm">20</span>, <span class="nm">50</span>),         <span class="cm"># overlay moving averages</span>
+    <span class="param">volume</span>=<span class="kw">True</span>,          <span class="cm"># add volume panel automatically</span>
+    <span class="param">figsize</span>=(<span class="nm">14</span>, <span class="nm">7</span>),
+    <span class="param">title</span>=<span class="st">"TCS.NS"</span>,
+    <span class="param">tight_layout</span>=<span class="kw">True</span>,
+    <span class="param">returnfig</span>=<span class="kw">True</span>,       <span class="cm"># return (fig, axes) so you can save it</span>
+    <span class="param">mavcolors</span>=[<span class="st">"#f7b955"</span>, <span class="st">"#5de8c1"</span>]
+)</pre>
+  </div>
+
+  <div class="callout amber">
+    <div class="callout-label">Why returnfig=True?</div>
+    By default <span class="ic">mpf.plot()</span> shows the chart and returns nothing. Setting <span class="ic">returnfig=True</span> makes it return the <span class="ic">(fig, axes)</span> tuple so you can then call <span class="ic">fig.savefig()</span> to save the chart to disk.
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════
+     SECTION 6 — PLOTLY
+═══════════════════════════════════════════════════ -->
+<section class="page-section" id="plotly">
+  <div class="eyebrow">Section 06</div>
+  <h2 class="section-title">Plotly — Interactive Charts</h2>
+  <p class="section-sub">Completely different paradigm from matplotlib. Instead of drawing on a canvas, you build a data structure (a Figure object) and Plotly renders it as an interactive HTML widget.</p>
+  <div class="section-divider"></div>
+
+  <table>
+    <tr>
+      <th>Dimension</th>
+      <th>Matplotlib</th>
+      <th>Plotly</th>
+    </tr>
+    <tr>
+      <td>Output</td>
+      <td>Static PNG / inline image</td>
+      <td>Interactive HTML (hover, zoom, pan, toggle)</td>
+    </tr>
+    <tr>
+      <td>Mental model</td>
+      <td>Canvas + Axes + drawing commands</td>
+      <td>Figure object + list of traces (data layers)</td>
+    </tr>
+    <tr>
+      <td>Configuration</td>
+      <td>Method calls on Axes</td>
+      <td>Dictionary/keyword arguments in update_layout()</td>
+    </tr>
+    <tr>
+      <td>Use case</td>
+      <td>Publication, reports, tight control</td>
+      <td>Dashboards, exploration, Jupyter notebooks</td>
+    </tr>
+  </table>
+
+  <h3 class="sub-heading">The Core Mental Model — Figures and Traces</h3>
+  <p style="color:var(--dim); font-size:0.88rem; margin-bottom:1rem;">
+    A Plotly figure is a container. You add "traces" to it — each trace is one data series (one line, one set of candles, etc.). The figure renders all traces layered on top of each other. Think of it like Photoshop layers.
+  </p>
+
+  <div class="card">
+    <div class="badge badge-purple">Pattern — Interactive Candlestick with Overlays</div>
+    <pre><span class="kw">import</span> plotly.graph_objects <span class="kw">as</span> go
+
+<span class="cm"># Step 1: Create empty figure container</span>
+fig = go.Figure()
+
+<span class="cm"># Step 2: Add traces (data layers)</span>
+
+<span class="cm"># Trace 1 — Candlestick</span>
+fig.add_trace(go.Candlestick(
+    <span class="param">x</span>=df.index,
+    <span class="param">open</span>=df[<span class="st">"Open"</span>],
+    <span class="param">high</span>=df[<span class="st">"High"</span>],
+    <span class="param">low</span>=df[<span class="st">"Low"</span>],
+    <span class="param">close</span>=df[<span class="st">"Close"</span>],
+    <span class="param">name</span>=<span class="st">"OHLC"</span>,
+    <span class="param">increasing_line_color</span>=<span class="st">"#26c980"</span>,
+    <span class="param">decreasing_line_color</span>=<span class="st">"#f76a6a"</span>
+))
+
+<span class="cm"># Trace 2 — MA20 line overlaid on same axes</span>
+fig.add_trace(go.Scatter(
+    <span class="param">x</span>=df.index,
+    <span class="param">y</span>=df[<span class="st">"Close"</span>].rolling(<span class="nm">20</span>).mean(),
+    <span class="param">line</span>=<span class="fn">dict</span>(<span class="param">color</span>=<span class="st">"#f7b955"</span>, <span class="param">width</span>=<span class="nm">1</span>),
+    <span class="param">name</span>=<span class="st">"MA 20"</span>
+))
+
+<span class="cm"># Step 3: Configure global layout</span>
+fig.update_layout(
+    <span class="param">title</span>=<span class="st">"TCS.NS — Interactive Candlestick"</span>,
+    <span class="param">template</span>=<span class="st">"plotly_dark"</span>,              <span class="cm"># built-in dark theme</span>
+    <span class="param">xaxis_rangeslider_visible</span>=<span class="kw">False</span>,   <span class="cm"># hide the range slider below</span>
+    <span class="param">height</span>=<span class="nm">500</span>,
+    <span class="param">paper_bgcolor</span>=<span class="st">"#0e0f14"</span>,
+    <span class="param">plot_bgcolor</span>=<span class="st">"#15161d"</span>,
+    <span class="param">font</span>=<span class="fn">dict</span>(<span class="param">family</span>=<span class="st">"monospace"</span>, <span class="param">size</span>=<span class="nm">10</span>)
+)
+
+fig.show()   <span class="cm"># renders as interactive HTML in Jupyter</span></pre>
+  </div>
+
+  <div class="callout">
+    <div class="callout-label">Key Difference from Matplotlib</div>
+    Notice there is no <span class="ic">ax</span> object. Instead of calling methods on an axes, you pass all configuration as keyword arguments to <span class="ic">update_layout()</span>. The "trace" concept is equivalent to calling <span class="ic">ax.plot()</span> or <span class="ic">ax.bar()</span> — each one adds another data layer.
+  </div>
+
+  <h3 class="sub-heading">go.Scatter vs go.Candlestick vs go.Bar</h3>
+  <p style="color:var(--dim); font-size:0.88rem;">These are the three main trace types you'll use with financial data. <span class="ic">go.Scatter</span> covers both lines and scatter points (use <span class="ic">mode="lines"</span> or <span class="ic">mode="markers"</span>). <span class="ic">go.Candlestick</span> requires OHLC columns. <span class="ic">go.Bar</span> is for bar charts.</p>
+</section>
+
+
+<!-- ════════════════════════════════════════════════
+     SECTION 7 — SEABORN
+═══════════════════════════════════════════════════ -->
+<section class="page-section" id="seaborn">
+  <div class="eyebrow">Section 07</div>
+  <h2 class="section-title">Seaborn — Statistical Charts</h2>
+  <p class="section-sub">Built on matplotlib, seaborn adds high-level functions for statistical visualizations. You pass a DataFrame and column names — it handles the math.</p>
+  <div class="section-divider"></div>
+
+  <p style="color:var(--dim); font-size:0.9rem; margin-bottom:1.5rem;">
+    The notebook uses seaborn for exactly one chart: the <strong style="color:var(--text)">correlation heatmap</strong>. This is where seaborn shines — charts that would require significant math + drawing code in raw matplotlib are a single function call in seaborn.
+  </p>
+
+  <div class="card">
+    <div class="badge badge-amber">Correlation Heatmap</div>
+    <pre><span class="kw">import</span> seaborn <span class="kw">as</span> sns
+
+<span class="cm"># corr is a DataFrame of correlation values (-1.0 to 1.0)</span>
+corr = returns.corr()
+
+<span class="cm"># diverging_palette creates a colormap that goes</span>
+<span class="cm"># blue (negative) → white (zero) → green (positive)</span>
+cmap = sns.diverging_palette(<span class="nm">250</span>, <span class="nm">130</span>, <span class="param">s</span>=<span class="nm">80</span>, <span class="param">as_cmap</span>=<span class="kw">True</span>)
+
+sns.heatmap(
+    corr,
+    <span class="param">annot</span>=<span class="kw">True</span>,            <span class="cm"># print the number inside each cell</span>
+    <span class="param">fmt</span>=<span class="st">".2f"</span>,              <span class="cm"># format those numbers to 2 decimal places</span>
+    <span class="param">cmap</span>=cmap,
+    <span class="param">center</span>=<span class="nm">0.5</span>,            <span class="cm"># value that maps to the center of the colormap</span>
+    <span class="param">linewidths</span>=<span class="nm">1</span>,          <span class="cm"># width of grid lines between cells</span>
+    <span class="param">linecolor</span>=<span class="st">"#080a0f"</span>,   <span class="cm"># color of those grid lines</span>
+    <span class="param">annot_kws</span>={<span class="st">"size"</span>: <span class="nm">9</span>},  <span class="cm"># font size of the numbers inside cells</span>
+    <span class="param">ax</span>=ax,                  <span class="cm"># draw into an existing matplotlib Axes</span>
+    <span class="param">cbar_kws</span>={<span class="st">"shrink"</span>: <span class="nm">0.8</span>} <span class="cm"># make the colorbar legend 80% height</span>
+)</pre>
+    <div class="callout amber">
+      <div class="callout-label">Important</div>
+      Notice <span class="ic">ax=ax</span> at the end. Seaborn functions accept an <span class="ic">ax</span> parameter, meaning they draw into an existing matplotlib Axes. This is how you embed seaborn charts inside a larger matplotlib figure with GridSpec or subplots.
+    </div>
+  </div>
+
+  <h3 class="sub-heading">What does a diverging colormap mean?</h3>
+  <p style="color:var(--dim); font-size:0.88rem;">
+    A diverging colormap has a meaningful center. For correlation: 0.0 means no relationship (neutral color), +1.0 means perfectly correlated (one extreme color), -1.0 means perfectly inversely correlated (opposite extreme color). The <span class="ic">center</span> parameter tells seaborn which value should map to the neutral middle of the colormap.
+  </p>
+</section>
+
+
+<!-- ════════════════════════════════════════════════
+     SECTION 8 — CROSS-CUTTING PATTERNS
+═══════════════════════════════════════════════════ -->
+<section class="page-section" id="patterns">
+  <div class="eyebrow">Section 08</div>
+  <h2 class="section-title">Cross-Cutting Patterns</h2>
+  <p class="section-sub">Things that appear in almost every chart regardless of library. Internalize these and you'll recognize the structure of any chart you encounter.</p>
+  <div class="section-divider"></div>
+
+  <h3 class="sub-heading">Pattern 1 — zorder: Who Draws on Top?</h3>
+  <p style="color:var(--dim); font-size:0.88rem; margin-bottom:0.8rem;">
+    When multiple elements overlap, <span class="ic">zorder</span> controls the drawing order. Higher number = drawn later = appears on top. Think of it like Z-index in CSS.
+  </p>
+  <pre><span class="cm"># Grid lines drawn first (low zorder), price line on top of them</span>
+ax.plot(df.index, df[<span class="st">"Close"</span>], <span class="param">zorder</span>=<span class="nm">4</span>)
+ax.fill_between(..., <span class="param">zorder</span>=<span class="nm">2</span>)
+<span class="cm"># ax.grid() is drawn at zorder 0 by default</span></pre>
+
+  <h3 class="sub-heading">Pattern 2 — The alpha Parameter</h3>
+  <p style="color:var(--dim); font-size:0.88rem; margin-bottom:0.8rem;">
+    <span class="ic">alpha</span> sets transparency on any element. <span class="ic">0.0</span> = invisible, <span class="ic">1.0</span> = fully opaque. Filled regions almost always use a low alpha (0.06 – 0.20) so they don't overpower the lines drawn on top.
+  </p>
+
+  <h3 class="sub-heading">Pattern 3 — lw, ls, marker</h3>
+  <pre><span class="cm"># lw / linewidth — thickness of the line</span>
+ax.plot(x, y, <span class="param">lw</span>=<span class="nm">1.5</span>)         <span class="cm"># standard line</span>
+ax.plot(x, y, <span class="param">lw</span>=<span class="nm">0.8</span>)         <span class="cm"># thin/secondary line</span>
+
+<span class="cm"># linestyle — dashed, dotted, dash-dot</span>
+ax.plot(x, y, <span class="param">linestyle</span>=<span class="st">"--"</span>)  <span class="cm"># dashed   → MA lines</span>
+ax.plot(x, y, <span class="param">linestyle</span>=<span class="st">":"</span>)   <span class="cm"># dotted   → reference lines</span>
+ax.plot(x, y, <span class="param">linestyle</span>=<span class="st">"-."</span>)  <span class="cm"># dash-dot → MA200</span>
+
+<span class="cm"># marker — a symbol drawn at each data point</span>
+ax.plot(years, values, <span class="param">marker</span>=<span class="st">"o"</span>, <span class="param">markersize</span>=<span class="nm">4</span>)  <span class="cm"># circle</span>
+ax.plot(years, values, <span class="param">marker</span>=<span class="st">"s"</span>)                 <span class="cm"># square</span>
+ax.plot(years, values, <span class="param">marker</span>=<span class="st">"^"</span>)                 <span class="cm"># triangle</span></pre>
+
+  <h3 class="sub-heading">Pattern 4 — fig.suptitle() vs ax.set_title()</h3>
+  <p style="color:var(--dim); font-size:0.88rem; margin-bottom:0.8rem;">
+    <span class="ic">ax.set_title()</span> puts a title inside a single panel. <span class="ic">fig.suptitle()</span> puts a title above the entire figure — used when you have multiple panels and want one overall heading.
+  </p>
+  <pre>fig.suptitle(<span class="st">"TCS — Key Financial Ratios Dashboard"</span>, <span class="param">fontsize</span>=<span class="nm">13</span>, <span class="param">y</span>=<span class="nm">1.01</span>)
+<span class="cm"># y=1.01 nudges it slightly above the top panel to avoid overlap</span></pre>
+
+  <h3 class="sub-heading">Pattern 5 — Normalizing for Comparison</h3>
+  <p style="color:var(--dim); font-size:0.88rem; margin-bottom:0.8rem;">
+    When comparing multiple stocks with different price levels (TCS at ₹3500, Wipro at ₹280), you can't plot raw prices on the same chart meaningfully. You normalize them to a common base of 100 on day 1, so you're comparing percentage returns, not absolute prices.
+  </p>
+  <pre><span class="cm"># Each stock starts at 100. After 1 year at +25%, it shows 125.</span>
+norm = (prices / prices.iloc[<span class="nm">0</span>]) * <span class="nm">100</span>
+
+<span class="cm"># Then plot all normalized series on the same ax</span>
+<span class="kw">for</span> col <span class="kw">in</span> norm.columns:
+    ax.plot(norm.index, norm[col], <span class="param">label</span>=col)</pre>
+
+  <h3 class="sub-heading">Pattern 6 — Scatter Plot Quadrant Labels</h3>
+  <p style="color:var(--dim); font-size:0.88rem; margin-bottom:0.8rem;">
+    The Risk vs Return scatter plot divides the chart into four quadrants using two reference lines, then uses <span class="ic">ax.transAxes</span> to place text at fractional positions relative to the chart size (0.0 = left/bottom, 1.0 = right/top).
+  </p>
+  <pre><span class="cm"># ax.transAxes means (0.02, 0.97) = 2% from left, 97% from bottom</span>
+<span class="cm"># This is independent of the actual data values on X and Y</span>
+ax.text(<span class="nm">0.02</span>, <span class="nm">0.97</span>, <span class="st">"Low Risk\nHigh Return"</span>,
+        <span class="param">transform</span>=ax.transAxes,  <span class="cm"># key: use axes coords not data coords</span>
+        <span class="param">color</span>=<span class="st">"#26c980"</span>, <span class="param">fontsize</span>=<span class="nm">8</span>, <span class="param">va</span>=<span class="st">"top"</span>)</pre>
+
+  <h3 class="sub-heading">Pattern 7 — Saving Charts</h3>
+  <pre><span class="cm"># Always save BEFORE plt.show()</span>
+<span class="cm"># plt.show() resets the figure; saving after gives you a blank file</span>
+<span class="fn">plt</span>.tight_layout()
+fig.savefig(<span class="st">"chart.png"</span>, <span class="param">bbox_inches</span>=<span class="st">"tight"</span>, <span class="param">dpi</span>=<span class="nm">150</span>)
+<span class="cm"># bbox_inches="tight" prevents labels from being cropped at the edges</span>
+<span class="fn">plt</span>.show()</pre>
+
+  <!-- Library Comparison -->
+  <h3 class="sub-heading">Library Decision Map</h3>
+  <table>
+    <tr>
+      <th>What you want to make</th>
+      <th>Use</th>
+      <th>Why</th>
+    </tr>
+    <tr>
+      <td>Line chart, bar chart, area chart</td>
+      <td><span class="ic">matplotlib</span></td>
+      <td>Full control, publication-ready</td>
+    </tr>
+    <tr>
+      <td>Candlestick / OHLCV chart</td>
+      <td><span class="ic">mplfinance</span></td>
+      <td>Designed for this exact job, handles layout automatically</td>
+    </tr>
+    <tr>
+      <td>Interactive chart (hover, zoom)</td>
+      <td><span class="ic">plotly</span></td>
+      <td>Built-in interactivity, great for Jupyter</td>
+    </tr>
+    <tr>
+      <td>Correlation heatmap, distribution</td>
+      <td><span class="ic">seaborn</span></td>
+      <td>Handles statistical math internally</td>
+    </tr>
+    <tr>
+      <td>Multiple panels, complex layout</td>
+      <td><span class="ic">matplotlib + GridSpec</span></td>
+      <td>Maximum control over panel sizing</td>
+    </tr>
+  </table>
+</section>
+
+
+<!-- ════════════════════════════════════════════════
+     SECTION 9 — READING A CHART QUICKLY
+═══════════════════════════════════════════════════ -->
+<section class="page-section" id="reading">
+  <div class="eyebrow">Section 09</div>
+  <h2 class="section-title">How to Read Any Unfamiliar Chart Code</h2>
+  <p class="section-sub">A repeatable 5-step approach whenever you encounter visualization code you haven't seen before.</p>
+  <div class="section-divider"></div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="badge badge-purple">Step 1</div>
+      <div class="card-title">Identify the library</div>
+      <p class="card-body">Is it <span class="ic">plt.</span> / <span class="ic">ax.</span>? That's matplotlib. <span class="ic">go.</span> or <span class="ic">fig.add_trace()</span>? Plotly. <span class="ic">mpf.</span>? mplfinance. <span class="ic">sns.</span>? Seaborn. Each has its own mental model.</p>
+    </div>
+    <div class="card">
+      <div class="badge badge-green">Step 2</div>
+      <div class="card-title">Find the figure and axes creation</div>
+      <p class="card-body">Look for <span class="ic">plt.subplots()</span>, <span class="ic">plt.figure()</span>, <span class="ic">go.Figure()</span>, or <span class="ic">GridSpec()</span>. This tells you how many panels exist and their relative sizes.</p>
+    </div>
+    <div class="card">
+      <div class="badge badge-amber">Step 3</div>
+      <div class="card-title">Find the data calls</div>
+      <p class="card-body">What is being drawn? <span class="ic">ax.plot()</span> = line. <span class="ic">ax.bar()</span> = bars. <span class="ic">ax.scatter()</span> = dots. <span class="ic">ax.fill_between()</span> = shaded region. Each one adds one visual layer.</p>
+    </div>
+    <div class="card">
+      <div class="badge badge-red">Step 4</div>
+      <div class="card-title">Find the axis configuration</div>
+      <p class="card-body">Look for <span class="ic">set_major_formatter</span>, <span class="ic">set_major_locator</span>, <span class="ic">set_xlabel</span>, <span class="ic">set_title</span>, <span class="ic">set_ylabel</span>. These are cosmetic — they label the chart and format the tick text.</p>
+    </div>
+    <div class="card" style="grid-column: 1 / -1;">
+      <div class="badge badge-teal">Step 5</div>
+      <div class="card-title">Read the legend and style calls</div>
+      <p class="card-body"><span class="ic">ax.legend()</span>, <span class="ic">clean_spines()</span>, <span class="ic">plt.tight_layout()</span>, <span class="ic">fig.savefig()</span> — these are final polish steps. They don't change the data being shown, just how it looks and where it's saved.</p>
+    </div>
+  </div>
+
+  <div class="callout green" style="margin-top:2rem;">
+    <div class="callout-label">The Most Important Realization</div>
+    Every chart in the notebook — even the complex 4-panel technical dashboard — is built from the same ~10 primitives: <span class="ic">plot()</span>, <span class="ic">bar()</span>, <span class="ic">scatter()</span>, <span class="ic">fill_between()</span>, <span class="ic">axhline()</span>, <span class="ic">text()</span>, <span class="ic">annotate()</span>, formatters, locators, and spine/grid styling. Once you understand these building blocks, you can reverse-engineer any chart.
+  </div>
+</section>
+
+<div style="max-width:960px; margin:0 auto; padding: 3rem 2rem;">
+  <div class="glow-line"></div>
+  <p style="color:var(--dim); font-size:0.82rem; text-align:center; font-family:'JetBrains Mono', monospace;">
+    Data Visualization Field Guide — built from YFinance EDA Notebook
+  </p>
+</div>
+
+</body>
+</html>

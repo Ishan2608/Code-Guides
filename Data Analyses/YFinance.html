@@ -5,497 +5,196 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>yfinance — Complete Python Guide</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          bg:      '#0e0f14',
+          surface: '#15161d',
+          surface2:'#1c1d28',
+          border:  '#2a2b3d',
+          border2: '#363752',
+          text:    '#d4d5e8',
+          dim:     '#7b7d9e',
+          bright:  '#eceef8',
+          accent:  '#7c6af7',
+          accent2: '#5de8c1',
+          accent3: '#f7b955',
+          accent4: '#f76a6a',
+          mdbg:    '#191a24',
+          codebg:  '#111219',
+          outbg:   '#0d1a14',
+          outborder:'#1e3d2e',
+          outtext: '#7dffc4',
+        },
+        fontFamily: {
+          sans:  ['"DM Sans"','sans-serif'],
+          mono:  ['"JetBrains Mono"','monospace'],
+          serif: ['Fraunces','serif'],
+        },
+      }
+    }
+  }
+</script>
 <style>
+  /* ── CSS variables kept for inline style references in HTML ── */
   :root {
-    --bg: #0e0f14;
-    --surface: #15161d;
-    --surface2: #1c1d28;
-    --border: #2a2b3d;
-    --border2: #363752;
-    --text: #d4d5e8;
-    --text-dim: #7b7d9e;
-    --text-bright: #eceef8;
-    --accent: #7c6af7;
-    --accent2: #5de8c1;
-    --accent3: #f7b955;
-    --accent4: #f76a6a;
-    --md-bg: #191a24;
-    --code-bg: #111219;
-    --string: #5de8c1;
-    --keyword: #c07df0;
-    --function: #7cb8f7;
-    --comment: #525470;
-    --number: #f7b955;
-    --param: #f78c5d;
-    --class: #f0c07d;
-    --out-bg: #0d1a14;
-    --out-border: #1e3d2e;
-    --out-text: #7dffc4;
+    --accent:#7c6af7; --accent2:#5de8c1; --accent3:#f7b955;
+    --text:#d4d5e8; --text-dim:#7b7d9e; --text-bright:#eceef8;
+    --border:#2a2b3d; --border2:#363752;
+    --out-border:#1e3d2e; --out-text:#7dffc4;
   }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  /* ── Syntax colours (cannot be expressed as Tailwind utilities) ── */
+  .kw { color:#c07df0; }
+  .fn { color:#7cb8f7; }
+  .st { color:#5de8c1; }
+  .cm { color:#525470; font-style:italic; }
+  .nu { color:#f7b955; }
+  .cl { color:#f0c07d; }
+  .pr { color:#f78c5d; }
+  .at { color:#5de8c1; }
 
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 15px;
-    line-height: 1.65;
-    min-height: 100vh;
-  }
-
-  /* ── HEADER ── */
-  header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 48px 0 36px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-  }
-  header::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(ellipse 70% 120% at 50% -30%, rgba(124,106,247,.18) 0%, transparent 70%);
-  }
-  .header-badge {
-    display: inline-block;
-    background: rgba(124,106,247,.15);
-    border: 1px solid rgba(124,106,247,.35);
-    color: #a598ff;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    letter-spacing: .12em;
-    padding: 4px 14px;
-    border-radius: 20px;
-    margin-bottom: 18px;
-    text-transform: uppercase;
-  }
-  header h1 {
-    font-family: 'Fraunces', serif;
-    font-size: clamp(2.2rem, 5vw, 3.8rem);
-    font-weight: 800;
-    color: var(--text-bright);
-    letter-spacing: -.02em;
-    line-height: 1.1;
-    position: relative;
-  }
-  header h1 span { color: var(--accent); }
-  header p.subtitle {
-    margin-top: 12px;
-    color: var(--text-dim);
-    font-size: 15px;
-    font-weight: 300;
-    position: relative;
-  }
-
-  /* ── TOC ── */
-  .toc-wrap {
-    max-width: 860px;
-    margin: 36px auto 0;
-    padding: 0 24px;
-  }
-  .toc {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 24px 28px;
-  }
-  .toc h3 {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    color: var(--text-dim);
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    margin-bottom: 14px;
-  }
-  .toc ol {
-    list-style: none;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 6px 32px;
-  }
+  /* ── TOC counter (CSS counter — no Tailwind equivalent) ── */
+  ol { counter-reset: toc-counter; }
   .toc li { counter-increment: toc-counter; }
-  .toc a {
-    color: var(--text);
-    text-decoration: none;
-    font-size: 13.5px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: color .2s;
-  }
-  .toc a:hover { color: var(--accent); }
   .toc a::before {
     content: counter(toc-counter, decimal-leading-zero);
     font-family: 'JetBrains Mono', monospace;
     font-size: 10px;
-    color: var(--accent);
+    color: #7c6af7;
     opacity: .6;
     min-width: 22px;
   }
-  ol { counter-reset: toc-counter; }
 
-  /* ── NOTEBOOK ── */
-  .notebook {
-    max-width: 860px;
-    margin: 40px auto 80px;
-    padding: 0 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-  }
-
-  /* ── CELL BASE ── */
-  .cell {
-    display: flex;
-    gap: 0;
-    position: relative;
-  }
-  .cell-gutter {
-    width: 52px;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    padding-top: 14px;
-    padding-right: 10px;
-    gap: 4px;
-    position: relative;
-  }
-  .cell-gutter .cell-type {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    letter-spacing: .08em;
-    text-transform: uppercase;
+  /* ── Writing-mode for vertical gutter label ── */
+  .cell-type {
     writing-mode: vertical-rl;
     transform: rotate(180deg);
-    opacity: .35;
-    padding: 6px 0;
   }
-  .cell-body { flex: 1; min-width: 0; }
 
-  /* ── SECTION LABEL ── */
-  .section-label {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 36px 0 6px;
-  }
-  .section-label .num {
-    font-family: 'Fraunces', serif;
-    font-size: 13px;
-    font-style: italic;
-    color: var(--accent);
-    opacity: .7;
-  }
-  .section-label .line { flex: 1; height: 1px; background: var(--border); }
-
-  /* ── MARKDOWN CELL ── */
-  .md-cell {
-    background: var(--md-bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 22px 26px;
-    margin-bottom: 2px;
-    position: relative;
+  /* ── Pseudo-elements ── */
+  header::before {
+    content:'';
+    position:absolute;
+    inset:0;
+    background:radial-gradient(ellipse 70% 120% at 50% -30%,rgba(124,106,247,.18) 0%,transparent 70%);
   }
   .md-cell::before {
-    content: 'md';
-    position: absolute;
-    top: 10px; right: 12px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9px;
-    color: var(--text-dim);
-    opacity: .4;
-    letter-spacing: .06em;
-  }
-  .md-cell h2 {
-    font-family: 'Fraunces', serif;
-    font-size: 1.55rem;
-    font-weight: 600;
-    color: var(--text-bright);
-    letter-spacing: -.02em;
-    margin-bottom: 10px;
-    line-height: 1.25;
-  }
-  .md-cell h3 {
-    font-family: 'Fraunces', serif;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--accent2);
-    margin: 18px 0 8px;
-  }
-  .md-cell h4 {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11.5px;
-    color: var(--accent3);
-    letter-spacing: .04em;
-    text-transform: uppercase;
-    margin: 16px 0 6px;
-  }
-  .md-cell p { color: var(--text); margin-bottom: 10px; font-size: 14.5px; }
-  .md-cell p:last-child { margin-bottom: 0; }
-  .md-cell ul, .md-cell ol { padding-left: 20px; margin-bottom: 10px; }
-  .md-cell li { color: var(--text); font-size: 14.5px; margin-bottom: 4px; }
-  .md-cell code {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12.5px;
-    background: rgba(124,106,247,.13);
-    color: #b8b0ff;
-    padding: 1px 6px;
-    border-radius: 4px;
-    border: 1px solid rgba(124,106,247,.2);
-  }
-  .md-cell strong { color: var(--text-bright); font-weight: 500; }
-  .md-cell em { color: var(--accent3); font-style: italic; }
-
-  /* param table */
-  .param-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 12px 0;
-    font-size: 13px;
-  }
-  .param-table thead th {
-    background: rgba(124,106,247,.12);
-    color: var(--text-dim);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    padding: 8px 12px;
-    text-align: left;
-    border-bottom: 1px solid var(--border2);
-  }
-  .param-table tbody td {
-    padding: 7px 12px;
-    border-bottom: 1px solid var(--border);
-    vertical-align: top;
-    line-height: 1.5;
-  }
-  .param-table tbody tr:last-child td { border-bottom: none; }
-  .param-table td:first-child {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    color: var(--param);
-    white-space: nowrap;
-  }
-  .param-table td:nth-child(2) {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    color: var(--string);
-  }
-  .param-table td:nth-child(3) { color: var(--text-dim); font-size: 13px; }
-  .param-table td .default { color: var(--accent3); font-style: italic; }
-
-  /* returns box */
-  .returns {
-    background: rgba(93,232,193,.06);
-    border: 1px solid rgba(93,232,193,.2);
-    border-radius: 7px;
-    padding: 10px 14px;
-    margin-top: 12px;
-    font-size: 13.5px;
-  }
-  .returns .ret-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: var(--accent2);
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    margin-bottom: 3px;
+    content:'md';
+    position:absolute;
+    top:10px; right:12px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:9px;
+    color:#7b7d9e;
+    opacity:.4;
+    letter-spacing:.06em;
   }
 
-  /* note box */
-  .note {
-    background: rgba(247,185,85,.06);
-    border-left: 3px solid var(--accent3);
-    padding: 10px 14px;
-    margin-top: 12px;
-    border-radius: 0 6px 6px 0;
-    font-size: 13.5px;
-  }
-  .note .note-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: var(--accent3);
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    margin-bottom: 3px;
-  }
-
-  /* ── CODE CELL ── */
-  .code-cell {
-    background: var(--code-bg);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-    margin-bottom: 2px;
-  }
-  .code-cell pre {
-    padding: 18px 22px;
-    overflow-x: auto;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    line-height: 1.75;
-  }
-  .code-cell code { font-family: inherit; font-size: inherit; background: none; border: none; padding: 0; color: var(--text); }
-
-  /* syntax */
-  .kw { color: var(--keyword); }
-  .fn { color: var(--function); }
-  .st { color: var(--string); }
-  .cm { color: var(--comment); font-style: italic; }
-  .nu { color: var(--number); }
-  .cl { color: var(--class); }
-  .pr { color: var(--param); }
-  .at { color: var(--accent2); }
-
-  /* ── OUTPUT CELL ── */
-  .out-cell {
-    background: var(--out-bg);
-    border: 1px solid var(--out-border);
-    border-radius: 10px;
-    overflow: hidden;
-    margin-bottom: 8px;
-  }
-  .out-cell-header {
-    padding: 5px 14px;
-    background: rgba(29,57,43,.6);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: #3d9966;
-    letter-spacing: .08em;
-    text-transform: uppercase;
-    border-bottom: 1px solid var(--out-border);
-  }
-  .out-cell pre {
-    padding: 14px 18px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12.5px;
-    line-height: 1.7;
-    color: var(--out-text);
-    overflow-x: auto;
-  }
-
-  /* ── DIVIDER ── */
+  /* ── Section divider gradient ── */
   .section-div {
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--border2), transparent);
-    margin: 48px 0 32px;
+    height:1px;
+    background:linear-gradient(90deg,transparent,#363752,transparent);
+    margin:48px 0 32px;
   }
 
-  /* tags */
-  .tag {
-    display: inline-block;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    padding: 2px 8px;
-    border-radius: 4px;
-    margin-right: 4px;
-    margin-bottom: 4px;
-    letter-spacing: .04em;
-  }
-  .tag-prop { background: rgba(93,232,193,.1); color: var(--accent2); border: 1px solid rgba(93,232,193,.2); }
-  .tag-method { background: rgba(124,106,247,.1); color: #b8b0ff; border: 1px solid rgba(124,106,247,.2); }
-  .tag-df { background: rgba(247,185,85,.1); color: var(--accent3); border: 1px solid rgba(247,185,85,.2); }
-
-  /* quick ref grid */
-  .quickref {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-top: 12px;
-  }
-  .qr-item {
-    background: rgba(255,255,255,.03);
-    border: 1px solid var(--border);
-    border-radius: 7px;
-    padding: 10px 13px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 13px;
-  }
-  .qr-item .qr-key { font-family: 'JetBrains Mono', monospace; color: var(--accent2); font-size: 12px; }
-  .qr-item .qr-val { color: var(--text-dim); font-size: 12px; }
-
-  @media (max-width: 600px) {
-    .toc ol { grid-template-columns: 1fr; }
-    .quickref { grid-template-columns: 1fr; }
-    .cell-gutter { width: 30px; }
+  /* ── md-cell typography (Tailwind can't target descendants easily) ── */
+  .md-cell h2 { font-family:'Fraunces',serif; font-size:1.55rem; font-weight:600; color:#eceef8; letter-spacing:-.02em; margin-bottom:10px; line-height:1.25; }
+  .md-cell h3 { font-family:'Fraunces',serif; font-size:1.1rem; font-weight:600; color:#5de8c1; margin:18px 0 8px; }
+  .md-cell h4 { font-family:'JetBrains Mono',monospace; font-size:11.5px; color:#f7b955; letter-spacing:.04em; text-transform:uppercase; margin:16px 0 6px; }
+  .md-cell p  { color:#d4d5e8; margin-bottom:10px; font-size:14.5px; }
+  .md-cell p:last-child { margin-bottom:0; }
+  .md-cell ul, .md-cell ol { padding-left:20px; margin-bottom:10px; }
+  .md-cell li { color:#d4d5e8; font-size:14.5px; margin-bottom:4px; }
+  .md-cell code { font-family:'JetBrains Mono',monospace; font-size:12.5px; background:rgba(124,106,247,.13); color:#b8b0ff; padding:1px 6px; border-radius:4px; border:1px solid rgba(124,106,247,.2); }
+  .md-cell strong { color:#eceef8; font-weight:500; }
+  .md-cell em { color:#f7b955; font-style:italic; }
+  /* param-table */
+  .param-table thead th { background:rgba(124,106,247,.12); color:#7b7d9e; font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.08em; text-transform:uppercase; padding:8px 12px; text-align:left; border-bottom:1px solid #363752; }
+  .param-table tbody td { padding:7px 12px; border-bottom:1px solid #2a2b3d; vertical-align:top; line-height:1.5; }
+  .param-table tbody tr:last-child td { border-bottom:none; }
+  .param-table td:first-child { font-family:'JetBrains Mono',monospace; font-size:12px; color:#f78c5d; white-space:nowrap; }
+  .param-table td:nth-child(2) { font-family:'JetBrains Mono',monospace; font-size:12px; color:#5de8c1; }
+  .param-table td:nth-child(3) { color:#7b7d9e; font-size:13px; }
+  .param-table td .default { color:#f7b955; font-style:italic; }
+  /* code-cell pre */
+  .bg-codebg pre { padding:18px 22px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:13px; line-height:1.75; }
+  .bg-codebg code { font-family:inherit; font-size:inherit; background:none; border:none; padding:0; color:#d4d5e8; }
+  /* out-cell pre */
+  .bg-outbg pre { padding:14px 18px; font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.7; color:#7dffc4; overflow-x:auto; }
+  /* responsive */
+  @media (max-width:600px) {
+    .grid-cols-2 { grid-template-columns:1fr; }
+    .w-\[52px\] { width:30px; }
   }
 </style>
 </head>
-<body>
+<body class="bg-bg text-text font-sans text-[15px] leading-[1.65] min-h-screen">
 
-<header>
-  <div class="header-badge">Python Library Guide</div>
-  <h1><span>yfinance</span> — Market Data for Python</h1>
-  <p class="subtitle">A comprehensive notebook-style reference for fetching and analysing financial data</p>
+<header class="bg-surface border-b border-border py-12 pb-9 text-center relative overflow-hidden">
+  <div class="inline-block bg-accent/15 border border-accent/35 text-[#a598ff] font-mono text-[11px] tracking-[.12em] px-[14px] py-1 rounded-full mb-[18px] uppercase">Python Library Guide</div>
+  <h1 class="font-serif font-extrabold text-bright tracking-[-0.02em] leading-tight text-[clamp(2.2rem,5vw,3.8rem)] relative"><span class="text-accent">yfinance</span> — Market Data for Python</h1>
+  <p class="mt-3 text-dim text-[15px] font-light relative">A comprehensive notebook-style reference for fetching and analysing financial data</p>
 </header>
 
-<div class="toc-wrap">
-  <div class="toc">
-    <h3>Contents</h3>
-    <ol>
-      <li><a href="#s1">Installation &amp; Setup</a></li>
-      <li><a href="#s2">Ticker Object</a></li>
-      <li><a href="#s3">Stock Info &amp; Metadata</a></li>
-      <li><a href="#s4">Financial Calendar</a></li>
-      <li><a href="#s5">News Articles</a></li>
-      <li><a href="#s6">Historical Price Data</a></li>
-      <li><a href="#s7">Financial Statements</a></li>
-      <li><a href="#s8">Corporate Actions</a></li>
-      <li><a href="#s9">Analyst Recommendations</a></li>
-      <li><a href="#s10">Ownership &amp; Holders</a></li>
-      <li><a href="#s11">ESG / Sustainability</a></li>
-      <li><a href="#s12">Multiple Tickers</a></li>
-      <li><a href="#s13">Chart Setup &amp; Matplotlib Style</a></li>
-      <li><a href="#s14">Price &amp; Volume Charts</a></li>
-      <li><a href="#s15">Candlestick &amp; OHLC Charts</a></li>
-      <li><a href="#s16">Technical Indicators</a></li>
-      <li><a href="#s17">Fundamental Analysis Charts</a></li>
-      <li><a href="#s18">Portfolio &amp; Comparative Analysis</a></li>
+<div class="max-w-[860px] mx-auto mt-9 px-6">
+  <div class="bg-surface2 border border-border rounded-xl px-7 py-6">
+    <h3 class="font-mono text-[11px] text-dim tracking-[.12em] uppercase mb-[14px]">Contents</h3>
+    <ol class="toc list-none grid grid-cols-2 gap-y-1.5 gap-x-8 sm:grid-cols-1">
+      <li><a class="text-text no-underline text-[13.5px] flex items-center gap-2 hover:text-accent transition-colors duration-200" href="#s1">Installation &amp; Setup</a></li>
+      <li><a class="text-text no-underline text-[13.5px] flex items-center gap-2 hover:text-accent transition-colors duration-200" href="#s2">Ticker Object</a></li>
+      <li><a class="text-text no-underline text-[13.5px] flex items-center gap-2 hover:text-accent transition-colors duration-200" href="#s3">Stock Info &amp; Metadata</a></li>
+      <li><a class="text-text no-underline text-[13.5px] flex items-center gap-2 hover:text-accent transition-colors duration-200" href="#s4">Financial Calendar</a></li>
+      <li><a class="text-text no-underline text-[13.5px] flex items-center gap-2 hover:text-accent transition-colors duration-200" href="#s5">News Articles</a></li>
+      <li><a class="text-text no-underline text-[13.5px] flex items-center gap-2 hover:text-accent transition-colors duration-200" href="#s6">Historical Price Data</a></li>
+      <li><a class="text-text no-underline text-[13.5px] flex items-center gap-2 hover:text-accent transition-colors duration-200" href="#s7">Financial Statements</a></li>
+      <li><a class="text-text no-underline text-[13.5px] flex items-center gap-2 hover:text-accent transition-colors duration-200" href="#s8">Corporate Actions</a></li>
+      <li><a class="text-text no-underline text-[13.5px] flex items-center gap-2 hover:text-accent transition-colors duration-200" href="#s9">Analyst Recommendations</a></li>
+      <li><a class="text-text no-underline text-[13.5px] flex items-center gap-2 hover:text-accent transition-colors duration-200" href="#s10">Ownership &amp; Holders</a></li>
+      <li><a class="text-text no-underline text-[13.5px] flex items-center gap-2 hover:text-accent transition-colors duration-200" href="#s11">ESG / Sustainability</a></li>
+      <li><a class="text-text no-underline text-[13.5px] flex items-center gap-2 hover:text-accent transition-colors duration-200" href="#s12">Multiple Tickers</a></li>
+      <li><a class="text-text no-underline text-[13.5px] flex items-center gap-2 hover:text-accent transition-colors duration-200" href="#s13">Chart Setup &amp; Matplotlib Style</a></li>
+      <li><a class="text-text no-underline text-[13.5px] flex items-center gap-2 hover:text-accent transition-colors duration-200" href="#s14">Price &amp; Volume Charts</a></li>
+      <li><a class="text-text no-underline text-[13.5px] flex items-center gap-2 hover:text-accent transition-colors duration-200" href="#s15">Candlestick &amp; OHLC Charts</a></li>
+      <li><a class="text-text no-underline text-[13.5px] flex items-center gap-2 hover:text-accent transition-colors duration-200" href="#s16">Technical Indicators</a></li>
+      <li><a class="text-text no-underline text-[13.5px] flex items-center gap-2 hover:text-accent transition-colors duration-200" href="#s17">Fundamental Analysis Charts</a></li>
+      <li><a class="text-text no-underline text-[13.5px] flex items-center gap-2 hover:text-accent transition-colors duration-200" href="#s18">Portfolio &amp; Comparative Analysis</a></li>
     </ol>
   </div>
 </div>
 
-<div class="notebook">
+<div class="max-w-[860px] mx-auto mt-10 mb-20 px-6 flex flex-col">
 
   <!-- ─────────────────────────────────────────────────────── -->
   <!-- SECTION 1: INSTALLATION -->
   <!-- ─────────────────────────────────────────────────────── -->
-  <div class="section-label" id="s1">
-    <span class="num">01</span>
-    <div class="line"></div>
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s1">
+    <span class="font-serif italic text-[13px] text-accent opacity-70">01</span>
+    <div class="flex-1 h-px bg-border"></div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h2>Installation &amp; Setup</h2>
         <p><strong>yfinance</strong> is an open-source Python library that wraps Yahoo Finance's unofficial API, giving you clean programmatic access to historical prices, financial statements, holder data, ESG scores, and more — all for free.</p>
         <h4>Install</h4>
         <p>Use <code>pip</code> to install the package. It is recommended to work inside a virtual environment.</p>
-        <div class="note">
-          <div class="note-label">⚠ Note</div>
+        <div class="bg-[rgba(247,185,85,.06)] border-l-[3px] border-accent3 px-[14px] py-[10px] mt-3 rounded-r-[6px] text-[13.5px]">
+          <div class="font-mono text-[10px] text-accent3 tracking-[.08em] uppercase mb-[3px]">⚠ Note</div>
           yfinance relies on Yahoo Finance's undocumented API, which can change without notice. Keep the library updated regularly with <code>pip install --upgrade yfinance</code>.
         </div>
       </div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code><span class="cm"># Install via pip</span>
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="cm"># Install via pip</span>
 pip install yfinance
 
 <span class="cm"># Upgrade to the latest version</span>
@@ -506,10 +205,10 @@ pip install yfinance[nospam,repair]</code></pre></div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code><span class="cm"># Standard imports used throughout this guide</span>
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="cm"># Standard imports used throughout this guide</span>
 <span class="kw">import</span> yfinance <span class="kw">as</span> yf
 <span class="kw">import</span> pandas <span class="kw">as</span> pd
 <span class="kw">import</span> json
@@ -527,15 +226,15 @@ pd.set_option(<span class="st">'display.float_format'</span>, <span class="kw">l
   <!-- ─────────────────────────────────────────────────────── -->
   <!-- SECTION 2: TICKER OBJECT -->
   <!-- ─────────────────────────────────────────────────────── -->
-  <div class="section-label" id="s2">
-    <span class="num">02</span>
-    <div class="line"></div>
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s2">
+    <span class="font-serif italic text-[13px] text-accent opacity-70">02</span>
+    <div class="flex-1 h-px bg-border"></div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h2>The Ticker Object</h2>
         <p>The <code>yf.Ticker()</code> class is the primary entry point. Every piece of data you fetch — prices, statements, news — flows through a Ticker instance. You construct one by passing a ticker symbol as a string.</p>
 
@@ -543,7 +242,7 @@ pd.set_option(<span class="st">'display.float_format'</span>, <span class="kw">l
         <p><code>ticker = yf.Ticker(ticker, session=None, proxy=None)</code></p>
 
         <h4>Parameters</h4>
-        <table class="param-table">
+        <table class="w-full border-collapse my-3 text-[13px]">
           <thead>
             <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
           </thead>
@@ -567,28 +266,28 @@ pd.set_option(<span class="st">'display.float_format'</span>, <span class="kw">l
         </table>
 
         <h4>Exchange Suffixes (Indian Markets)</h4>
-        <div class="quickref">
-          <div class="qr-item"><span class="qr-key">.NS</span><span class="qr-val">National Stock Exchange (NSE)</span></div>
-          <div class="qr-item"><span class="qr-key">.BO</span><span class="qr-val">Bombay Stock Exchange (BSE)</span></div>
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <div class="bg-white/[.03] border border-border rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="font-mono text-accent2 text-[12px]">.NS</span><span class="text-dim text-[12px]">National Stock Exchange (NSE)</span></div>
+          <div class="bg-white/[.03] border border-border rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="font-mono text-accent2 text-[12px]">.BO</span><span class="text-dim text-[12px]">Bombay Stock Exchange (BSE)</span></div>
         </div>
 
         <h4>Common Ticker Formats</h4>
-        <div class="quickref">
-          <div class="qr-item"><span class="qr-key">AAPL</span><span class="qr-val">US Stock (Apple)</span></div>
-          <div class="qr-item"><span class="qr-key">BTC-USD</span><span class="qr-val">Crypto (Bitcoin)</span></div>
-          <div class="qr-item"><span class="qr-key">TCS.NS</span><span class="qr-val">Indian NSE Stock (TCS)</span></div>
-          <div class="qr-item"><span class="qr-key">EURUSD=X</span><span class="qr-val">Forex pair</span></div>
-          <div class="qr-item"><span class="qr-key">^NSEI</span><span class="qr-val">Nifty 50 Index</span></div>
-          <div class="qr-item"><span class="qr-key">GC=F</span><span class="qr-val">Gold Futures</span></div>
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <div class="bg-white/[.03] border border-border rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="font-mono text-accent2 text-[12px]">AAPL</span><span class="text-dim text-[12px]">US Stock (Apple)</span></div>
+          <div class="bg-white/[.03] border border-border rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="font-mono text-accent2 text-[12px]">BTC-USD</span><span class="text-dim text-[12px]">Crypto (Bitcoin)</span></div>
+          <div class="bg-white/[.03] border border-border rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="font-mono text-accent2 text-[12px]">TCS.NS</span><span class="text-dim text-[12px]">Indian NSE Stock (TCS)</span></div>
+          <div class="bg-white/[.03] border border-border rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="font-mono text-accent2 text-[12px]">EURUSD=X</span><span class="text-dim text-[12px]">Forex pair</span></div>
+          <div class="bg-white/[.03] border border-border rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="font-mono text-accent2 text-[12px]">^NSEI</span><span class="text-dim text-[12px]">Nifty 50 Index</span></div>
+          <div class="bg-white/[.03] border border-border rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="font-mono text-accent2 text-[12px]">GC=F</span><span class="text-dim text-[12px]">Gold Futures</span></div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code><span class="cm"># ── Basic Ticker instantiation ────────────────────────────────────────────────</span>
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="cm"># ── Basic Ticker instantiation ────────────────────────────────────────────────</span>
 
 <span class="cm"># Indian stocks: append .NS (NSE) or .BO (BSE)</span>
 ticker_nse = yf.<span class="cl">Ticker</span>(<span class="st">"TCS.NS"</span>)
@@ -610,8 +309,8 @@ session = requests_cache.<span class="fn">CachedSession</span>(<span class="st">
 cached_ticker = yf.<span class="cl">Ticker</span>(<span class="st">"INFY.NS"</span>, session=session)
 
 <span class="fn">print</span>(<span class="st">f"Ticker created: </span><span class="at">{ticker_nse.ticker}</span><span class="st">"</span>)</code></pre></div>
-      <div class="out-cell">
-        <div class="out-cell-header">▶ output</div>
+      <div class="bg-outbg border border-outborder rounded-[10px] overflow-hidden mb-2">
+        <div class="px-[14px] py-[5px] bg-[rgba(29,57,43,0.6)] flex items-center gap-1.5 font-mono text-[10px] text-[#3d9966] tracking-[.08em] uppercase border-b border-outborder">▶ output</div>
         <pre>Ticker created: TCS.NS</pre>
       </div>
     </div>
@@ -622,21 +321,21 @@ cached_ticker = yf.<span class="cl">Ticker</span>(<span class="st">"INFY.NS"</sp
   <!-- ─────────────────────────────────────────────────────── -->
   <!-- SECTION 3: INFO -->
   <!-- ─────────────────────────────────────────────────────── -->
-  <div class="section-label" id="s3">
-    <span class="num">03</span>
-    <div class="line"></div>
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s3">
+    <span class="font-serif italic text-[13px] text-accent opacity-70">03</span>
+    <div class="flex-1 h-px bg-border"></div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h2>Stock Info &amp; Metadata</h2>
-        <span class="tag tag-prop">property</span><span class="tag tag-df">dict</span>
+        <span class="inline-block font-mono text-[10px] px-2 py-0.5 rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(93,232,193,.1)] text-accent2 border border-[rgba(93,232,193,.2)]">property</span><span class="inline-block font-mono text-[10px] px-2 py-0.5 rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(247,185,85,.1)] text-accent3 border border-[rgba(247,185,85,.2)]">dict</span>
         <p>The <code>.info</code> property returns a large dictionary with over 100 fields covering company profile, valuation metrics, trading statistics, and contact information. <strong>Every access triggers a fresh network request</strong>, so always cache it in a variable first.</p>
 
         <h4>Key Categories &amp; Fields</h4>
-        <table class="param-table">
+        <table class="w-full border-collapse my-3 text-[13px]">
           <thead>
             <tr><th>Field</th><th>Type</th><th>Description</th></tr>
           </thead>
@@ -660,18 +359,18 @@ cached_ticker = yf.<span class="cl">Ticker</span>(<span class="st">"INFY.NS"</sp
             <tr><td>longBusinessSummary</td><td>str</td><td>Plain-English business description</td></tr>
           </tbody>
         </table>
-        <div class="note">
-          <div class="note-label">⚠ Performance Tip</div>
+        <div class="bg-[rgba(247,185,85,.06)] border-l-[3px] border-accent3 px-[14px] py-[10px] mt-3 rounded-r-[6px] text-[13.5px]">
+          <div class="font-mono text-[10px] text-accent3 tracking-[.08em] uppercase mb-[3px]">⚠ Performance Tip</div>
           <code>ticker.info</code> makes a separate HTTP request every single time it is accessed. Always assign <code>info = ticker.info</code> once at the top and reuse the variable throughout your script.
         </div>
       </div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code>tcs = yf.<span class="cl">Ticker</span>(<span class="st">"TCS.NS"</span>)
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code>tcs = yf.<span class="cl">Ticker</span>(<span class="st">"TCS.NS"</span>)
 
 <span class="cm"># ── Cache info once ───────────────────────────────────────────────────────────</span>
 info = tcs.info
@@ -705,8 +404,8 @@ info = tcs.info
 <span class="fn">print</span>(<span class="st">"\n── All Available Info Keys ───────────────────────"</span>)
 <span class="kw">for</span> key <span class="kw">in</span> <span class="fn">sorted</span>(info.keys()):
     <span class="fn">print</span>(<span class="st">f"  {key}"</span>)</code></pre></div>
-      <div class="out-cell">
-        <div class="out-cell-header">▶ output</div>
+      <div class="bg-outbg border border-outborder rounded-[10px] overflow-hidden mb-2">
+        <div class="px-[14px] py-[5px] bg-[rgba(29,57,43,0.6)] flex items-center gap-1.5 font-mono text-[10px] text-[#3d9966] tracking-[.08em] uppercase border-b border-outborder">▶ output</div>
         <pre>── Company Overview ──────────────────────────────
 Name        : Tata Consultancy Services Limited
 Sector      : Technology
@@ -737,21 +436,21 @@ Dividend Yield   : 1.80%</pre>
   <!-- ─────────────────────────────────────────────────────── -->
   <!-- SECTION 4: CALENDAR -->
   <!-- ─────────────────────────────────────────────────────── -->
-  <div class="section-label" id="s4">
-    <span class="num">04</span>
-    <div class="line"></div>
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s4">
+    <span class="font-serif italic text-[13px] text-accent opacity-70">04</span>
+    <div class="flex-1 h-px bg-border"></div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h2>Financial Calendar</h2>
-        <span class="tag tag-prop">property</span><span class="tag tag-df">dict</span>
+        <span class="inline-block font-mono text-[10px] px-2 py-0.5 rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(93,232,193,.1)] text-accent2 border border-[rgba(93,232,193,.2)]">property</span><span class="inline-block font-mono text-[10px] px-2 py-0.5 rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(247,185,85,.1)] text-accent3 border border-[rgba(247,185,85,.2)]">dict</span>
         <p>The <code>.calendar</code> property returns a dictionary of upcoming corporate events for the ticker. It is especially useful for planning around earnings announcements, which can cause significant price volatility.</p>
 
         <h4>Typical Keys Returned</h4>
-        <table class="param-table">
+        <table class="w-full border-collapse my-3 text-[13px]">
           <thead><tr><th>Key</th><th>Description</th></tr></thead>
           <tbody>
             <tr><td>Earnings Date</td><td>List of expected earnings announcement date(s)</td></tr>
@@ -765,18 +464,18 @@ Dividend Yield   : 1.80%</pre>
             <tr><td>Ex-Dividend Date</td><td>Date by which you must own shares to receive the dividend</td></tr>
           </tbody>
         </table>
-        <div class="note">
-          <div class="note-label">Note</div>
+        <div class="bg-[rgba(247,185,85,.06)] border-l-[3px] border-accent3 px-[14px] py-[10px] mt-3 rounded-r-[6px] text-[13.5px]">
+          <div class="font-mono text-[10px] text-accent3 tracking-[.08em] uppercase mb-[3px]">Note</div>
           Calendar data availability is inconsistent for Indian stocks. US stocks tend to have richer calendar coverage. Always check for <code>None</code> before using a value.
         </div>
       </div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code>ticker = yf.<span class="cl">Ticker</span>(<span class="st">"TCS.NS"</span>)
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code>ticker = yf.<span class="cl">Ticker</span>(<span class="st">"TCS.NS"</span>)
 cal = ticker.calendar
 
 <span class="fn">print</span>(<span class="st">"── Upcoming Financial Events ─────────────────────"</span>)
@@ -790,8 +489,8 @@ cal = ticker.calendar
 earnings_dates = cal.get(<span class="st">"Earnings Date"</span>, [])
 <span class="kw">if</span> earnings_dates:
     <span class="fn">print</span>(<span class="st">f"\n  Next Earnings: </span><span class="at">{earnings_dates[0].strftime('%d %b %Y')}</span><span class="st">"</span>)</code></pre></div>
-      <div class="out-cell">
-        <div class="out-cell-header">▶ output</div>
+      <div class="bg-outbg border border-outborder rounded-[10px] overflow-hidden mb-2">
+        <div class="px-[14px] py-[5px] bg-[rgba(29,57,43,0.6)] flex items-center gap-1.5 font-mono text-[10px] text-[#3d9966] tracking-[.08em] uppercase border-b border-outborder">▶ output</div>
         <pre>── Upcoming Financial Events ─────────────────────
   Earnings Date            : [datetime.datetime(2025, 7, 10, 0, 0)]
   Earnings High            : 32.5
@@ -811,21 +510,21 @@ earnings_dates = cal.get(<span class="st">"Earnings Date"</span>, [])
   <!-- ─────────────────────────────────────────────────────── -->
   <!-- SECTION 5: NEWS -->
   <!-- ─────────────────────────────────────────────────────── -->
-  <div class="section-label" id="s5">
-    <span class="num">05</span>
-    <div class="line"></div>
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s5">
+    <span class="font-serif italic text-[13px] text-accent opacity-70">05</span>
+    <div class="flex-1 h-px bg-border"></div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h2>News Articles</h2>
-        <span class="tag tag-prop">property</span><span class="tag tag-df">list[dict]</span>
+        <span class="inline-block font-mono text-[10px] px-2 py-0.5 rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(93,232,193,.1)] text-accent2 border border-[rgba(93,232,193,.2)]">property</span><span class="inline-block font-mono text-[10px] px-2 py-0.5 rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(247,185,85,.1)] text-accent3 border border-[rgba(247,185,85,.2)]">list[dict]</span>
         <p>The <code>.news</code> property returns a list of recent news articles associated with the ticker, sourced from Yahoo Finance. Each article is represented as a dictionary.</p>
 
         <h4>Article Dictionary Keys</h4>
-        <table class="param-table">
+        <table class="w-full border-collapse my-3 text-[13px]">
           <thead><tr><th>Key</th><th>Type</th><th>Description</th></tr></thead>
           <tbody>
             <tr><td>title</td><td>str</td><td>Headline of the news article</td></tr>
@@ -841,10 +540,10 @@ earnings_dates = cal.get(<span class="st">"Earnings Date"</span>, [])
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code><span class="kw">from</span> datetime <span class="kw">import</span> datetime
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="kw">from</span> datetime <span class="kw">import</span> datetime
 
 ticker = yf.<span class="cl">Ticker</span>(<span class="st">"TCS.NS"</span>)
 news = ticker.news
@@ -865,8 +564,8 @@ news = ticker.news
     <span class="fn">print</span>(<span class="st">f"    Publisher : </span><span class="at">{article.get('publisher')}</span><span class="st">"</span>)
     <span class="fn">print</span>(<span class="st">f"    Published : </span><span class="at">{dt_str}</span><span class="st">"</span>)
     <span class="fn">print</span>(<span class="st">f"    URL       : </span><span class="at">{article.get('link')}</span><span class="st">"</span>)</code></pre></div>
-      <div class="out-cell">
-        <div class="out-cell-header">▶ output</div>
+      <div class="bg-outbg border border-outborder rounded-[10px] overflow-hidden mb-2">
+        <div class="px-[14px] py-[5px] bg-[rgba(29,57,43,0.6)] flex items-center gap-1.5 font-mono text-[10px] text-[#3d9966] tracking-[.08em] uppercase border-b border-outborder">▶ output</div>
         <pre>Total news articles fetched: 8
 
 ── Recent News ───────────────────────────────────
@@ -889,24 +588,24 @@ news = ticker.news
   <!-- ─────────────────────────────────────────────────────── -->
   <!-- SECTION 6: HISTORY -->
   <!-- ─────────────────────────────────────────────────────── -->
-  <div class="section-label" id="s6">
-    <span class="num">06</span>
-    <div class="line"></div>
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s6">
+    <span class="font-serif italic text-[13px] text-accent opacity-70">06</span>
+    <div class="flex-1 h-px bg-border"></div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h2>Historical Price Data</h2>
-        <span class="tag tag-method">method</span><span class="tag tag-df">DataFrame</span>
+        <span class="inline-block font-mono text-[10px] px-2 py-0.5 rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(124,106,247,.1)] text-[#b8b0ff] border border-[rgba(124,106,247,.2)]">method</span><span class="inline-block font-mono text-[10px] px-2 py-0.5 rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(247,185,85,.1)] text-accent3 border border-[rgba(247,185,85,.2)]">DataFrame</span>
         <p>The <code>.history()</code> method is the workhorse for fetching OHLCV (Open, High, Low, Close, Volume) data. It returns a <strong>pandas DataFrame</strong> with the date as the index. By default, prices are adjusted for stock splits and dividends (<code>auto_adjust=True</code>).</p>
 
         <h3>Syntax</h3>
         <p><code>ticker.history(period, interval, start, end, prepost, auto_adjust, back_adjust, repair, actions)</code></p>
 
         <h4>Parameters</h4>
-        <table class="param-table">
+        <table class="w-full border-collapse my-3 text-[13px]">
           <thead><tr><th>Parameter</th><th>Values</th><th>Description</th></tr></thead>
           <tbody>
             <tr>
@@ -952,18 +651,18 @@ news = ticker.news
           </tbody>
         </table>
 
-        <div class="returns">
-          <div class="ret-label">Returns → DataFrame</div>
+        <div class="bg-[rgba(93,232,193,.06)] border border-[rgba(93,232,193,.2)] rounded-[7px] px-[14px] py-[10px] mt-3 text-[13.5px]">
+          <div class="font-mono text-[10px] text-accent2 tracking-[.08em] uppercase mb-[3px]">Returns → DataFrame</div>
           Columns: <code>Open</code>, <code>High</code>, <code>Low</code>, <code>Close</code>, <code>Volume</code> (and optionally <code>Dividends</code>, <code>Stock Splits</code>). Index is a timezone-aware DatetimeIndex.
         </div>
       </div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code>wipro = yf.<span class="cl">Ticker</span>(<span class="st">"WIPRO.NS"</span>)
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code>wipro = yf.<span class="cl">Ticker</span>(<span class="st">"WIPRO.NS"</span>)
 
 <span class="cm"># ── 1. Intraday: today's 1-minute candles ─────────────────────────────────────</span>
 <span class="cm"># Note: 1m data only available for the last 7 days</span>
@@ -998,8 +697,8 @@ yearly_df[<span class="st">"MA_50"</span>] = yearly_df[<span class="st">"Close"<
 <span class="fn">print</span>(<span class="st">f"Volatility (std): </span><span class="at">{yearly_df['Daily Return %'].std():.3f}</span><span class="st">%"</span>)
 <span class="fn">print</span>(<span class="st">f"Best Day        : </span><span class="at">{yearly_df['Daily Return %'].max():.2f}</span><span class="st">%"</span>)
 <span class="fn">print</span>(<span class="st">f"Worst Day       : </span><span class="at">{yearly_df['Daily Return %'].min():.2f}</span><span class="st">%"</span>)</code></pre></div>
-      <div class="out-cell">
-        <div class="out-cell-header">▶ output</div>
+      <div class="bg-outbg border border-outborder rounded-[10px] overflow-hidden mb-2">
+        <div class="px-[14px] py-[5px] bg-[rgba(29,57,43,0.6)] flex items-center gap-1.5 font-mono text-[10px] text-[#3d9966] tracking-[.08em] uppercase border-b border-outborder">▶ output</div>
         <pre>Current Wipro Price (NSE) : ₹488.75
 
 ── Last 5 Days High / Low ────────────────────────
@@ -1023,50 +722,50 @@ Worst Day       : -5.23%</pre>
   <!-- ─────────────────────────────────────────────────────── -->
   <!-- SECTION 7: FINANCIALS -->
   <!-- ─────────────────────────────────────────────────────── -->
-  <div class="section-label" id="s7">
-    <span class="num">07</span>
-    <div class="line"></div>
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s7">
+    <span class="font-serif italic text-[13px] text-accent opacity-70">07</span>
+    <div class="flex-1 h-px bg-border"></div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h2>Financial Statements</h2>
-        <span class="tag tag-prop">property</span><span class="tag tag-df">DataFrame</span>
+        <span class="inline-block font-mono text-[10px] px-2 py-0.5 rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(93,232,193,.1)] text-accent2 border border-[rgba(93,232,193,.2)]">property</span><span class="inline-block font-mono text-[10px] px-2 py-0.5 rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(247,185,85,.1)] text-accent3 border border-[rgba(247,185,85,.2)]">DataFrame</span>
         <p>yfinance exposes all three core financial statements for fundamental analysis. Each statement has an <em>annual</em> and a <em>quarterly</em> version. Rows represent line items (metrics), and columns represent reporting periods (most recent first).</p>
 
         <h3>Income Statement</h3>
         <p>Shows revenue, expenses, and profitability over a period.</p>
-        <div class="quickref">
-          <div class="qr-item"><span class="qr-key">.financials</span><span class="qr-val">Annual — last 4 years</span></div>
-          <div class="qr-item"><span class="qr-key">.quarterly_financials</span><span class="qr-val">Quarterly — last 4 quarters</span></div>
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <div class="bg-white/[.03] border border-border rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="font-mono text-accent2 text-[12px]">.financials</span><span class="text-dim text-[12px]">Annual — last 4 years</span></div>
+          <div class="bg-white/[.03] border border-border rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="font-mono text-accent2 text-[12px]">.quarterly_financials</span><span class="text-dim text-[12px]">Quarterly — last 4 quarters</span></div>
         </div>
         <p style="margin-top:10px">Key rows include: <code>Total Revenue</code>, <code>Gross Profit</code>, <code>EBITDA</code>, <code>Operating Income</code>, <code>Net Income</code>, <code>Basic EPS</code>, <code>Diluted EPS</code>.</p>
 
         <h3>Balance Sheet</h3>
         <p>A point-in-time snapshot of assets, liabilities, and shareholders' equity.</p>
-        <div class="quickref">
-          <div class="qr-item"><span class="qr-key">.balance_sheet</span><span class="qr-val">Annual</span></div>
-          <div class="qr-item"><span class="qr-key">.quarterly_balance_sheet</span><span class="qr-val">Quarterly</span></div>
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <div class="bg-white/[.03] border border-border rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="font-mono text-accent2 text-[12px]">.balance_sheet</span><span class="text-dim text-[12px]">Annual</span></div>
+          <div class="bg-white/[.03] border border-border rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="font-mono text-accent2 text-[12px]">.quarterly_balance_sheet</span><span class="text-dim text-[12px]">Quarterly</span></div>
         </div>
         <p style="margin-top:10px">Key rows: <code>Total Assets</code>, <code>Total Debt</code>, <code>Cash And Cash Equivalents</code>, <code>Stockholders Equity</code>, <code>Current Liabilities</code>.</p>
 
         <h3>Cash Flow Statement</h3>
         <p>Tracks actual cash movement — operating, investing, and financing activities.</p>
-        <div class="quickref">
-          <div class="qr-item"><span class="qr-key">.cashflow</span><span class="qr-val">Annual</span></div>
-          <div class="qr-item"><span class="qr-key">.quarterly_cashflow</span><span class="qr-val">Quarterly</span></div>
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <div class="bg-white/[.03] border border-border rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="font-mono text-accent2 text-[12px]">.cashflow</span><span class="text-dim text-[12px]">Annual</span></div>
+          <div class="bg-white/[.03] border border-border rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="font-mono text-accent2 text-[12px]">.quarterly_cashflow</span><span class="text-dim text-[12px]">Quarterly</span></div>
         </div>
         <p style="margin-top:10px">Key rows: <code>Free Cash Flow</code>, <code>Operating Cash Flow</code>, <code>Capital Expenditure</code>, <code>Repurchase Of Capital Stock</code>.</p>
       </div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code>tata_steel = yf.<span class="cl">Ticker</span>(<span class="st">"TATASTEEL.NS"</span>)
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code>tata_steel = yf.<span class="cl">Ticker</span>(<span class="st">"TATASTEEL.NS"</span>)
 
 <span class="cm"># ── Income Statement ──────────────────────────────────────────────────────────</span>
 income_stmt   = tata_steel.financials
@@ -1105,8 +804,8 @@ cash_flow = tata_steel.cashflow
 <span class="kw">if</span> <span class="st">"Free Cash Flow"</span> <span class="kw">in</span> cash_flow.index:
     fcf = cash_flow.loc[<span class="st">"Free Cash Flow"</span>].iloc[<span class="nu">0</span>]
     <span class="fn">print</span>(<span class="st">f"\nLatest Free Cash Flow : ₹</span><span class="at">{fcf / 1e9:.2f}</span><span class="st"> Billion"</span>)</code></pre></div>
-      <div class="out-cell">
-        <div class="out-cell-header">▶ output</div>
+      <div class="bg-outbg border border-outborder rounded-[10px] overflow-hidden mb-2">
+        <div class="px-[14px] py-[5px] bg-[rgba(29,57,43,0.6)] flex items-center gap-1.5 font-mono text-[10px] text-[#3d9966] tracking-[.08em] uppercase border-b border-outborder">▶ output</div>
         <pre>── Annual Income Statement (last 2 years) ────────
                          2024-03-31    2023-03-31
 Total Revenue          2.340000e+11  2.230000e+11
@@ -1128,21 +827,21 @@ Latest Free Cash Flow : ₹12.40 Billion</pre>
   <!-- ─────────────────────────────────────────────────────── -->
   <!-- SECTION 8: CORPORATE ACTIONS -->
   <!-- ─────────────────────────────────────────────────────── -->
-  <div class="section-label" id="s8">
-    <span class="num">08</span>
-    <div class="line"></div>
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s8">
+    <span class="font-serif italic text-[13px] text-accent opacity-70">08</span>
+    <div class="flex-1 h-px bg-border"></div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h2>Corporate Actions</h2>
-        <span class="tag tag-prop">property</span><span class="tag tag-df">DataFrame</span>
+        <span class="inline-block font-mono text-[10px] px-2 py-0.5 rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(93,232,193,.1)] text-accent2 border border-[rgba(93,232,193,.2)]">property</span><span class="inline-block font-mono text-[10px] px-2 py-0.5 rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(247,185,85,.1)] text-accent3 border border-[rgba(247,185,85,.2)]">DataFrame</span>
         <p>Corporate actions are events initiated by a public company that materially affect the stock. The two most important are <strong>Dividends</strong> (cash distributions to shareholders) and <strong>Stock Splits</strong> (increasing share count, reducing price per share proportionally).</p>
 
         <h4>Properties Available</h4>
-        <table class="param-table">
+        <table class="w-full border-collapse my-3 text-[13px]">
           <thead><tr><th>Property</th><th>Returns</th><th>Description</th></tr></thead>
           <tbody>
             <tr><td>.actions</td><td>DataFrame</td><td>Combined view of both Dividends and Splits, indexed by date</td></tr>
@@ -1155,10 +854,10 @@ Latest Free Cash Flow : ₹12.40 Billion</pre>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code>itc = yf.<span class="cl">Ticker</span>(<span class="st">"ITC.NS"</span>)
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code>itc = yf.<span class="cl">Ticker</span>(<span class="st">"ITC.NS"</span>)
 info = itc.info
 
 <span class="cm"># ── Fetch all corporate actions ───────────────────────────────────────────────</span>
@@ -1188,8 +887,8 @@ splits  = itc.splits      <span class="cm"># Series: split ratio by date</span>
     <span class="fn">print</span>(splits)
 <span class="kw">else</span>:
     <span class="fn">print</span>(<span class="st">"\nNo historical stock splits found."</span>)</code></pre></div>
-      <div class="out-cell">
-        <div class="out-cell-header">▶ output</div>
+      <div class="bg-outbg border border-outborder rounded-[10px] overflow-hidden mb-2">
+        <div class="px-[14px] py-[5px] bg-[rgba(29,57,43,0.6)] flex items-center gap-1.5 font-mono text-[10px] text-[#3d9966] tracking-[.08em] uppercase border-b border-outborder">▶ output</div>
         <pre>── Corporate Actions: ITC Limited ──
 
 Recent Corporate Actions (last 5):
@@ -1216,21 +915,21 @@ No historical stock splits found.</pre>
   <!-- ─────────────────────────────────────────────────────── -->
   <!-- SECTION 9: ANALYST RECOMMENDATIONS -->
   <!-- ─────────────────────────────────────────────────────── -->
-  <div class="section-label" id="s9">
-    <span class="num">09</span>
-    <div class="line"></div>
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s9">
+    <span class="font-serif italic text-[13px] text-accent opacity-70">09</span>
+    <div class="flex-1 h-px bg-border"></div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h2>Analyst Recommendations &amp; Price Targets</h2>
-        <span class="tag tag-prop">property</span><span class="tag tag-df">DataFrame / dict</span>
+        <span class="inline-block font-mono text-[10px] px-2 py-0.5 rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(93,232,193,.1)] text-accent2 border border-[rgba(93,232,193,.2)]">property</span><span class="inline-block font-mono text-[10px] px-2 py-0.5 rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(247,185,85,.1)] text-accent3 border border-[rgba(247,185,85,.2)]">DataFrame / dict</span>
         <p>yfinance exposes analyst opinion data — both consensus price targets and a breakdown of Buy/Hold/Sell ratings from Wall Street analysts and brokers.</p>
 
         <h4>Price Targets (from .info)</h4>
-        <table class="param-table">
+        <table class="w-full border-collapse my-3 text-[13px]">
           <thead><tr><th>Key</th><th>Description</th></tr></thead>
           <tbody>
             <tr><td>targetMeanPrice</td><td>Analyst consensus (average) 12-month price target</td></tr>
@@ -1243,7 +942,7 @@ No historical stock splits found.</pre>
         </table>
 
         <h4>Properties</h4>
-        <table class="param-table">
+        <table class="w-full border-collapse my-3 text-[13px]">
           <thead><tr><th>Property</th><th>Returns</th><th>Description</th></tr></thead>
           <tbody>
             <tr><td>.recommendations_summary</td><td>DataFrame</td><td>Counts of each rating grade for the current and prior periods</td></tr>
@@ -1251,18 +950,18 @@ No historical stock splits found.</pre>
             <tr><td>.analyst_price_targets</td><td>DataFrame</td><td>Current, low, high, and mean price targets</td></tr>
           </tbody>
         </table>
-        <div class="note">
-          <div class="note-label">Coverage Note</div>
+        <div class="bg-[rgba(247,185,85,.06)] border-l-[3px] border-accent3 px-[14px] py-[10px] mt-3 rounded-r-[6px] text-[13.5px]">
+          <div class="font-mono text-[10px] text-accent3 tracking-[.08em] uppercase mb-[3px]">Coverage Note</div>
           Analyst coverage data is sparse for mid-cap and small-cap Indian stocks. US-listed stocks generally have the richest coverage. Always check for <code>None</code> before use.
         </div>
       </div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code>sbi = yf.<span class="cl">Ticker</span>(<span class="st">"SBIN.NS"</span>)
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code>sbi = yf.<span class="cl">Ticker</span>(<span class="st">"SBIN.NS"</span>)
 sbi_info = sbi.info
 
 <span class="fn">print</span>(<span class="st">f"── Analyst Insights: </span><span class="at">{sbi_info.get('longName')}</span><span class="st"> ──"</span>)
@@ -1297,8 +996,8 @@ recs = sbi.recommendations
 <span class="kw">if</span> recs <span class="kw">is not None and not</span> recs.empty:
     <span class="fn">print</span>(<span class="st">"\n── Latest Firm-Level Recommendations ─────────────"</span>)
     <span class="fn">print</span>(recs.tail(<span class="nu">5</span>))</code></pre></div>
-      <div class="out-cell">
-        <div class="out-cell-header">▶ output</div>
+      <div class="bg-outbg border border-outborder rounded-[10px] overflow-hidden mb-2">
+        <div class="px-[14px] py-[5px] bg-[rgba(29,57,43,0.6)] flex items-center gap-1.5 font-mono text-[10px] text-[#3d9966] tracking-[.08em] uppercase border-b border-outborder">▶ output</div>
         <pre>── Analyst Insights: State Bank of India ──
 
 ── Price Targets ─────────────────────────────────
@@ -1323,21 +1022,21 @@ Upside to Mean  : +18.02%
   <!-- ─────────────────────────────────────────────────────── -->
   <!-- SECTION 10: HOLDERS -->
   <!-- ─────────────────────────────────────────────────────── -->
-  <div class="section-label" id="s10">
-    <span class="num">10</span>
-    <div class="line"></div>
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s10">
+    <span class="font-serif italic text-[13px] text-accent opacity-70">10</span>
+    <div class="flex-1 h-px bg-border"></div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h2>Ownership &amp; Holders</h2>
-        <span class="tag tag-prop">property</span><span class="tag tag-df">DataFrame</span>
+        <span class="inline-block font-mono text-[10px] px-2 py-0.5 rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(93,232,193,.1)] text-accent2 border border-[rgba(93,232,193,.2)]">property</span><span class="inline-block font-mono text-[10px] px-2 py-0.5 rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(247,185,85,.1)] text-accent3 border border-[rgba(247,185,85,.2)]">DataFrame</span>
         <p>Understanding who holds a stock — promoters, institutions, or retail investors — is crucial for gauging conviction and stability. yfinance exposes three layers of ownership data, updated based on regulatory filings (e.g., SEBI in India, SEC in the US).</p>
 
         <h4>Properties</h4>
-        <table class="param-table">
+        <table class="w-full border-collapse my-3 text-[13px]">
           <thead><tr><th>Property</th><th>Returns</th><th>Description</th></tr></thead>
           <tbody>
             <tr><td>.major_holders</td><td>DataFrame</td><td>High-level percentage summary: insider %, institutions %, float outstanding, etc.</td></tr>
@@ -1349,7 +1048,7 @@ Upside to Mean  : +18.02%
         </table>
 
         <h4>Major Holders Row Labels</h4>
-        <table class="param-table">
+        <table class="w-full border-collapse my-3 text-[13px]">
           <thead><tr><th>Row Label</th><th>Meaning</th></tr></thead>
           <tbody>
             <tr><td>insidersPercentHeld</td><td>Fraction of shares held by company insiders (promoters)</td></tr>
@@ -1362,10 +1061,10 @@ Upside to Mean  : +18.02%
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code>hdfc = yf.<span class="cl">Ticker</span>(<span class="st">"HDFCBANK.NS"</span>)
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code>hdfc = yf.<span class="cl">Ticker</span>(<span class="st">"HDFCBANK.NS"</span>)
 <span class="fn">print</span>(<span class="st">f"── Ownership: </span><span class="at">{hdfc.info.get('longName')}</span><span class="st"> ──"</span>)
 
 <span class="cm"># ── Major Holders Summary ─────────────────────────────────────────────────────</span>
@@ -1392,8 +1091,8 @@ insider_txns = hdfc.insider_transactions
 <span class="kw">if</span> insider_txns <span class="kw">is not None and not</span> insider_txns.empty:
     <span class="fn">print</span>(<span class="st">"\n── Recent Insider Transactions ───────────────────"</span>)
     <span class="fn">print</span>(insider_txns.head(<span class="nu">5</span>))</code></pre></div>
-      <div class="out-cell">
-        <div class="out-cell-header">▶ output</div>
+      <div class="bg-outbg border border-outborder rounded-[10px] overflow-hidden mb-2">
+        <div class="px-[14px] py-[5px] bg-[rgba(29,57,43,0.6)] flex items-center gap-1.5 font-mono text-[10px] text-[#3d9966] tracking-[.08em] uppercase border-b border-outborder">▶ output</div>
         <pre>── Ownership: HDFC Bank Limited ──
 
 ── Major Holders Summary ─────────────────────────
@@ -1417,21 +1116,21 @@ institutionsCount          2847.0000   2847 institutions
   <!-- ─────────────────────────────────────────────────────── -->
   <!-- SECTION 11: ESG -->
   <!-- ─────────────────────────────────────────────────────── -->
-  <div class="section-label" id="s11">
-    <span class="num">11</span>
-    <div class="line"></div>
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s11">
+    <span class="font-serif italic text-[13px] text-accent opacity-70">11</span>
+    <div class="flex-1 h-px bg-border"></div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h2>ESG / Sustainability Scores</h2>
-        <span class="tag tag-prop">property</span><span class="tag tag-df">DataFrame</span>
+        <span class="inline-block font-mono text-[10px] px-2 py-0.5 rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(93,232,193,.1)] text-accent2 border border-[rgba(93,232,193,.2)]">property</span><span class="inline-block font-mono text-[10px] px-2 py-0.5 rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(247,185,85,.1)] text-accent3 border border-[rgba(247,185,85,.2)]">DataFrame</span>
         <p>The <code>.sustainability</code> property returns ESG (Environmental, Social, and Governance) risk scores provided to Yahoo Finance by <strong>Sustainalytics</strong>. A <em>lower</em> score indicates <em>lower</em> ESG risk.</p>
 
         <h4>Key Rows in the DataFrame</h4>
-        <table class="param-table">
+        <table class="w-full border-collapse my-3 text-[13px]">
           <thead><tr><th>Row Key</th><th>Description</th></tr></thead>
           <tbody>
             <tr><td>totalEsg</td><td>Overall ESG risk score. Range: 0 (negligible) to 40+ (severe)</td></tr>
@@ -1445,18 +1144,18 @@ institutionsCount          2847.0000   2847 institutions
             <tr><td>highestControversy</td><td>Integer 0–5 indicating the most severe ESG controversy on record</td></tr>
           </tbody>
         </table>
-        <div class="note">
-          <div class="note-label">Note</div>
+        <div class="bg-[rgba(247,185,85,.06)] border-l-[3px] border-accent3 px-[14px] py-[10px] mt-3 rounded-r-[6px] text-[13.5px]">
+          <div class="font-mono text-[10px] text-accent3 tracking-[.08em] uppercase mb-[3px]">Note</div>
           ESG data availability varies widely. Many Indian stocks lack Sustainalytics coverage. US-listed and dual-listed companies (e.g., INFY on NYSE) tend to have better data.
         </div>
       </div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code>infy = yf.<span class="cl">Ticker</span>(<span class="st">"INFY.NS"</span>)
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code>infy = yf.<span class="cl">Ticker</span>(<span class="st">"INFY.NS"</span>)
 <span class="fn">print</span>(<span class="st">f"── ESG Data: </span><span class="at">{infy.info.get('longName')}</span><span class="st"> ──"</span>)
 
 esg = infy.sustainability
@@ -1479,8 +1178,8 @@ esg = infy.sustainability
         <span class="fn">print</span>(<span class="st">f"  Percentile   : </span><span class="at">{esg.loc['percentile', 'Value']}</span><span class="st">th (lower = less risky)"</span>)
 <span class="kw">else</span>:
     <span class="fn">print</span>(<span class="st">"ESG/Sustainability data not available for this ticker."</span>)</code></pre></div>
-      <div class="out-cell">
-        <div class="out-cell-header">▶ output</div>
+      <div class="bg-outbg border border-outborder rounded-[10px] overflow-hidden mb-2">
+        <div class="px-[14px] py-[5px] bg-[rgba(29,57,43,0.6)] flex items-center gap-1.5 font-mono text-[10px] text-[#3d9966] tracking-[.08em] uppercase border-b border-outborder">▶ output</div>
         <pre>── ESG Data: Infosys Limited ──
 
 ── Score Breakdown ───────────────────────────────
@@ -1501,24 +1200,24 @@ esg = infy.sustainability
   <!-- ─────────────────────────────────────────────────────── -->
   <!-- SECTION 12: MULTIPLE TICKERS -->
   <!-- ─────────────────────────────────────────────────────── -->
-  <div class="section-label" id="s12">
-    <span class="num">12</span>
-    <div class="line"></div>
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s12">
+    <span class="font-serif italic text-[13px] text-accent opacity-70">12</span>
+    <div class="flex-1 h-px bg-border"></div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h2>Multiple Tickers &amp; Bulk Download</h2>
-        <span class="tag tag-method">function</span><span class="tag tag-df">DataFrame</span>
+        <span class="inline-block font-mono text-[10px] px-2 py-0.5 rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(124,106,247,.1)] text-[#b8b0ff] border border-[rgba(124,106,247,.2)]">function</span><span class="inline-block font-mono text-[10px] px-2 py-0.5 rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(247,185,85,.1)] text-accent3 border border-[rgba(247,185,85,.2)]">DataFrame</span>
         <p>When working with a portfolio or comparing multiple stocks, use <code>yf.download()</code> for bulk historical data, or <code>yf.Tickers()</code> to manage multiple Ticker objects at once.</p>
 
         <h3>yf.download()</h3>
         <p>Downloads OHLCV data for <strong>one or more tickers</strong> in a single optimised request. Returns a multi-level column DataFrame when multiple tickers are passed.</p>
 
         <h4>Key Parameters (same as .history() plus:)</h4>
-        <table class="param-table">
+        <table class="w-full border-collapse my-3 text-[13px]">
           <thead><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
           <tbody>
             <tr><td>tickers</td><td>str or list</td><td>Single symbol string or space-separated string or list of strings. <strong>Required.</strong></td></tr>
@@ -1534,10 +1233,10 @@ esg = infy.sustainability
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code><span class="cm"># ── 1. Bulk download with yf.download() ───────────────────────────────────────</span>
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="cm"># ── 1. Bulk download with yf.download() ───────────────────────────────────────</span>
 nifty_it = [<span class="st">"TCS.NS"</span>, <span class="st">"INFY.NS"</span>, <span class="st">"WIPRO.NS"</span>, <span class="st">"HCLTECH.NS"</span>, <span class="st">"TECHM.NS"</span>]
 
 <span class="cm"># Download 1-year daily data for all 5 tickers in one call</span>
@@ -1575,8 +1274,8 @@ portfolio = yf.<span class="cl">Tickers</span>(<span class="st">"TCS.NS INFY.NS 
 <span class="kw">for</span> sym, ticker_obj <span class="kw">in</span> portfolio.tickers.items():
     price = ticker_obj.info.get(<span class="st">'currentPrice'</span>, <span class="st">'N/A'</span>)
     <span class="fn">print</span>(<span class="st">f"  </span><span class="at">{sym:<15}</span><span class="st">: ₹</span><span class="at">{price:,.2f}</span><span class="st">"</span>)</code></pre></div>
-      <div class="out-cell">
-        <div class="out-cell-header">▶ output</div>
+      <div class="bg-outbg border border-outborder rounded-[10px] overflow-hidden mb-2">
+        <div class="px-[14px] py-[5px] bg-[rgba(29,57,43,0.6)] flex items-center gap-1.5 font-mono text-[10px] text-[#3d9966] tracking-[.08em] uppercase border-b border-outborder">▶ output</div>
         <pre>── Downloaded Shape ─────────────────────────────
 (252, 30)
 ['TCS.NS', 'INFY.NS', 'WIPRO.NS', 'HCLTECH.NS', 'TECHM.NS']
@@ -1605,28 +1304,28 @@ WIPRO.NS   0.681    0.703     1.000       0.694     0.688
   <!-- ═══════════════════════════════════════════════════════════ -->
   <!-- SECTION 13: CHART SETUP                                    -->
   <!-- ═══════════════════════════════════════════════════════════ -->
-  <div class="section-label" id="s13">
-    <span class="num">13</span>
-    <div class="line"></div>
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s13">
+    <span class="font-serif italic text-[13px] text-accent opacity-70">13</span>
+    <div class="flex-1 h-px bg-border"></div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h2>Chart Setup &amp; Matplotlib Style Configuration</h2>
         <p>Before creating charts, configure <strong>matplotlib</strong> with a consistent dark financial theme and import <strong>mplfinance</strong> for candlestick charts and <strong>plotly</strong> for interactive visuals. This section sets up everything needed for the charting sections that follow.</p>
 
         <h4>Library Requirements</h4>
-        <div class="quickref">
-          <div class="qr-item"><span class="qr-key">matplotlib</span><span class="qr-val">Core plotting — line, bar, scatter</span></div>
-          <div class="qr-item"><span class="qr-key">mplfinance</span><span class="qr-val">Candlestick &amp; OHLC charts</span></div>
-          <div class="qr-item"><span class="qr-key">plotly</span><span class="qr-val">Interactive charts in browser/notebook</span></div>
-          <div class="qr-item"><span class="qr-key">seaborn</span><span class="qr-val">Statistical charts &amp; heatmaps</span></div>
+        <div class="grid grid-cols-2 gap-2 mt-3">
+          <div class="bg-white/[.03] border border-border rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="font-mono text-accent2 text-[12px]">matplotlib</span><span class="text-dim text-[12px]">Core plotting — line, bar, scatter</span></div>
+          <div class="bg-white/[.03] border border-border rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="font-mono text-accent2 text-[12px]">mplfinance</span><span class="text-dim text-[12px]">Candlestick &amp; OHLC charts</span></div>
+          <div class="bg-white/[.03] border border-border rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="font-mono text-accent2 text-[12px]">plotly</span><span class="text-dim text-[12px]">Interactive charts in browser/notebook</span></div>
+          <div class="bg-white/[.03] border border-border rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="font-mono text-accent2 text-[12px]">seaborn</span><span class="text-dim text-[12px]">Statistical charts &amp; heatmaps</span></div>
         </div>
 
         <h4>rcParams Key Settings</h4>
-        <table class="param-table">
+        <table class="w-full border-collapse my-3 text-[13px]">
           <thead><tr><th>Parameter</th><th>Purpose</th></tr></thead>
           <tbody>
             <tr><td>figure.facecolor</td><td>Background colour of the entire figure canvas</td></tr>
@@ -1641,10 +1340,10 @@ WIPRO.NS   0.681    0.703     1.000       0.694     0.688
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code><span class="cm"># ── Install required charting libraries ──────────────────────────────────────</span>
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="cm"># ── Install required charting libraries ──────────────────────────────────────</span>
 <span class="cm"># pip install matplotlib mplfinance plotly seaborn</span>
 
 <span class="kw">import</span> yfinance <span class="kw">as</span> yf
@@ -1704,8 +1403,8 @@ plt.rcParams.update({
         ax.spines[spine].set_visible(spine <span class="kw">in</span> keep)
 
 <span class="fn">print</span>(<span class="st">"✓ Chart environment configured."</span>)</code></pre></div>
-      <div class="out-cell">
-        <div class="out-cell-header">▶ output</div>
+      <div class="bg-outbg border border-outborder rounded-[10px] overflow-hidden mb-2">
+        <div class="px-[14px] py-[5px] bg-[rgba(29,57,43,0.6)] flex items-center gap-1.5 font-mono text-[10px] text-[#3d9966] tracking-[.08em] uppercase border-b border-outborder">▶ output</div>
         <pre>✓ Chart environment configured.</pre>
       </div>
     </div>
@@ -1716,15 +1415,15 @@ plt.rcParams.update({
   <!-- ═══════════════════════════════════════════════════════════ -->
   <!-- SECTION 14: PRICE & VOLUME CHARTS                         -->
   <!-- ═══════════════════════════════════════════════════════════ -->
-  <div class="section-label" id="s14">
-    <span class="num">14</span>
-    <div class="line"></div>
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s14">
+    <span class="font-serif italic text-[13px] text-accent opacity-70">14</span>
+    <div class="flex-1 h-px bg-border"></div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h2>Price &amp; Volume Charts</h2>
         <p>The foundation of any market analysis. These charts show raw price history and trading volume, with moving averages overlaid to reveal the underlying trend direction.</p>
 
@@ -1737,18 +1436,18 @@ plt.rcParams.update({
         <h3>Chart 3 — Area Chart with Gradient Fill</h3>
         <p>An aesthetically cleaner alternative to the line chart. Use <code>ax.fill_between()</code> with <code>alpha</code> to create the gradient effect under the price line.</p>
 
-        <div class="note">
-          <div class="note-label">Key matplotlib calls used</div>
+        <div class="bg-[rgba(247,185,85,.06)] border-l-[3px] border-accent3 px-[14px] py-[10px] mt-3 rounded-r-[6px] text-[13.5px]">
+          <div class="font-mono text-[10px] text-accent3 tracking-[.08em] uppercase mb-[3px]">Key matplotlib calls used</div>
           <code>ax.plot()</code> line, <code>ax.bar()</code> volume, <code>ax.fill_between()</code> area fill, <code>ax.axhline()</code> reference lines, <code>mdates.DateFormatter</code> x-axis date formatting.
         </div>
       </div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code><span class="cm"># ── Fetch 1 year of data ──────────────────────────────────────────────────────</span>
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="cm"># ── Fetch 1 year of data ──────────────────────────────────────────────────────</span>
 ticker = yf.<span class="cl">Ticker</span>(<span class="st">"TCS.NS"</span>)
 df = ticker.<span class="fn">history</span>(period=<span class="st">"1y"</span>)
 
@@ -1821,10 +1520,10 @@ plt.<span class="fn">show</span>()</code></pre></div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#5de8c1">img</span></div>
-    <div class="cell-body">
-      <div class="md-cell" style="padding:14px 18px;">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#5de8c1">img</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative" style="padding:14px 18px;">
         <div style="background:#111219;border-radius:8px;overflow:hidden;border:1px solid #2a2b3d;">
           <div style="padding:10px 14px;background:#0d1a14;font-family:'JetBrains Mono',monospace;font-size:10px;color:#3d9966;letter-spacing:.08em;border-bottom:1px solid #1e3d2e;">📊 chart output — chart_price_volume.png</div>
           <div style="padding:20px;display:flex;gap:12px;flex-wrap:wrap;">
@@ -1861,10 +1560,10 @@ plt.<span class="fn">show</span>()</code></pre></div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code><span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="cm"># ═══════════════════════════════════════════════════════════════</span>
 <span class="cm"># CHART 3: Area chart with gradient fill</span>
 <span class="cm"># ═══════════════════════════════════════════════════════════════</span>
 fig, ax = plt.<span class="fn">subplots</span>(figsize=(<span class="nu">14</span>, <span class="nu">5</span>))
@@ -1893,15 +1592,15 @@ plt.<span class="fn">show</span>()</code></pre></div>
   <!-- ═══════════════════════════════════════════════════════════ -->
   <!-- SECTION 15: CANDLESTICK CHARTS                            -->
   <!-- ═══════════════════════════════════════════════════════════ -->
-  <div class="section-label" id="s15">
-    <span class="num">15</span>
-    <div class="line"></div>
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s15">
+    <span class="font-serif italic text-[13px] text-accent opacity-70">15</span>
+    <div class="flex-1 h-px bg-border"></div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h2>Candlestick &amp; OHLC Charts</h2>
         <p>Candlestick charts encode four data points per period — Open, High, Low, Close — in a single visual element. They are the standard chart type for reading price action and detecting chart patterns.</p>
 
@@ -1916,7 +1615,7 @@ plt.<span class="fn">show</span>()</code></pre></div>
         <p><code>mpf.plot()</code> is the primary function. It expects a DataFrame with columns named <code>Open</code>, <code>High</code>, <code>Low</code>, <code>Close</code>, <code>Volume</code> and a DatetimeIndex.</p>
 
         <h4>mpf.plot() Key Parameters</h4>
-        <table class="param-table">
+        <table class="w-full border-collapse my-3 text-[13px]">
           <thead><tr><th>Parameter</th><th>Values</th><th>Description</th></tr></thead>
           <tbody>
             <tr><td>type</td><td><code>"candle"</code> <code>"ohlc"</code> <code>"line"</code> <code>"renko"</code> <code>"pnf"</code></td><td>Chart style. <code>"candle"</code> = Japanese candlesticks.</td></tr>
@@ -1943,10 +1642,10 @@ plt.<span class="fn">show</span>()</code></pre></div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code><span class="cm"># ── Fetch 3 months of daily data for cleaner candle chart ────────────────────</span>
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="cm"># ── Fetch 3 months of daily data for cleaner candle chart ────────────────────</span>
 df_3mo = yf.<span class="cl">Ticker</span>(<span class="st">"TCS.NS"</span>).<span class="fn">history</span>(period=<span class="st">"3mo"</span>)
 df_3mo.index = df_3mo.index.tz_localize(<span class="kw">None</span>)  <span class="cm"># mplfinance needs tz-naive index</span>
 
@@ -2031,15 +1730,15 @@ fig_px.<span class="fn">show</span>()  <span class="cm"># interactive in Jupyter
   <!-- ═══════════════════════════════════════════════════════════ -->
   <!-- SECTION 16: TECHNICAL INDICATORS                          -->
   <!-- ═══════════════════════════════════════════════════════════ -->
-  <div class="section-label" id="s16">
-    <span class="num">16</span>
-    <div class="line"></div>
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s16">
+    <span class="font-serif italic text-[13px] text-accent opacity-70">16</span>
+    <div class="flex-1 h-px bg-border"></div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h2>Technical Indicators &amp; Oscillator Charts</h2>
         <p>Technical indicators transform raw OHLCV data into signals about momentum, trend strength, volatility, and overbought/oversold conditions. All of the below are computed manually using pandas — no extra library required (though <code>pandas-ta</code> or <code>TA-Lib</code> can automate this at scale).</p>
 
@@ -2058,8 +1757,8 @@ fig_px.<span class="fn">show</span>()  <span class="cm"># interactive in Jupyter
         <h4>ATR — Average True Range</h4>
         <p>Measures volatility as the average of the true range (max of high−low, |high−prev_close|, |low−prev_close|) over 14 periods. Higher ATR = more volatile market; useful for setting stop-loss distances.</p>
 
-        <div class="note">
-          <div class="note-label">Library shortcut</div>
+        <div class="bg-[rgba(247,185,85,.06)] border-l-[3px] border-accent3 px-[14px] py-[10px] mt-3 rounded-r-[6px] text-[13.5px]">
+          <div class="font-mono text-[10px] text-accent3 tracking-[.08em] uppercase mb-[3px]">Library shortcut</div>
           Install <code>pandas-ta</code> (<code>pip install pandas-ta</code>) to compute all indicators with one line: <code>df.ta.rsi(length=14)</code>, <code>df.ta.macd()</code>, <code>df.ta.bbands()</code>, etc.
         </div>
 
@@ -2069,10 +1768,10 @@ fig_px.<span class="fn">show</span>()  <span class="cm"># interactive in Jupyter
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code><span class="cm"># ── Helper functions — compute indicators from scratch ────────────────────────</span>
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="cm"># ── Helper functions — compute indicators from scratch ────────────────────────</span>
 
 <span class="kw">def</span> <span class="fn">compute_rsi</span>(series, period=<span class="nu">14</span>):
     delta = series.<span class="fn">diff</span>()
@@ -2181,10 +1880,10 @@ plt.<span class="fn">show</span>()</code></pre></div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h3>Chart 7 — Stochastic Oscillator + OBV</h3>
         <p>Two more momentum/volume tools that complement RSI and MACD:</p>
         <ul>
@@ -2195,10 +1894,10 @@ plt.<span class="fn">show</span>()</code></pre></div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code><span class="kw">def</span> <span class="fn">compute_stochastic</span>(df, k_period=<span class="nu">14</span>, d_period=<span class="nu">3</span>):
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="kw">def</span> <span class="fn">compute_stochastic</span>(df, k_period=<span class="nu">14</span>, d_period=<span class="nu">3</span>):
     low_min  = df[<span class="st">"Low"</span>].<span class="fn">rolling</span>(k_period).<span class="fn">min</span>()
     high_max = df[<span class="st">"High"</span>].<span class="fn">rolling</span>(k_period).<span class="fn">max</span>()
     pct_k    = <span class="nu">100</span> * (df[<span class="st">"Close"</span>] - low_min) / (high_max - low_min)
@@ -2252,15 +1951,15 @@ plt.<span class="fn">show</span>()</code></pre></div>
   <!-- ═══════════════════════════════════════════════════════════ -->
   <!-- SECTION 17: FUNDAMENTAL ANALYSIS CHARTS                   -->
   <!-- ═══════════════════════════════════════════════════════════ -->
-  <div class="section-label" id="s17">
-    <span class="num">17</span>
-    <div class="line"></div>
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s17">
+    <span class="font-serif italic text-[13px] text-accent opacity-70">17</span>
+    <div class="flex-1 h-px bg-border"></div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h2>Fundamental Analysis Charts</h2>
         <p>Fundamental analysis evaluates a company's intrinsic value by examining financial statements, ratios, and business metrics. Charts are the best way to visualise multi-year trends that raw numbers obscure.</p>
 
@@ -2274,7 +1973,7 @@ plt.<span class="fn">show</span>()</code></pre></div>
         </ul>
 
         <h4>Key Ratios Reference</h4>
-        <table class="param-table">
+        <table class="w-full border-collapse my-3 text-[13px]">
           <thead><tr><th>Ratio</th><th>Formula</th><th>What it measures</th></tr></thead>
           <tbody>
             <tr><td>Gross Margin %</td><td>(Revenue − COGS) / Revenue × 100</td><td>Pricing power &amp; production efficiency</td></tr>
@@ -2291,10 +1990,10 @@ plt.<span class="fn">show</span>()</code></pre></div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code>tcs = yf.<span class="cl">Ticker</span>(<span class="st">"TCS.NS"</span>)
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code>tcs = yf.<span class="cl">Ticker</span>(<span class="st">"TCS.NS"</span>)
 
 <span class="cm"># ── Pull financial statements ─────────────────────────────────────────────────</span>
 inc   = tcs.financials            <span class="cm"># Annual income statement</span>
@@ -2394,20 +2093,20 @@ plt.<span class="fn">show</span>()</code></pre></div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h3>Chart 11 — Key Financial Ratios Dashboard</h3>
         <p>A single-page snapshot of the most important ratios: liquidity, leverage, efficiency, and valuation. Plotted as a 2×3 panel grid using a mixed chart approach — bar for point-in-time, line for trends.</p>
       </div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code><span class="cm"># ── Compute key ratios from financial statements ──────────────────────────────</span>
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="cm"># ── Compute key ratios from financial statements ──────────────────────────────</span>
 total_assets    = <span class="fn">get_row</span>(bs, <span class="st">"Total Assets"</span>)
 total_debt      = <span class="fn">get_row</span>(bs, <span class="st">"Total Debt"</span>)
 equity          = <span class="fn">get_row</span>(bs, <span class="st">"Stockholders Equity"</span>)
@@ -2455,20 +2154,20 @@ plt.<span class="fn">show</span>()</code></pre></div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h3>Chart 12 — DuPont Decomposition</h3>
         <p>Breaks ROE (Return on Equity) into its three drivers: <strong>Net Margin</strong> (profitability), <strong>Asset Turnover</strong> (efficiency), and <strong>Financial Leverage</strong> (use of debt). A grouped bar chart across years makes it easy to see which component is driving ROE changes.</p>
       </div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code><span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="cm"># ═══════════════════════════════════════════════════════════════</span>
 <span class="cm"># CHART 12: DuPont Decomposition — ROE = Margin × Turnover × Leverage</span>
 <span class="cm"># ═══════════════════════════════════════════════════════════════</span>
 net_margin   = net_inc / revenue          <span class="cm"># Net Margin</span>
@@ -2503,15 +2202,15 @@ plt.<span class="fn">show</span>()</code></pre></div>
   <!-- ═══════════════════════════════════════════════════════════ -->
   <!-- SECTION 18: PORTFOLIO & COMPARATIVE ANALYSIS             -->
   <!-- ═══════════════════════════════════════════════════════════ -->
-  <div class="section-label" id="s18">
-    <span class="num">18</span>
-    <div class="line"></div>
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s18">
+    <span class="font-serif italic text-[13px] text-accent opacity-70">18</span>
+    <div class="flex-1 h-px bg-border"></div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h2>Portfolio &amp; Comparative Analysis Charts</h2>
         <p>Move beyond a single stock to compare a basket of companies — essential for sector analysis, peer benchmarking, and portfolio construction.</p>
 
@@ -2525,7 +2224,7 @@ plt.<span class="fn">show</span>()</code></pre></div>
         </ul>
 
         <h4>Key concepts</h4>
-        <table class="param-table">
+        <table class="w-full border-collapse my-3 text-[13px]">
           <thead><tr><th>Concept</th><th>Method</th><th>Interpretation</th></tr></thead>
           <tbody>
             <tr><td>Normalised Returns</td><td><code>df / df.iloc[0] * 100</code></td><td>Compares % gains from same starting point</td></tr>
@@ -2540,10 +2239,10 @@ plt.<span class="fn">show</span>()</code></pre></div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code><span class="cm"># ── Download 1 year of data for Nifty IT basket ───────────────────────────────</span>
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="cm"># ── Download 1 year of data for Nifty IT basket ───────────────────────────────</span>
 tickers = [<span class="st">"TCS.NS"</span>, <span class="st">"INFY.NS"</span>, <span class="st">"WIPRO.NS"</span>, <span class="st">"HCLTECH.NS"</span>, <span class="st">"TECHM.NS"</span>]
 raw = yf.<span class="fn">download</span>(tickers, period=<span class="st">"1y"</span>, group_by=<span class="st">"ticker"</span>,
                   auto_adjust=<span class="kw">True</span>, progress=<span class="kw">False</span>)
@@ -2666,8 +2365,8 @@ summary = pd.<span class="cl">DataFrame</span>({
 
 <span class="fn">print</span>(<span class="st">"── Portfolio Risk / Return Summary ───────────────"</span>)
 <span class="fn">print</span>(summary.<span class="fn">to_string</span>())</code></pre></div>
-      <div class="out-cell">
-        <div class="out-cell-header">▶ output</div>
+      <div class="bg-outbg border border-outborder rounded-[10px] overflow-hidden mb-2">
+        <div class="px-[14px] py-[5px] bg-[rgba(29,57,43,0.6)] flex items-center gap-1.5 font-mono text-[10px] text-[#3d9966] tracking-[.08em] uppercase border-b border-outborder">▶ output</div>
         <pre>── Portfolio Risk / Return Summary ───────────────
           Ann. Return %  Ann. Volatility %  Sharpe Ratio  Max Drawdown %
 TCS              -14.23              19.42         -0.73          -26.81
@@ -2679,20 +2378,20 @@ TECHM             -6.33              22.89         -0.28          -24.55</pre>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7b7d9e">markdown</span></div>
-    <div class="cell-body">
-      <div class="md-cell">
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-border rounded-[10px] px-[26px] py-[22px] mb-0.5 relative">
         <h3>Chart 17 — Peer Valuation Comparison (Bar Chart)</h3>
         <p>Compare P/E, P/B, and Dividend Yield across the same sector peer group by pulling <code>.info</code> for multiple tickers and building a comparison DataFrame. This reveals whether a stock trades at a premium or discount to its peers.</p>
       </div>
     </div>
   </div>
 
-  <div class="cell">
-    <div class="cell-gutter"><span class="cell-type" style="color:#7c6af7">code</span></div>
-    <div class="cell-body">
-      <div class="code-cell"><pre><code><span class="cm"># ═══════════════════════════════════════════════════════════════</span>
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-35 py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-border rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="cm"># ═══════════════════════════════════════════════════════════════</span>
 <span class="cm"># CHART 17: Peer valuation comparison</span>
 <span class="cm"># ═══════════════════════════════════════════════════════════════</span>
 valuation_keys = [<span class="st">"trailingPE"</span>, <span class="st">"priceToBook"</span>, <span class="st">"dividendYield"</span>]
@@ -2728,8 +2427,8 @@ fig.<span class="fn">suptitle</span>(<span class="st">"Nifty IT — Peer Valuati
 plt.<span class="fn">tight_layout</span>()
 plt.<span class="fn">savefig</span>(<span class="st">"chart_peer_valuation.png"</span>, bbox_inches=<span class="st">"tight"</span>)
 plt.<span class="fn">show</span>()</code></pre></div>
-      <div class="out-cell">
-        <div class="out-cell-header">▶ output</div>
+      <div class="bg-outbg border border-outborder rounded-[10px] overflow-hidden mb-2">
+        <div class="px-[14px] py-[5px] bg-[rgba(29,57,43,0.6)] flex items-center gap-1.5 font-mono text-[10px] text-[#3d9966] tracking-[.08em] uppercase border-b border-outborder">▶ output</div>
         <pre>         P/E    P/B  Div Yield %
 Ticker
 TCS     24.60  13.20         1.80
@@ -2743,7 +2442,7 @@ TECHM   18.50   4.90         2.40</pre>
 
 </div><!-- /notebook -->
 
-<footer style="background:var(--surface);border-top:1px solid var(--border);text-align:center;padding:28px;color:var(--text-dim);font-size:12.5px;font-family:'JetBrains Mono',monospace;letter-spacing:.04em;">
+<footer class="bg-surface border-t border-border text-center p-7 text-dim text-[12.5px] font-mono tracking-[.04em]">
   yfinance guide · data sourced from Yahoo Finance · for educational use only
 </footer>
 

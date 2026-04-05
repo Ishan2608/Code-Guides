@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LangChain Training Guide — Complete Reference</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+  <style>
+    :root {
+      --ink: #0a0a0f;
+      --surface: #13131a;
+      --panel: #1c1c27;
+      --border: #2e2e42;
+      --accent: #5ee7b7;
+      --accent2: #7c6aff;
+      --muted: #6b6b8a;
+      --text: #dcdcf0;
+      --text-soft: #9595b5;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--ink);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+    h1,h2,h3,h4 { font-family: 'Syne', sans-serif; letter-spacing: -0.01em; }
+    code, pre { font-family: 'JetBrains Mono', monospace; }
+
+    /* Sidebar */
+    #sidebar {
+      position: fixed; top: 0; left: 0; height: 100vh; width: 260px;
+      background: var(--surface); border-right: 1px solid var(--border);
+      overflow-y: auto; z-index: 100; padding: 24px 0;
+    }
+    #sidebar::-webkit-scrollbar { width: 4px; }
+    #sidebar::-webkit-scrollbar-track { background: transparent; }
+    #sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .nav-brand { padding: 0 20px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+    .nav-section { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; padding: 8px 20px 4px; }
+    .nav-link { display: block; padding: 5px 20px; font-size: 13px; color: var(--text-soft); text-decoration: none; border-left: 2px solid transparent; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
+    .nav-link:hover, .nav-link.active { color: var(--accent); border-left-color: var(--accent); background: rgba(94,231,183,0.04); }
+    .nav-sub { padding-left: 32px; font-size: 12px; }
+
+    /* Main */
+    #main { margin-left: 260px; min-height: 100vh; }
+    .section { max-width: 860px; padding: 56px 48px; border-bottom: 1px solid var(--border); }
+    .section:last-child { border-bottom: none; }
+
+    /* Section headers */
+    .section-num {
+      display: inline-block;
+      background: var(--accent); color: var(--ink);
+      font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600;
+      padding: 2px 8px; border-radius: 3px; margin-bottom: 12px; letter-spacing: 0.05em;
+    }
+    .section-num.purple { background: var(--accent2); color: #fff; }
+    .section-num.orange { background: #f97316; color: #fff; }
+    .section-num.blue { background: #60a5fa; color: var(--ink); }
+    .section-num.pink { background: #f472b6; color: var(--ink); }
+    .section-num.yellow { background: #fbbf24; color: var(--ink); }
+
+    h1.page-title { font-size: 2.6rem; font-weight: 800; line-height: 1.1; color: #fff; }
+    h2.sec-title { font-size: 1.7rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    h3.sub-title { font-size: 1.1rem; font-weight: 700; color: var(--accent); margin-top: 28px; margin-bottom: 8px; }
+    h4.micro-title { font-size: 0.9rem; font-weight: 600; color: var(--text-soft); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 20px; margin-bottom: 6px; }
+
+    p { color: var(--text-soft); margin-bottom: 12px; }
+    p strong { color: var(--text); }
+    a { color: var(--accent); }
+
+    /* Code blocks */
+    pre.hljs-block {
+      background: var(--surface) !important;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px 22px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.65;
+      margin: 16px 0;
+    }
+    pre.hljs-block code { background: none !important; padding: 0 !important; }
+    .code-label {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600;
+      color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em;
+      margin-bottom: 4px; display: block;
+    }
+
+    /* Inline code */
+    p code, li code, td code {
+      background: var(--panel); color: var(--accent);
+      padding: 2px 6px; border-radius: 4px; font-size: 12.5px;
+    }
+
+    /* Info boxes */
+    .info-box {
+      border-left: 3px solid var(--accent); background: rgba(94,231,183,0.05);
+      padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0;
+      font-size: 14px; color: var(--text-soft);
+    }
+    .warn-box {
+      border-left: 3px solid #f97316; background: rgba(249,115,22,0.05);
+      padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 16px 0;
+      font-size: 14px; color: var(--text-soft);
+    }
+    .warn-box strong, .info-box strong { color: var(--text); }
+
+    /* Bullet list */
+    ul.guide-list { list-style: none; padding: 0; margin: 12px 0; }
+    ul.guide-list li { padding: 4px 0 4px 20px; position: relative; color: var(--text-soft); font-size: 14px; }
+    ul.guide-list li::before { content: '→'; position: absolute; left: 0; color: var(--accent); font-family: monospace; }
+
+    /* Version badge row */
+    .version-strip {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 8px; padding: 16px 20px;
+      display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 28px;
+    }
+    .vbadge { display: flex; flex-direction: column; gap: 2px; }
+    .vbadge .vk { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .vbadge .vv { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--accent); font-weight: 600; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13.5px; }
+    th { background: var(--panel); color: var(--text); font-family: 'Syne', sans-serif; font-size: 12px; padding: 10px 14px; text-align: left; border: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.05em; }
+    td { padding: 9px 14px; border: 1px solid var(--border); color: var(--text-soft); vertical-align: top; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* Diagram box */
+    .diagram {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 8px; padding: 20px; margin: 16px 0;
+      font-family: 'JetBrains Mono', monospace; font-size: 12px;
+      color: var(--text-soft); line-height: 1.8;
+    }
+    .diagram .node { color: var(--accent); }
+    .diagram .arrow { color: var(--accent2); }
+
+    /* Hero strip */
+    .hero-strip {
+      background: linear-gradient(135deg, rgba(94,231,183,0.08), rgba(124,106,255,0.08));
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 20px 24px; margin: 24px 0;
+    }
+
+    /* Step boxes */
+    .step { display: flex; gap: 14px; margin: 10px 0; align-items: flex-start; }
+    .step-num { flex-shrink: 0; width: 24px; height: 24px; background: var(--accent2); color: #fff; border-radius: 50%; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; font-family: 'Syne', sans-serif; margin-top: 1px; }
+    .step-content { color: var(--text-soft); font-size: 14px; }
+    .step-content strong { color: var(--text); }
+
+    /* conversation loop highlight */
+    .convo-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(94,231,183,0.12); border: 1px solid rgba(94,231,183,0.3);
+      color: var(--accent); padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.05em;
+      font-family: 'JetBrains Mono', monospace; margin-bottom: 10px;
+    }
+
+    /* Mobile toggle */
+    #sidebar-toggle { display: none; }
+    @media(max-width:768px) {
+      #sidebar { transform: translateX(-100%); transition: transform 0.2s; }
+      #sidebar.open { transform: translateX(0); }
+      #main { margin-left: 0; }
+      .section { padding: 32px 20px; }
+      #sidebar-toggle { display: flex; position: fixed; top: 12px; left: 12px; z-index: 200; background: var(--accent); color: var(--ink); border: none; border-radius: 6px; padding: 8px 12px; font-weight: 700; cursor: pointer; }
+    }
+  </style>
+</head>
+<body>
+
+<button id="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+
+<!-- ========================= SIDEBAR ========================= -->
+<nav id="sidebar">
+  <div class="nav-brand">
+    <div style="font-family:'Syne',sans-serif;font-size:1rem;font-weight:800;color:#fff">LangChain Guide</div>
+    <div style="font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px">Complete Training Reference</div>
+  </div>
+
+  <div class="nav-section">Core</div>
+  <a href="#s0" class="nav-link">0 — Setup & Versions</a>
+  <a href="#s1" class="nav-link">1 — The LangChain Family</a>
+  <a href="#s2" class="nav-link">2 — Chat Models</a>
+  <a href="#s2-1" class="nav-link nav-sub">2.1 init_chat_model</a>
+  <a href="#s2-2" class="nav-link nav-sub">2.2 Provider Class</a>
+  <a href="#s3" class="nav-link">3 — Message Templates</a>
+  <a href="#s3-1" class="nav-link nav-sub">3.1 Single-Turn</a>
+  <a href="#s3-2" class="nav-link nav-sub">3.2 System Prompt</a>
+  <a href="#s3-3" class="nav-link nav-sub">3.3 Multi-Turn (Simulated)</a>
+  <a href="#s4" class="nav-link">4 — Prompt Templates</a>
+  <a href="#s4-1" class="nav-link nav-sub">4.1 ChatPromptTemplate</a>
+  <a href="#s4-2" class="nav-link nav-sub">4.2 prompt | model | parser</a>
+
+  <div class="nav-section">Memory</div>
+  <a href="#s5" class="nav-link">5 — Memory</a>
+  <a href="#s5-1" class="nav-link nav-sub">5.1 Python List (Manual)</a>
+  <a href="#s5-2" class="nav-link nav-sub">5.2 MemorySaver (LangGraph)</a>
+  <a href="#s5-3" class="nav-link nav-sub">5.3 SqliteSaver (Persistent)</a>
+  <a href="#s5-4" class="nav-link nav-sub">5.4 Conversation Loop</a>
+
+  <div class="nav-section">RAG</div>
+  <a href="#s6" class="nav-link">6 — RAG</a>
+  <a href="#s6-1" class="nav-link nav-sub">6.1 Document Loaders</a>
+  <a href="#s6-2" class="nav-link nav-sub">6.2 Text Splitters</a>
+  <a href="#s6-3" class="nav-link nav-sub">6.3 Embeddings</a>
+  <a href="#s6-4" class="nav-link nav-sub">6.4 Vectorstores</a>
+  <a href="#s6-5" class="nav-link nav-sub">6.5 RAG Conversation Chain</a>
+
+  <div class="nav-section">Chains & Agents</div>
+  <a href="#s7" class="nav-link">7 — Chains</a>
+  <a href="#s7-1" class="nav-link nav-sub">7.1 Sequential</a>
+  <a href="#s7-2" class="nav-link nav-sub">7.2 Parallel (RunnableParallel)</a>
+  <a href="#s7-3" class="nav-link nav-sub">7.3 Branched (RunnableBranch)</a>
+  <a href="#s7-4" class="nav-link nav-sub">7.4 Conversation Loop</a>
+  <a href="#s8" class="nav-link">8 — Agents</a>
+  <a href="#s8-1" class="nav-link nav-sub">8.1 create_react_agent</a>
+  <a href="#s8-2" class="nav-link nav-sub">8.2 Tools (@tool)</a>
+  <a href="#s8-3" class="nav-link nav-sub">8.3 RunnableConfig</a>
+  <a href="#s8-4" class="nav-link nav-sub">8.4 Store & Sessions</a>
+  <a href="#s8-5" class="nav-link nav-sub">8.5 Interrupts (HITL)</a>
+  <a href="#s8-6" class="nav-link nav-sub">8.6 Conversation Loop</a>
+
+  <div class="nav-section">Advanced</div>
+  <a href="#s9" class="nav-link">9 — Multi-Agent Systems</a>
+  <a href="#s10" class="nav-link">10 — LangSmith</a>
+  <a href="#s11" class="nav-link">11 — Quick Reference</a>
+</nav>
+
+<!-- ========================= MAIN ========================= -->
+<main id="main">
+
+<!-- ── SECTION 0: SETUP ─────────────────────────────────── -->
+<section class="section" id="s0">
+  <div class="section-num">00 — GUIDE INFO</div>
+  <h2 class="sec-title">Setup & Version Reference</h2>
+
+  <div class="version-strip">
+    <div class="vbadge"><span class="vk">Guide Date</span><span class="vv">April 03, 2026</span></div>
+    <div class="vbadge"><span class="vk">langchain</span><span class="vv">&gt;= 0.3.26</span></div>
+    <div class="vbadge"><span class="vk">langgraph</span><span class="vv">&gt;= 0.3.0</span></div>
+    <div class="vbadge"><span class="vk">langchain-core</span><span class="vv">&gt;= 0.3.0</span></div>
+    <div class="vbadge"><span class="vk">langchain-google-genai</span><span class="vv">&gt;= 2.0.0</span></div>
+    <div class="vbadge"><span class="vk">Model Used</span><span class="vv">gemini-2.0-flash-lite</span></div>
+    <div class="vbadge"><span class="vk">Python</span><span class="vv">&gt;= 3.11</span></div>
+  </div>
+
+  <h3 class="sub-title">Install All Dependencies</h3>
+  <span class="code-label">bash</span>
+  <pre class="hljs-block"><code class="language-python">pip install langchain langchain-core langgraph \
+            langchain-google-genai langchain-community \
+            langchain-chroma chromadb sentence-transformers \
+            langgraph-checkpoint-sqlite wikipedia pytz
+</code></pre>
+
+  <h3 class="sub-title">Google Colab — Load API Key</h3>
+  <pre class="hljs-block"><code class="language-python">from google.colab import userdata
+
+GEMINI_API_KEY = userdata.get('GEMINI_API_KEY')
+GEMINI_MODEL   = "gemini-2.0-flash-lite"   # or "gemini-2.0-flash"
+</code></pre>
+
+  <div class="info-box">
+    <strong>Provider Agnostic.</strong> Every example below uses Google Gemini, but all LangChain abstractions work identically with OpenAI, Anthropic, Groq, or any other provider — just swap the model string.
+  </div>
+</section>
+
+
+<!-- ── SECTION 1 ─────────────────────────────────────────── -->
+<section class="section" id="s1">
+  <div class="section-num">01</div>
+  <h2 class="sec-title">The LangChain Family</h2>
+  <p>Four products, one ecosystem. Understand what each layer does before writing code.</p>
+
+  <table>
+    <thead><tr><th>Package</th><th>Role</th><th>When You Use It</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>langchain</code></td>
+        <td>Core abstractions — models, prompts, chains, agents, tools</td>
+        <td>Every project</td>
+      </tr>
+      <tr>
+        <td><code>langgraph</code></td>
+        <td>Graph runtime that LangChain agents compile to. Handles state, checkpointing, streaming, human-in-the-loop</td>
+        <td>Agents, stateful workflows, multi-agent</td>
+      </tr>
+      <tr>
+        <td><code>LangSmith</code></td>
+        <td>Observability SaaS — traces every LLM call, token count, latency, tool invocation. No code changes needed beyond env vars</td>
+        <td>Debugging, evaluation, production monitoring</td>
+      </tr>
+      <tr>
+        <td><code>LangFlow</code></td>
+        <td>Visual drag-and-drop IDE on top of LangChain. Rapid prototyping without writing chains manually</td>
+        <td>Non-devs, rapid demos</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="diagram">
+    <span style="color:#fff;font-weight:600">Architecture Stack</span><br><br>
+    <span class="node">  LangSmith</span>   <span style="color:var(--muted)">← observability layer (any tier)</span><br>
+    <span style="color:var(--muted)">  ─────────────────────────────────</span><br>
+    <span class="node">  LangChain</span>   <span style="color:var(--muted)">← chains, agents, tools, prompts</span><br>
+    <span class="arrow">      ↓  compiles to</span><br>
+    <span class="node">  LangGraph</span>   <span style="color:var(--muted)">← stateful graph runtime, checkpoints</span><br>
+    <span class="arrow">      ↓  runs on</span><br>
+    <span class="node">  LLM Provider</span>  <span style="color:var(--muted)">← Gemini / OpenAI / Anthropic / Groq …</span>
+  </div>
+</section>
+
+
+<!-- ── SECTION 2 ─────────────────────────────────────────── -->
+<section class="section" id="s2">
+  <div class="section-num purple">02</div>
+  <h2 class="sec-title">Chat Models</h2>
+  <p>Two ways to instantiate a model. <strong>init_chat_model</strong> is preferred for flexibility; the provider class gives full parameter control.</p>
+
+  <id="s2-1"></id>
+  <h3 class="sub-title" id="s2-1">2.1 — Using <code>init_chat_model</code></h3>
+  <p>Takes a <code>"provider:model-name"</code> string. Easiest to swap providers.</p>
+
+  <pre class="hljs-block"><code class="language-python">from langchain.chat_models import init_chat_model
+
+# Format: "provider:model-name"
+llm = init_chat_model(f"google_genai:{GEMINI_MODEL}", api_key=GEMINI_API_KEY)
+
+response = llm.invoke("Explain the subconscious mind in 100 words.")
+
+print(response.text)          # shorthand for text content
+print(response.content)       # same (str for most providers)
+print(response.usage_metadata)  # token counts
+</code></pre>
+
+  <table>
+    <thead><tr><th>Provider String</th><th>Package Required</th></tr></thead>
+    <tbody>
+      <tr><td><code>"google_genai:gemini-2.0-flash"</code></td><td><code>langchain-google-genai</code></td></tr>
+      <tr><td><code>"openai:gpt-4.1"</code></td><td><code>langchain-openai</code></td></tr>
+      <tr><td><code>"anthropic:claude-sonnet-4-6"</code></td><td><code>langchain-anthropic</code></td></tr>
+      <tr><td><code>"groq:llama-3.1-8b-instant"</code></td><td><code>langchain-groq</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub-title" id="s2-2">2.2 — Using a Provider Class</h3>
+  <p>Direct instantiation — full access to model-specific parameters.</p>
+  <pre class="hljs-block"><code class="language-python">from langchain_google_genai import ChatGoogleGenerativeAI
+
+llm = ChatGoogleGenerativeAI(
+    model=GEMINI_MODEL,
+    api_key=GEMINI_API_KEY,
+    temperature=0.7,          # 0.0 = deterministic, 1.0 = creative
+    max_tokens=512,
+)
+
+response = llm.invoke("Write a formal 100-word description of artificial intelligence.")
+print(response.content)
+</code></pre>
+
+  <div class="info-box">
+    <strong>response.content</strong> is always a string for text models. Use <code>response.text</code> as a convenience alias. Both give you the model's reply.
+  </div>
+</section>
+
+
+<!-- ── SECTION 3 ─────────────────────────────────────────── -->
+<section class="section" id="s3">
+  <div class="section-num orange">03</div>
+  <h2 class="sec-title">Message Templates</h2>
+  <p>LangChain models accept a <em>list of messages</em>, not just a plain string. Use message objects for clarity.</p>
+
+  <pre class="hljs-block"><code class="language-python">from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+</code></pre>
+
+  <table>
+    <thead><tr><th>Class</th><th>Role</th><th>Equivalent Dict</th></tr></thead>
+    <tbody>
+      <tr><td><code>SystemMessage</code></td><td>Instructions / persona for the model</td><td><code>{"role":"system","content":"..."}</code></td></tr>
+      <tr><td><code>HumanMessage</code></td><td>The user's turn</td><td><code>{"role":"user","content":"..."}</code></td></tr>
+      <tr><td><code>AIMessage</code></td><td>A prior model reply (for history)</td><td><code>{"role":"assistant","content":"..."}</code></td></tr>
+      <tr><td><code>ToolMessage</code></td><td>Result returned by a tool call</td><td><code>{"role":"tool","content":"..."}</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub-title" id="s3-1">3.1 — Single-Turn Call</h3>
+  <pre class="hljs-block"><code class="language-python">response = llm.invoke([
+    HumanMessage(content="What is the capital of France?")
+])
+print(response.content)  # "The capital of France is Paris."
+</code></pre>
+
+  <h3 class="sub-title" id="s3-2">3.2 — With a System Prompt</h3>
+  <pre class="hljs-block"><code class="language-python">response = llm.invoke([
+    SystemMessage(content="You are a concise assistant. Reply in one sentence only."),
+    HumanMessage(content="Explain what a neural network is.")
+])
+print(response.content)
+</code></pre>
+
+  <h3 class="sub-title" id="s3-3">3.3 — Multi-Turn (Simulated Memory via List)</h3>
+  <p>The simplest form of memory — maintain a Python list and keep appending. Each call sends the full history.</p>
+  <pre class="hljs-block"><code class="language-python">history = [
+    SystemMessage(content="You are a helpful Python tutor."),
+    HumanMessage(content="What is a list comprehension?"),
+]
+r1 = llm.invoke(history)
+print(r1.content)
+
+# Extend history and continue
+history.append(AIMessage(content=r1.content))
+history.append(HumanMessage(content="Show me an example that filters even numbers."))
+r2 = llm.invoke(history)
+print(r2.content)
+
+# Token usage grows with each turn
+print(r2.usage_metadata)
+</code></pre>
+</section>
+
+
+<!-- ── SECTION 4 ─────────────────────────────────────────── -->
+<section class="section" id="s4">
+  <div class="section-num blue">04</div>
+  <h2 class="sec-title">Prompt Templates</h2>
+  <p>Templates separate the prompt structure from the data. Reuse the same prompt shape with different variables.</p>
+
+  <h3 class="sub-title" id="s4-1">4.1 — ChatPromptTemplate</h3>
+  <pre class="hljs-block"><code class="language-python">from langchain_core.prompts import ChatPromptTemplate
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are an expert in {domain}. Keep answers under 3 sentences."),
+    ("user", "Explain: {topic}")
+])
+
+# Format into a message list
+messages = prompt.format_messages(domain="machine learning", topic="gradient descent")
+response = llm.invoke(messages)
+print(response.content)
+</code></pre>
+
+  <h3 class="sub-title" id="s4-2">4.2 — Pipe Operator: <code>prompt | model | parser</code></h3>
+  <p>LangChain's LCEL (LangChain Expression Language) uses <code>|</code> to compose a chain. Each component's output is the next component's input.</p>
+
+  <pre class="hljs-block"><code class="language-python">from langchain_core.output_parsers import StrOutputParser
+
+# Build the chain
+chain = prompt | llm | StrOutputParser()
+
+# Invoke — returns a plain string (not an AIMessage)
+text: str = chain.invoke({"domain": "networking", "topic": "TCP handshake"})
+print(text)
+
+# Works for any variables
+text2 = chain.invoke({"domain": "databases", "topic": "indexing"})
+print(text2)
+</code></pre>
+
+  <div class="info-box">
+    <strong>StrOutputParser</strong> strips the <code>AIMessage</code> wrapper and returns a plain <code>str</code>. Use it as the final step whenever downstream code expects a string.
+  </div>
+</section>
+
+
+<!-- ── SECTION 5 ─────────────────────────────────────────── -->
+<section class="section" id="s5">
+  <div class="section-num pink">05</div>
+  <h2 class="sec-title">Memory in LangChain</h2>
+  <p>LangGraph's checkpointing system is the <strong>recommended memory approach</strong> in 2025+. Legacy <code>ConversationBufferMemory</code> is deprecated. There are three tiers.</p>
+
+  <table>
+    <thead><tr><th>Tier</th><th>Class</th><th>Persists Across Restarts?</th><th>Use Case</th></tr></thead>
+    <tbody>
+      <tr><td>Manual</td><td>Python list</td><td>No</td><td>Quick demos, single-session scripts</td></tr>
+      <tr><td>In-Memory</td><td><code>MemorySaver</code></td><td>No (RAM only)</td><td>Development, testing, Colab notebooks</td></tr>
+      <tr><td>Persistent</td><td><code>SqliteSaver</code> / <code>PostgresSaver</code></td><td>Yes</td><td>Production apps, user sessions across restarts</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub-title" id="s5-1">5.1 — Python List (Manual)</h3>
+  <p>No imports needed. Fine for notebooks. Limitation: you manage trimming to avoid token overflow.</p>
+  <pre class="hljs-block"><code class="language-python">from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+
+history = [SystemMessage(content="You are a helpful tutor.")]
+
+def chat(user_input: str) -> str:
+    history.append(HumanMessage(content=user_input))
+    response = llm.invoke(history)
+    history.append(AIMessage(content=response.content))
+    return response.content
+
+print(chat("What is recursion?"))
+print(chat("Give me a Python example of it."))
+print(chat("What did I just ask you about?"))  # proves memory works
+</code></pre>
+
+  <h3 class="sub-title" id="s5-2">5.2 — MemorySaver (LangGraph Checkpointer)</h3>
+  <p>Attach a <code>MemorySaver</code> to a compiled LangGraph graph. State is saved automatically after every step. Each conversation thread is identified by a <code>thread_id</code>.</p>
+  <pre class="hljs-block"><code class="language-python">from langchain.chat_models import init_chat_model
+from langgraph.prebuilt import create_react_agent
+from langgraph.checkpoint.memory import MemorySaver
+
+llm = init_chat_model(f"google_genai:{GEMINI_MODEL}", api_key=GEMINI_API_KEY)
+
+# MemorySaver stores state in RAM — fine for dev/Colab
+checkpointer = MemorySaver()
+
+# Compile agent with checkpointer — this is all you need
+agent = create_react_agent(
+    model=llm,
+    tools=[],                # no tools for this demo
+    checkpointer=checkpointer,
+    prompt="You are a helpful assistant."
+)
+</code></pre>
+
+  <div class="info-box">
+    <strong>Key concept:</strong> <code>thread_id</code> identifies a conversation session. Same thread_id = same memory. Different thread_id = fresh conversation. This is how you isolate different users.
+  </div>
+
+  <pre class="hljs-block"><code class="language-python"># thread_id is passed at invocation time via config
+config = {"configurable": {"thread_id": "user-alice-session-1"}}
+
+def chat_with_memory(user_input: str, cfg: dict) -> str:
+    result = agent.invoke(
+        {"messages": [{"role": "user", "content": user_input}]},
+        config=cfg
+    )
+    return result["messages"][-1].content
+
+# These calls share memory because they use the same thread_id
+print(chat_with_memory("My name is Alice.", config))
+print(chat_with_memory("What is 7 × 8?", config))
+print(chat_with_memory("What is my name?", config))  # "Your name is Alice."
+
+# Fresh session — no memory of Alice
+config2 = {"configurable": {"thread_id": "user-bob-session-1"}}
+print(chat_with_memory("What is my name?", config2))  # "I don't know your name."
+</code></pre>
+
+  <h3 class="sub-title" id="s5-3">5.3 — SqliteSaver (Persistent)</h3>
+  <p>Drop-in replacement for <code>MemorySaver</code>. Writes checkpoints to a <code>.db</code> file. Conversations survive restarts.</p>
+  <pre class="hljs-block"><code class="language-python">from langgraph.checkpoint.sqlite import SqliteSaver
+
+# Context manager handles open/close of the DB connection
+with SqliteSaver.from_conn_string("./checkpoints.db") as checkpointer:
+    agent = create_react_agent(
+        model=llm,
+        tools=[],
+        checkpointer=checkpointer,
+    )
+    config = {"configurable": {"thread_id": "persistent-session-1"}}
+    result = agent.invoke(
+        {"messages": [{"role": "user", "content": "Remember: my favourite colour is green."}]},
+        config=config
+    )
+    print(result["messages"][-1].content)
+
+# Restart script, reconnect — memory survives
+with SqliteSaver.from_conn_string("./checkpoints.db") as checkpointer:
+    agent = create_react_agent(model=llm, tools=[], checkpointer=checkpointer)
+    result = agent.invoke(
+        {"messages": [{"role": "user", "content": "What is my favourite colour?"}]},
+        config={"configurable": {"thread_id": "persistent-session-1"}}
+    )
+    print(result["messages"][-1].content)  # "Your favourite colour is green."
+</code></pre>
+
+  <h3 class="sub-title" id="s5-4">5.4 — Interactive Conversation Loop</h3>
+  <div class="convo-badge">⟳ Conversation Loop</div>
+  <p>A real interactive loop. User types, agent responds, memory is automatic via checkpointer.</p>
+  <pre class="hljs-block"><code class="language-python">from langchain.chat_models import init_chat_model
+from langgraph.prebuilt import create_react_agent
+from langgraph.checkpoint.memory import MemorySaver
+import uuid
+
+llm = init_chat_model(f"google_genai:{GEMINI_MODEL}", api_key=GEMINI_API_KEY)
+checkpointer = MemorySaver()
+agent = create_react_agent(
+    model=llm,
+    tools=[],
+    checkpointer=checkpointer,
+    prompt="You are a friendly assistant with a good memory."
+)
+
+# Each session gets a unique thread_id
+session_id = str(uuid.uuid4())
+config = {"configurable": {"thread_id": session_id}}
+
+print(f"Session started. Thread: {session_id}")
+print("Type 'exit' to quit.\n")
+
+while True:
+    user_input = input("You: ").strip()
+    if not user_input or user_input.lower() == "exit":
+        print("Session ended.")
+        break
+
+    result = agent.invoke(
+        {"messages": [{"role": "user", "content": user_input}]},
+        config=config
+    )
+    reply = result["messages"][-1].content
+    print(f"AI: {reply}\n")
+</code></pre>
+</section>
+
+
+<!-- ── SECTION 6 ─────────────────────────────────────────── -->
+<section class="section" id="s6">
+  <div class="section-num yellow">06</div>
+  <h2 class="sec-title">RAG — Retrieval-Augmented Generation</h2>
+  <p>RAG lets the model answer questions about your data (PDFs, docs, websites) without fine-tuning. Four steps: load → split → embed → retrieve → generate.</p>
+
+  <div class="diagram">
+    <span class="node">Documents</span>
+    <span class="arrow"> → load → </span>
+    <span class="node">Chunks</span>
+    <span class="arrow"> → embed → </span>
+    <span class="node">VectorStore</span>
+    <span class="arrow"> → retrieve → </span>
+    <span class="node">Context + Prompt</span>
+    <span class="arrow"> → </span>
+    <span class="node">LLM</span>
+    <span class="arrow"> → </span>
+    <span class="node">Answer</span>
+  </div>
+
+  <h3 class="sub-title" id="s6-1">6.1 — Document Loaders</h3>
+  <p>Load raw content from various sources into <code>Document</code> objects.</p>
+  <pre class="hljs-block"><code class="language-python">from langchain_community.document_loaders import (
+    TextLoader,
+    PyPDFLoader,
+    WebBaseLoader,
+    DirectoryLoader,
+    CSVLoader,
+)
+
+# Load a plain text file
+loader = TextLoader("my_notes.txt")
+docs = loader.load()  # list of Document objects
+
+# Load a PDF (each page becomes a Document)
+loader = PyPDFLoader("report.pdf")
+docs = loader.load()
+
+# Scrape a webpage
+loader = WebBaseLoader("https://en.wikipedia.org/wiki/Artificial_intelligence")
+docs = loader.load()
+
+# Load all .txt files in a folder
+loader = DirectoryLoader("./data/", glob="**/*.txt", loader_cls=TextLoader)
+docs = loader.load()
+
+print(f"Loaded {len(docs)} documents")
+print(docs[0].page_content[:200])  # raw text
+print(docs[0].metadata)            # source, page number, etc.
+</code></pre>
+
+  <h3 class="sub-title" id="s6-2">6.2 — Text Splitters</h3>
+  <p>LLMs have context limits. Split documents into chunks before embedding. <code>RecursiveCharacterTextSplitter</code> is the default choice.</p>
+  <pre class="hljs-block"><code class="language-python">from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+splitter = RecursiveCharacterTextSplitter(
+    chunk_size=500,       # characters per chunk
+    chunk_overlap=50,     # overlap to avoid losing context at boundaries
+    separators=["\n\n", "\n", " ", ""],  # tries each in order
+)
+
+chunks = splitter.split_documents(docs)
+
+print(f"Split into {len(chunks)} chunks")
+print(chunks[0].page_content)
+print(chunks[0].metadata)  # inherits source metadata
+</code></pre>
+
+  <div class="info-box">
+    <strong>chunk_overlap</strong> matters for retrieval quality. Overlapping windows ensure a sentence split across two chunks is still retrievable.
+  </div>
+
+  <h3 class="sub-title" id="s6-3">6.3 — Embeddings</h3>
+  <p>Convert text into numeric vectors. Semantically similar text lands close together in vector space.</p>
+  <pre class="hljs-block"><code class="language-python">from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
+embeddings = GoogleGenerativeAIEmbeddings(
+    model="models/text-embedding-004",
+    google_api_key=GEMINI_API_KEY
+)
+
+# Embed a single string
+vector = embeddings.embed_query("What is machine learning?")
+print(f"Vector dimension: {len(vector)}")  # 768
+
+# Embed a batch of documents (used internally by vectorstores)
+vectors = embeddings.embed_documents(["text 1", "text 2", "text 3"])
+</code></pre>
+
+  <h3 class="sub-title" id="s6-4">6.4 — Vectorstores</h3>
+  <p>Store vectors and support similarity search. <code>Chroma</code> is the standard local choice. <code>FAISS</code> is an alternative (pip install faiss-cpu).</p>
+  <pre class="hljs-block"><code class="language-python">from langchain_chroma import Chroma
+
+# Create vectorstore from chunks (embeds automatically)
+vectorstore = Chroma.from_documents(
+    documents=chunks,
+    embedding=embeddings,
+    persist_directory="./chroma_db",   # omit for in-memory
+)
+
+# Similarity search — returns top-k most relevant chunks
+results = vectorstore.similarity_search("explain neural networks", k=3)
+for doc in results:
+    print(doc.page_content[:150])
+    print("---")
+
+# Load an existing persisted store
+vectorstore = Chroma(
+    persist_directory="./chroma_db",
+    embedding_function=embeddings
+)
+
+# Use as a retriever (integrates with chains)
+retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
+</code></pre>
+
+  <h3 class="sub-title" id="s6-5">6.5 — RAG Conversation Chain</h3>
+  <div class="convo-badge">⟳ Conversation Loop</div>
+  <p>A full RAG chain with conversation memory. Uses checkpointer so context is maintained across turns.</p>
+  <pre class="hljs-block"><code class="language-python">from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
+from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
+from langchain_chroma import Chroma
+from langchain_community.document_loaders import WebBaseLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+# --- 1. Load & index documents ---
+loader = WebBaseLoader("https://en.wikipedia.org/wiki/Machine_learning")
+docs = loader.load()
+chunks = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50).split_documents(docs)
+embeddings = GoogleGenerativeAIEmbeddings(
+    model="models/text-embedding-004", google_api_key=GEMINI_API_KEY
+)
+vectorstore = Chroma.from_documents(chunks, embeddings)
+retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
+
+# --- 2. Build the RAG chain ---
+llm = ChatGoogleGenerativeAI(model=GEMINI_MODEL, api_key=GEMINI_API_KEY)
+
+rag_prompt = ChatPromptTemplate.from_messages([
+    ("system", "Answer using ONLY the context below. If it's not there, say so.\n\nContext:\n{context}"),
+    ("human", "{question}"),
+])
+
+def format_docs(docs):
+    return "\n\n".join(doc.page_content for doc in docs)
+
+rag_chain = (
+    {"context": retriever | format_docs, "question": RunnablePassthrough()}
+    | rag_prompt
+    | llm
+    | StrOutputParser()
+)
+
+# --- 3. Conversation loop ---
+# Maintain a simple history list for the conversation context
+history = []
+
+print("RAG Assistant ready. Ask questions about the loaded document.\n")
+while True:
+    q = input("You: ").strip()
+    if q.lower() == "exit":
+        break
+    answer = rag_chain.invoke(q)
+    history.append({"question": q, "answer": answer})
+    print(f"AI: {answer}\n")
+</code></pre>
+</section>
+
+
+<!-- ── SECTION 7 ─────────────────────────────────────────── -->
+<section class="section" id="s7">
+  <div class="section-num">07</div>
+  <h2 class="sec-title">Chains</h2>
+  <p>Chains compose multiple steps using the <code>|</code> pipe operator (LCEL). They are <strong>stateless by default</strong> — memory must be added explicitly.</p>
+
+  <div class="info-box">
+    <strong>When to use chains vs agents:</strong> Chains are deterministic — you hard-code the steps. Agents are dynamic — the LLM decides which steps to take. Use chains when the workflow is fixed; agents when it needs to reason.
+  </div>
+
+  <h3 class="sub-title" id="s7-1">7.1 — Sequential Chain</h3>
+  <p>Output of step A becomes input of step B. Common pattern: summarise → translate → format.</p>
+  <pre class="hljs-block"><code class="language-python">from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+llm = ChatGoogleGenerativeAI(model=GEMINI_MODEL, api_key=GEMINI_API_KEY)
+parser = StrOutputParser()
+
+# Step 1: Summarise
+summarise_prompt = ChatPromptTemplate.from_template(
+    "Summarise the following text in 2 sentences:\n\n{text}"
+)
+
+# Step 2: Make it formal
+formalise_prompt = ChatPromptTemplate.from_template(
+    "Rewrite this in a formal, professional tone:\n\n{summary}"
+)
+
+# Build sequential chain — output of step 1 feeds {summary} in step 2
+step1 = summarise_prompt | llm | parser
+step2 = formalise_prompt | llm | parser
+
+# Chain them — output of step1 is a string, fed as {"summary": ...} into step2
+sequential_chain = step1 | (lambda summary: {"summary": summary}) | step2
+
+result = sequential_chain.invoke({
+    "text": "Machine learning is a way for computers to learn from data. "
+            "Instead of being programmed with rules, the system finds patterns by itself."
+})
+print(result)
+</code></pre>
+
+  <h3 class="sub-title" id="s7-2">7.2 — Parallel Chain (<code>RunnableParallel</code>)</h3>
+  <p>Run multiple chains simultaneously on the same input. Results are combined into a dict.</p>
+  <pre class="hljs-block"><code class="language-python">from langchain_core.runnables import RunnableParallel
+
+pros_prompt   = ChatPromptTemplate.from_template("List 3 pros of {technology}. Be brief.")
+cons_prompt   = ChatPromptTemplate.from_template("List 3 cons of {technology}. Be brief.")
+future_prompt = ChatPromptTemplate.from_template("In one sentence, future of {technology}?")
+
+# All three run in parallel on the same input
+analysis_chain = RunnableParallel(
+    pros   = pros_prompt   | llm | parser,
+    cons   = cons_prompt   | llm | parser,
+    future = future_prompt | llm | parser,
+)
+
+result = analysis_chain.invoke({"technology": "blockchain"})
+print("PROS:\n",   result["pros"])
+print("CONS:\n",   result["cons"])
+print("FUTURE:\n", result["future"])
+</code></pre>
+
+  <h3 class="sub-title" id="s7-3">7.3 — Branched Chain (<code>RunnableBranch</code>)</h3>
+  <p>Route to different chains based on a condition. Acts like an <code>if/elif/else</code> for chains.</p>
+  <pre class="hljs-block"><code class="language-python">from langchain_core.runnables import RunnableBranch, RunnableLambda
+
+# Detect intent (simple keyword classifier)
+def detect_intent(x: dict) -> dict:
+    text = x["question"].lower()
+    if any(w in text for w in ["code", "python", "function", "class"]):
+        return {**x, "intent": "code"}
+    elif any(w in text for w in ["explain", "what is", "define", "meaning"]):
+        return {**x, "intent": "explain"}
+    else:
+        return {**x, "intent": "general"}
+
+code_chain    = ChatPromptTemplate.from_template("Write clean Python code for: {question}") | llm | parser
+explain_chain = ChatPromptTemplate.from_template("Explain clearly for a beginner: {question}") | llm | parser
+general_chain = ChatPromptTemplate.from_template("Answer helpfully: {question}") | llm | parser
+
+branch = RunnableBranch(
+    (lambda x: x["intent"] == "code",    code_chain),
+    (lambda x: x["intent"] == "explain", explain_chain),
+    general_chain  # default fallback
+)
+
+full_chain = RunnableLambda(detect_intent) | branch
+
+print(full_chain.invoke({"question": "write a Python function to reverse a string"}))
+print(full_chain.invoke({"question": "what is backpropagation"}))
+print(full_chain.invoke({"question": "best pizza places in Delhi"}))
+</code></pre>
+
+  <h3 class="sub-title" id="s7-4">7.4 — Conversation Loop with Memory</h3>
+  <div class="convo-badge">⟳ Conversation Loop</div>
+  <p>A chain-based conversation that maintains history across turns. Since chains are stateless, we pass history explicitly each call.</p>
+  <pre class="hljs-block"><code class="language-python">from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.output_parsers import StrOutputParser
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+llm = ChatGoogleGenerativeAI(model=GEMINI_MODEL, api_key=GEMINI_API_KEY)
+
+# MessagesPlaceholder injects the history list directly into the prompt
+chat_prompt = ChatPromptTemplate.from_messages([
+    ("system", "You are a knowledgeable assistant. Remember what the user says."),
+    MessagesPlaceholder(variable_name="history"),
+    ("human", "{input}"),
+])
+
+chain = chat_prompt | llm | StrOutputParser()
+
+# Persistent history list
+history = []
+
+def chat(user_input: str) -> str:
+    response = chain.invoke({"input": user_input, "history": history})
+    # Update history AFTER invocation
+    history.append(HumanMessage(content=user_input))
+    history.append(AIMessage(content=response))
+    return response
+
+# Interactive loop
+print("Chain Chat (type 'exit' to quit)\n")
+while True:
+    user_input = input("You: ").strip()
+    if user_input.lower() == "exit":
+        break
+    if user_input:
+        print(f"AI: {chat(user_input)}\n")
+</code></pre>
+
+  <h3 class="sub-title">7.5 — Limitations of Chains → Enter Agents</h3>
+  <ul class="guide-list">
+    <li>Chains require <strong>you</strong> to decide the steps upfront — no dynamic reasoning</li>
+    <li>Cannot decide <em>whether</em> to call a tool or <em>which</em> tool to call</li>
+    <li>Cannot retry, self-correct, or loop until a goal is reached</li>
+    <li>No native state persistence (must wire memory manually)</li>
+    <li><strong>Agents solve all of this</strong> — the LLM reasons about what to do next</li>
+  </ul>
+</section>
+
+
+<!-- ── SECTION 8 ─────────────────────────────────────────── -->
+<section class="section" id="s8">
+  <div class="section-num purple">08</div>
+  <h2 class="sec-title">Agents</h2>
+  <p>An agent is an LLM that can call tools, observe results, and decide what to do next — in a loop — until it has a final answer. LangChain agents are compiled LangGraph graphs under the hood.</p>
+
+  <div class="diagram">
+    <span class="node">User Message</span><br>
+    <span class="arrow">  ↓</span><br>
+    <span class="node">Agent (LLM)</span>  <span style="color:var(--muted)">← reasons: do I need a tool?</span><br>
+    <span class="arrow">  ↓  (if tool needed)</span><br>
+    <span class="node">Tool Execution</span>  <span style="color:var(--muted)">← runs the function</span><br>
+    <span class="arrow">  ↓  ToolMessage back</span><br>
+    <span class="node">Agent (LLM)</span>  <span style="color:var(--muted)">← observes result, decides next</span><br>
+    <span class="arrow">  ↓  (loop until done)</span><br>
+    <span class="node">Final Answer</span>
+  </div>
+
+  <h3 class="sub-title" id="s8-1">8.1 — <code>create_react_agent</code> (Core API)</h3>
+  <p>The primary way to create a ReAct agent with LangGraph. Every other agent type builds on this.</p>
+  <pre class="hljs-block"><code class="language-python">from langchain.chat_models import init_chat_model
+from langgraph.prebuilt import create_react_agent
+from langgraph.checkpoint.memory import MemorySaver
+
+llm = init_chat_model(f"google_genai:{GEMINI_MODEL}", api_key=GEMINI_API_KEY)
+checkpointer = MemorySaver()
+
+agent = create_react_agent(
+    model=llm,
+    tools=[],                     # tool list — empty for now
+    checkpointer=checkpointer,    # enables multi-turn memory
+    prompt="You are a helpful AI assistant.",  # system instruction
+    # name="my-agent",            # optional: for multi-agent systems
+)
+
+# Invoke
+config = {"configurable": {"thread_id": "demo-1"}}
+result = agent.invoke(
+    {"messages": [{"role": "user", "content": "Hello! What can you do?"}]},
+    config=config
+)
+print(result["messages"][-1].content)
+
+# Inspect the full message trace
+for msg in result["messages"]:
+    print(f"[{type(msg).__name__}] {msg.content[:80]}")
+</code></pre>
+
+  <div class="info-box">
+    <strong>Unified API (LangChain 0.3+):</strong> You may also see <code>from langchain.agents import create_agent</code> — this is a higher-level wrapper that delegates to <code>create_react_agent</code>. Both accept the same parameters.
+  </div>
+
+  <h3 class="sub-title" id="s8-2">8.2 — Defining Tools with <code>@tool</code></h3>
+  <p>Tools are Python functions with a descriptive docstring. The LLM reads the docstring to decide when and how to call the tool.</p>
+  <pre class="hljs-block"><code class="language-python">from langchain_core.tools import tool
+from datetime import datetime
+
+# --- Basic synchronous tool ---
+@tool
+def calculate_area(length: float, width: float) -> str:
+    """Calculate the area of a rectangle.
+    Use when the user asks about rectangular area given length and width.
+    Both inputs must be non-negative numbers in metres."""
+    if length < 0 or width < 0:
+        return "Error: dimensions must be non-negative."
+    return f"Area = {length * width:.2f} m²"
+
+# --- Tool with custom name ---
+@tool("get-time", description="Returns current time in the given timezone (e.g. 'Asia/Kolkata').")
+def get_current_time(timezone: str = "UTC") -> str:
+    try:
+        from pytz import timezone as tz
+        return datetime.now(tz(timezone)).strftime("%Y-%m-%d %H:%M:%S %Z")
+    except Exception as e:
+        return f"Error: {e}"
+
+# --- Async tool (preferred for I/O bound operations) ---
+@tool
+async def fetch_weather(city: str) -> str:
+    """Fetch current weather for a given city.
+    Use when user asks about weather, temperature, or conditions."""
+    # In real code, call a weather API here
+    return f"Weather in {city}: 28°C, partly cloudy"
+
+# --- Test tools directly ---
+print(calculate_area.invoke({"length": 10.5, "width": 4.0}))
+print(get_current_time.invoke({"timezone": "Asia/Kolkata"}))
+
+# Tool metadata
+print(calculate_area.name)         # "calculate_area"
+print(calculate_area.description)  # the docstring
+print(calculate_area.args)         # {"length": ..., "width": ...}
+</code></pre>
+
+  <div class="warn-box">
+    <strong>Docstring quality = tool call accuracy.</strong> Write specific, clear docstrings. Say what the tool does, when to use it, and what format inputs should be in. Vague docstrings lead to the agent calling the wrong tool.
+  </div>
+
+  <h3 class="sub-title" id="s8-3">8.3 — RunnableConfig & Per-Call Configuration</h3>
+  <p><code>RunnableConfig</code> is a dict passed at runtime — not baked into the agent. It controls thread identity, recursion limits, callbacks, and more.</p>
+  <pre class="hljs-block"><code class="language-python">from langchain_core.runnables import RunnableConfig
+
+# Minimal: just the thread_id for memory
+config: RunnableConfig = {
+    "configurable": {
+        "thread_id": "user-123",
+    }
+}
+
+# Full options
+config: RunnableConfig = {
+    "configurable": {
+        "thread_id": "user-123",           # identifies the memory thread
+    },
+    "recursion_limit": 25,                 # max agent loop iterations (default 25)
+    "run_name": "my-agent-run",            # label visible in LangSmith
+    "tags": ["prod", "v2"],                # filter runs in LangSmith
+    "metadata": {"user_id": "abc123"},     # arbitrary metadata
+}
+
+result = agent.invoke(
+    {"messages": [{"role": "user", "content": "What's 12 × 13?"}]},
+    config=config
+)
+
+# Access config inside a tool using get_config()
+from langchain_core.tools import tool
+from langchain_core.runnables import RunnableConfig as RC
+
+@tool
+def user_info(config: RC = None) -> str:
+    """Returns the current user's ID from the runtime config."""
+    user_id = config.get("metadata", {}).get("user_id", "unknown")
+    return f"Current user: {user_id}"
+</code></pre>
+
+  <h3 class="sub-title" id="s8-4">8.4 — Store Object for Cross-Session Memory</h3>
+  <p><code>InMemoryStore</code> adds a <em>namespace-aware key-value store</em> to the agent. Unlike checkpointer (which stores per-thread state), the store persists <strong>across threads</strong> — e.g. user preferences that survive a new conversation.</p>
+  <pre class="hljs-block"><code class="language-python">from langgraph.store.memory import InMemoryStore
+from langgraph.prebuilt import create_react_agent
+from langchain_core.tools import tool
+
+# In-memory store (replace with AsyncPostgresStore for production)
+store = InMemoryStore()
+
+# Tools can read/write to the store
+@tool
+def save_preference(key: str, value: str) -> str:
+    """Save a user preference so it can be recalled later.
+    Example: save_preference('favourite_color', 'blue')"""
+    store.put(("user-prefs", "alice"), key, {"value": value})
+    return f"Saved: {key} = {value}"
+
+@tool
+def get_preference(key: str) -> str:
+    """Retrieve a previously saved user preference by key."""
+    result = store.get(("user-prefs", "alice"), key)
+    if result:
+        return f"{key} = {result.value['value']}"
+    return f"No preference found for '{key}'"
+
+from langgraph.checkpoint.memory import MemorySaver
+from langchain.chat_models import init_chat_model
+
+llm = init_chat_model(f"google_genai:{GEMINI_MODEL}", api_key=GEMINI_API_KEY)
+
+agent = create_react_agent(
+    model=llm,
+    tools=[save_preference, get_preference],
+    checkpointer=MemorySaver(),   # per-thread state
+    store=store,                  # cross-thread long-term memory
+    prompt="You are a personalisation assistant. Save and recall user preferences."
+)
+
+config_t1 = {"configurable": {"thread_id": "thread-1"}}
+agent.invoke({"messages": [{"role": "user", "content": "My favourite colour is teal."}]}, config=config_t1)
+
+# New thread — checkpointer knows nothing about thread-1
+# But the store retains the preference
+config_t2 = {"configurable": {"thread_id": "thread-2"}}
+result = agent.invoke(
+    {"messages": [{"role": "user", "content": "What is my favourite colour?"}]},
+    config=config_t2
+)
+print(result["messages"][-1].content)  # recalls "teal" via store
+</code></pre>
+
+  <h3 class="sub-title" id="s8-5">8.5 — Human-in-the-Loop (Interrupts)</h3>
+  <p>Interrupts pause the agent before or after a tool call, letting a human inspect/approve the action. Built into LangGraph.</p>
+  <pre class="hljs-block"><code class="language-python">from langgraph.prebuilt import create_react_agent
+from langgraph.checkpoint.memory import MemorySaver
+from langchain_core.tools import tool
+from langchain.chat_models import init_chat_model
+
+llm = init_chat_model(f"google_genai:{GEMINI_MODEL}", api_key=GEMINI_API_KEY)
+
+@tool
+def send_email(to: str, subject: str, body: str) -> str:
+    """Send an email to a recipient. Use when user explicitly asks to send an email."""
+    # Real implementation would call an email API
+    return f"Email sent to {to}: '{subject}'"
+
+@tool
+def get_contacts() -> str:
+    """Return a list of available contacts."""
+    return "Contacts: alice@example.com, bob@example.com"
+
+checkpointer = MemorySaver()
+
+# interrupt_before=["tools"] pauses execution BEFORE any tool runs
+agent = create_react_agent(
+    model=llm,
+    tools=[send_email, get_contacts],
+    checkpointer=checkpointer,
+    interrupt_before=["tools"],   # pause before tool execution for human approval
+)
+
+config = {"configurable": {"thread_id": "hitl-demo"}}
+
+# Step 1: Stream until the interrupt
+events = agent.stream(
+    {"messages": [{"role": "user", "content": "Send an email to alice@example.com saying hello."}]},
+    config=config
+)
+
+state = None
+for event in events:
+    if "__interrupt__" in event:
+        interrupt_info = event["__interrupt__"]
+        print("⚠️  Agent wants to call a tool. Review:")
+        print(interrupt_info)
+
+# Step 2: Human decision — approve or reject
+approval = input("Approve tool call? (yes/no): ").strip().lower()
+
+if approval == "yes":
+    # Resume the agent — None means "proceed as planned"
+    result = agent.invoke(None, config=config)
+    print(result["messages"][-1].content)
+else:
+    # Inject a rejection message and resume
+    from langchain_core.messages import HumanMessage
+    agent.invoke(
+        {"messages": [HumanMessage(content="User rejected the tool call. Explain what you were going to do instead.")]},
+        config=config
+    )
+</code></pre>
+
+  <h3 class="sub-title" id="s8-6">8.6 — Full Agent Conversation Loop</h3>
+  <div class="convo-badge">⟳ Conversation Loop</div>
+  <p>A complete, production-style agent with tools, memory via checkpointer, and an interactive conversation loop.</p>
+  <pre class="hljs-block"><code class="language-python">import asyncio
+import uuid
+import wikipedia
+import platform
+from datetime import datetime
+from langchain.chat_models import init_chat_model
+from langchain_core.tools import tool
+from langgraph.prebuilt import create_react_agent
+from langgraph.checkpoint.memory import MemorySaver
+
+# ── Tools ──────────────────────────────────────────────────
+@tool
+def calculate_area(length: float, width: float) -> str:
+    """Calculate the area of a rectangle. Inputs: length and width as floats."""
+    return f"Area = {length * width:.2f} sq units"
+
+@tool
+def search_wikipedia(query: str) -> str:
+    """Search Wikipedia and return a 3-sentence summary of the topic.
+    Use for factual questions, definitions, or historical information."""
+    try:
+        return wikipedia.summary(query, sentences=3)
+    except wikipedia.exceptions.PageError:
+        return f"No Wikipedia page found for '{query}'."
+    except wikipedia.exceptions.DisambiguationError as e:
+        return f"Ambiguous. Options: {', '.join(e.options[:5])}"
+
+@tool
+def get_current_time(timezone: str = "UTC") -> str:
+    """Return current date and time in the given timezone.
+    Use when user asks about the current time or date."""
+    try:
+        from pytz import timezone as tz
+        return datetime.now(tz(timezone)).strftime("%Y-%m-%d %H:%M:%S %Z")
+    except Exception as e:
+        return f"Error: {e}"
+
+@tool
+def get_system_info() -> str:
+    """Return information about the current system environment.
+    Use when user asks about the machine, OS, Python version, etc."""
+    return (f"OS: {platform.system()} {platform.version()} | "
+            f"Arch: {platform.machine()} | Python: {platform.python_version()}")
+
+# ── Agent Setup ────────────────────────────────────────────
+llm = init_chat_model(f"google_genai:{GEMINI_MODEL}", api_key=GEMINI_API_KEY)
+checkpointer = MemorySaver()
+
+agent = create_react_agent(
+    model=llm,
+    tools=[calculate_area, search_wikipedia, get_current_time, get_system_info],
+    checkpointer=checkpointer,
+    prompt=(
+        "You are a helpful AI assistant with access to tools. "
+        "Always use the appropriate tool when the user's request requires it. "
+        "Maintain context from the conversation history."
+    )
+)
+
+# ── Conversation Loop ──────────────────────────────────────
+async def run_agent_loop():
+    session_id = str(uuid.uuid4())
+    config = {"configurable": {"thread_id": session_id}}
+
+    print(f"Agent ready | Session: {session_id[:8]}...")
+    print("Tools: calculate_area, search_wikipedia, get_current_time, get_system_info")
+    print("Type 'exit' to quit, 'history' to see message count.\n")
+
+    while True:
+        user_input = input("You: ").strip()
+        if not user_input:
+            continue
+        if user_input.lower() == "exit":
+            print("Session ended.")
+            break
+        if user_input.lower() == "history":
+            state = agent.get_state(config)
+            print(f"  Message count: {len(state.values.get('messages', []))}\n")
+            continue
+
+        result = await agent.ainvoke(
+            {"messages": [{"role": "user", "content": user_input}]},
+            config=config
+        )
+
+        final_msg = result["messages"][-1]
+        print(f"AI: {final_msg.content}\n")
+
+# Run the loop
+await run_agent_loop()   # use asyncio.run(run_agent_loop()) outside of notebooks
+</code></pre>
+</section>
+
+
+<!-- ── SECTION 9 ─────────────────────────────────────────── -->
+<section class="section" id="s9">
+  <div class="section-num orange">09</div>
+  <h2 class="sec-title">Multi-Agent Systems</h2>
+  <p>When tasks are too complex for one agent, split them across specialist agents. A <strong>supervisor</strong> receives the user's request and delegates to the right sub-agent.</p>
+
+  <div class="diagram">
+    <span class="node">User</span><br>
+    <span class="arrow">  ↓</span><br>
+    <span class="node">Orchestrator / Supervisor</span>   <span style="color:var(--muted)">← the only agent that talks to user</span><br>
+    <span class="arrow">  ↓ delegates to</span><br>
+    <span class="node">Specialist Agent A</span>  <span style="color:var(--muted)">(e.g. Research Agent)</span><br>
+    <span class="node">Specialist Agent B</span>  <span style="color:var(--muted)">(e.g. Code Agent)</span><br>
+    <span class="node">Specialist Agent C</span>  <span style="color:var(--muted)">(e.g. Summariser Agent)</span><br>
+    <span class="arrow">  ↓ results back to Orchestrator</span><br>
+    <span class="node">Orchestrator</span>  <span style="color:var(--muted)">← synthesises and replies to user</span>
+  </div>
+
+  <h3 class="sub-title">Pattern 1 — Tool-as-Agent</h3>
+  <p>The simplest pattern. Wrap a specialist agent as a tool that the orchestrator calls.</p>
+  <pre class="hljs-block"><code class="language-python">from langchain.chat_models import init_chat_model
+from langgraph.prebuilt import create_react_agent
+from langgraph.checkpoint.memory import MemorySaver
+from langchain_core.tools import tool
+
+llm = init_chat_model(f"google_genai:{GEMINI_MODEL}", api_key=GEMINI_API_KEY)
+
+# ── Specialist: Research Agent ────────────────────────────
+import wikipedia
+
+@tool
+def wiki_search(query: str) -> str:
+    """Search Wikipedia."""
+    try:
+        return wikipedia.summary(query, sentences=5)
+    except Exception as e:
+        return str(e)
+
+research_agent = create_react_agent(
+    model=llm,
+    tools=[wiki_search],
+    prompt="You are a research specialist. Find accurate factual information."
+)
+
+# ── Wrap the specialist as a tool for the orchestrator ────
+@tool
+def research(query: str) -> str:
+    """Delegate a factual research question to the research specialist agent.
+    Use when the user asks about facts, history, science, or definitions."""
+    result = research_agent.invoke({
+        "messages": [{"role": "user", "content": query}]
+    })
+    return result["messages"][-1].content
+
+# ── Orchestrator ──────────────────────────────────────────
+orchestrator = create_react_agent(
+    model=llm,
+    tools=[research],
+    checkpointer=MemorySaver(),
+    prompt=(
+        "You are the main orchestrator. Delegate research tasks to the research tool. "
+        "Synthesise results and reply to the user in a clear, friendly manner."
+    )
+)
+
+config = {"configurable": {"thread_id": "multi-agent-demo"}}
+result = orchestrator.invoke(
+    {"messages": [{"role": "user", "content": "Tell me about quantum computing."}]},
+    config=config
+)
+print(result["messages"][-1].content)
+</code></pre>
+
+  <h3 class="sub-title">Pattern 2 — LangGraph Supervisor (Recommended for Production)</h3>
+  <p>Install <code>langgraph-supervisor</code> for a cleaner multi-agent framework with routing logic.</p>
+  <pre class="hljs-block"><code class="language-python">pip install langgraph-supervisor
+</code></pre>
+  <pre class="hljs-block"><code class="language-python">from langgraph_supervisor import create_supervisor
+from langgraph.prebuilt import create_react_agent
+from langchain.chat_models import init_chat_model
+from langchain_core.tools import tool
+
+llm = init_chat_model(f"google_genai:{GEMINI_MODEL}", api_key=GEMINI_API_KEY)
+
+# Specialist agents
+@tool
+def python_exec(code: str) -> str:
+    """Execute Python code and return the output. Use for maths and code tasks."""
+    import io, contextlib
+    buf = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(buf):
+            exec(code, {})
+        return buf.getvalue() or "Executed. No output."
+    except Exception as e:
+        return f"Error: {e}"
+
+code_agent = create_react_agent(llm, tools=[python_exec], name="code_agent",
+    prompt="You are a Python coding specialist. Write and execute code.")
+
+research_agent = create_react_agent(llm, tools=[], name="research_agent",
+    prompt="You are a research specialist. Answer factual questions thoroughly.")
+
+# Supervisor routes between specialists
+supervisor = create_supervisor(
+    agents=[code_agent, research_agent],
+    model=llm,
+    prompt=(
+        "You are the supervisor. Route coding/math questions to code_agent. "
+        "Route research/factual questions to research_agent. "
+        "Synthesise results and reply to the user."
+    )
+).compile()
+
+result = supervisor.invoke({
+    "messages": [{"role": "user", "content": "What is 15 factorial? Also, who invented Python?"}]
+})
+print(result["messages"][-1].content)
+</code></pre>
+
+  <h3 class="sub-title">Key Principles for Multi-Agent Design</h3>
+  <ul class="guide-list">
+    <li>Only the <strong>orchestrator</strong> communicates with the user — specialists never talk directly</li>
+    <li>Each specialist has a <strong>narrow, well-defined</strong> set of tools and a focused system prompt</li>
+    <li>Give each agent a <code>name=</code> parameter — it appears in LangSmith traces for debugging</li>
+    <li>The orchestrator holds the <code>checkpointer</code> for conversation memory — specialists are usually stateless</li>
+    <li>Use <code>RunnableConfig</code> metadata to pass user context (user_id, permissions) to all agents</li>
+  </ul>
+</section>
+
+
+<!-- ── SECTION 10 ─────────────────────────────────────────── -->
+<section class="section" id="s10">
+  <div class="section-num blue">10</div>
+  <h2 class="sec-title">LangSmith — Observability</h2>
+  <p>LangSmith records every LLM call, tool invocation, token count, and latency — no changes to your LangChain code. Just set two environment variables.</p>
+
+  <h3 class="sub-title">Setup</h3>
+  <pre class="hljs-block"><code class="language-python">import os
+
+os.environ["LANGSMITH_TRACING"]  = "true"
+os.environ["LANGSMITH_API_KEY"]  = "lsv2_pt_..."    # from smith.langchain.com
+os.environ["LANGSMITH_PROJECT"]  = "my-project"     # organise traces into projects
+# os.environ["LANGSMITH_ENDPOINT"] = "https://api.smith.langchain.com"  # default
+
+# That's it. Every agent.invoke(), chain.invoke(), llm.invoke() is now traced.
+</code></pre>
+
+  <div class="info-box">
+    <strong>In Google Colab:</strong> Store the key in <code>userdata</code> and set it via <code>os.environ["LANGSMITH_API_KEY"] = userdata.get("LANGSMITH_API_KEY")</code>
+  </div>
+
+  <h3 class="sub-title">What You Get in the Dashboard</h3>
+  <table>
+    <thead><tr><th>Feature</th><th>What it shows</th></tr></thead>
+    <tbody>
+      <tr><td>Trace tree</td><td>Every node in the agent graph — LLM call, tool call, routing decision — with inputs and outputs</td></tr>
+      <tr><td>Token counts</td><td>Prompt tokens, completion tokens, and cost per run</td></tr>
+      <tr><td>Latency</td><td>Time for each step and total wall-clock time</td></tr>
+      <tr><td>Errors</td><td>Full stack trace when a tool or LLM call fails</td></tr>
+      <tr><td>Datasets & Evals</td><td>Collect examples into a dataset; run automated evaluations against them</td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub-title">Manual Tracing with <code>@traceable</code></h3>
+  <pre class="hljs-block"><code class="language-python">from langsmith import traceable
+
+@traceable(name="my-custom-function", tags=["preprocessing"])
+def preprocess(text: str) -> str:
+    """Custom function — will appear as a span in LangSmith traces."""
+    return text.strip().lower()
+
+# Or trace a whole run manually
+from langsmith import Client
+
+client = Client()
+
+# Create a dataset for evaluation
+dataset = client.create_dataset("qa-test-set")
+client.create_examples(
+    inputs=[{"question": "What is ML?"}],
+    outputs=[{"answer": "Machine Learning is..."}],
+    dataset_id=dataset.id,
+)
+</code></pre>
+
+  <h3 class="sub-title">Filtering Traces</h3>
+  <pre class="hljs-block"><code class="language-python"># Tag runs for easy filtering in the dashboard
+config = {
+    "configurable": {"thread_id": "user-123"},
+    "tags": ["production", "v2.1"],
+    "metadata": {"user_id": "alice", "feature_flag": "rag-v2"},
+    "run_name": "alice-session",
+}
+
+result = agent.invoke({"messages": [...]}, config=config)
+</code></pre>
+</section>
+
+
+<!-- ── SECTION 11 ─────────────────────────────────────────── -->
+<section class="section" id="s11">
+  <div class="section-num yellow">11</div>
+  <h2 class="sec-title">Quick Reference</h2>
+
+  <h3 class="sub-title">Import Cheatsheet</h3>
+  <pre class="hljs-block"><code class="language-python"># ── Models ────────────────────────────────────────────────
+from langchain.chat_models import init_chat_model
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+# ── Messages ──────────────────────────────────────────────
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, ToolMessage
+
+# ── Prompts ───────────────────────────────────────────────
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+# ── Output Parsers ────────────────────────────────────────
+from langchain_core.output_parsers import StrOutputParser, JsonOutputParser
+
+# ── Runnables (LCEL) ──────────────────────────────────────
+from langchain_core.runnables import RunnableParallel, RunnableBranch, RunnableLambda, RunnablePassthrough
+
+# ── Memory / Checkpointers ────────────────────────────────
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.checkpoint.sqlite import SqliteSaver
+
+# ── Store (cross-session) ─────────────────────────────────
+from langgraph.store.memory import InMemoryStore
+
+# ── Agents ────────────────────────────────────────────────
+from langgraph.prebuilt import create_react_agent
+from langchain_core.tools import tool
+
+# ── RAG ───────────────────────────────────────────────────
+from langchain_community.document_loaders import PyPDFLoader, WebBaseLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_chroma import Chroma
+
+# ── Observability ─────────────────────────────────────────
+import os
+os.environ["LANGSMITH_TRACING"] = "true"
+</code></pre>
+
+  <h3 class="sub-title">Memory Decision Tree</h3>
+  <div class="hero-strip">
+    <div class="step"><div class="step-num">1</div><div class="step-content"><strong>Need memory across messages in the same session?</strong> → Any checkpointer with same <code>thread_id</code></div></div>
+    <div class="step"><div class="step-num">2</div><div class="step-content"><strong>Need memory to survive process restart?</strong> → <code>SqliteSaver</code> or <code>PostgresSaver</code></div></div>
+    <div class="step"><div class="step-num">3</div><div class="step-content"><strong>Need memory to cross session boundaries</strong> (user prefs, facts about user)? → <code>store=InMemoryStore()</code> or <code>AsyncPostgresStore</code></div></div>
+    <div class="step"><div class="step-num">4</div><div class="step-content"><strong>Multi-user app</strong>? → Generate a unique <code>thread_id</code> per user session (<code>str(uuid.uuid4())</code>)</div></div>
+  </div>
+
+  <h3 class="sub-title">Common Errors & Fixes</h3>
+  <table>
+    <thead><tr><th>Error</th><th>Cause</th><th>Fix</th></tr></thead>
+    <tbody>
+      <tr><td><code>RecursionError</code> / agent loops forever</td><td>Agent stuck in a tool call loop</td><td>Set <code>"recursion_limit": 10</code> in config</td></tr>
+      <tr><td>Agent ignores tool</td><td>Docstring is vague or missing type hints</td><td>Improve docstring; add explicit type annotations</td></tr>
+      <tr><td>Context length exceeded</td><td>History grows too large</td><td>Use <code>trim_messages()</code> or summarisation before invoking</td></tr>
+      <tr><td><code>MemorySaver</code> loses memory</td><td>Thread_id changes between calls</td><td>Use a stable <code>thread_id</code> (e.g. user ID from DB)</td></tr>
+      <tr><td><code>SqliteSaver</code> errors</td><td>Not using context manager</td><td>Always use <code>with SqliteSaver.from_conn_string(...) as cp:</code></td></tr>
+    </tbody>
+  </table>
+
+  <h3 class="sub-title">Message Trimming (Prevent Context Overflow)</h3>
+  <pre class="hljs-block"><code class="language-python">from langchain_core.messages import trim_messages
+
+# Keep only the last N tokens worth of messages
+trimmed = trim_messages(
+    history,
+    max_tokens=2000,
+    token_counter=llm,           # uses the model's tokenizer
+    strategy="last",             # keep most recent messages
+    include_system=True,         # always keep the system message
+)
+</code></pre>
+
+  <!-- Footer -->
+  <div style="margin-top:48px;padding-top:24px;border-top:1px solid var(--border);color:var(--muted);font-size:12px;">
+    <div style="font-family:'JetBrains Mono',monospace;">LangChain Training Guide · Last validated April 03, 2026</div>
+    <div>All examples use Google Gemini via <code>langchain-google-genai</code>. Swap model strings to use any provider.</div>
+  </div>
+</section>
+
+</main>
+
+<script>
+  // Init highlight.js
+  hljs.highlightAll();
+
+  // Active nav on scroll
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-link');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const active = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
+        if (active) active.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-20% 0px -70% 0px' });
+
+  sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>

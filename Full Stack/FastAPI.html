@@ -1,0 +1,2273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FastAPI — Complete Python Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          bg:      '#0e0f14',
+          surface: '#15161d',
+          surface2:'#1c1d28',
+          bdr:     '#2a2b3d',
+          bdr2:    '#363752',
+          tx:      '#d4d5e8',
+          txdim:   '#7b7d9e',
+          txbrt:   '#eceef8',
+          accent:  '#00bfa6',
+          accent2: '#5de8c1',
+          accent3: '#f7b955',
+          accent4: '#f76a6a',
+          mdbg:    '#191a24',
+          codebg:  '#111219',
+          outbg:   '#0d1a1a',
+          outbdr:  '#1e3d3d',
+        },
+        fontFamily: {
+          mono:  ['"JetBrains Mono"', 'monospace'],
+          serif: ['Fraunces', 'serif'],
+          sans:  ['"DM Sans"', 'sans-serif'],
+        },
+      }
+    }
+  }
+</script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* Syntax highlight */
+  .kw  { color: #c07df0; }
+  .fn  { color: #7cb8f7; }
+  .st  { color: #5de8c1; }
+  .cm  { color: #525470; font-style: italic; }
+  .nu  { color: #f7b955; }
+  .cl  { color: #f0c07d; }
+  .pr  { color: #f78c5d; }
+  .at  { color: #5de8c1; }
+  .dc  { color: #00bfa6; }
+  .ht  { color: #f78c5d; }
+  .default { color: #f7b955; font-style: italic; }
+
+  /* Vertical text — not expressible in Tailwind */
+  .cell-type { writing-mode: vertical-rl; transform: rotate(180deg); }
+
+  /* TOC counter */
+  ol { counter-reset: toc-counter; }
+  .toc li { counter-increment: toc-counter; }
+  .toc a::before {
+    content: counter(toc-counter, decimal-leading-zero);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: #00bfa6; opacity: .6; min-width: 22px;
+  }
+
+  /* Header radial glow */
+  header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 70% 120% at 50% -30%, rgba(0,191,166,.16) 0%, transparent 70%);
+  }
+
+  /* md-cell "md" watermark */
+  .md-cell::before {
+    content: 'md';
+    position: absolute; top: 10px; right: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px; color: #7b7d9e; opacity: .4; letter-spacing: .06em;
+  }
+
+  /* Section divider gradient */
+  .section-div {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #363752, transparent);
+    margin: 48px 0 32px;
+  }
+
+  /* clamp font size for h1 */
+  header h1 { font-size: clamp(2.2rem, 5vw, 3.8rem); }
+
+  /* Param table column styles */
+  .param-table td:first-child { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #f78c5d; white-space: nowrap; }
+  .param-table td:nth-child(2) { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5de8c1; }
+  .param-table td:nth-child(3) { color: #7b7d9e; font-size: 13px; }
+
+  @media (max-width: 600px) {
+    .toc ol { grid-template-columns: 1fr !important; }
+    .quickref { grid-template-columns: 1fr !important; }
+    .cell-gutter { width: 30px !important; }
+  }
+
+  /* md-cell child element styles (scoped — Tailwind can't target child elements efficiently in static HTML) */
+  .md-cell h2 { font-family: 'Fraunces', serif; font-size: 1.55rem; font-weight: 600; color: #eceef8; letter-spacing: -.02em; margin-bottom: 10px; line-height: 1.25; }
+  .md-cell h3 { font-family: 'Fraunces', serif; font-size: 1.1rem; font-weight: 600; color: #5de8c1; margin: 18px 0 8px; }
+  .md-cell h4 { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #f7b955; letter-spacing: .04em; text-transform: uppercase; margin: 16px 0 6px; }
+  .md-cell p { color: #d4d5e8; margin-bottom: 10px; font-size: 14.5px; }
+  .md-cell p:last-child { margin-bottom: 0; }
+  .md-cell ul, .md-cell ol { padding-left: 20px; margin-bottom: 10px; }
+  .md-cell li { color: #d4d5e8; font-size: 14.5px; margin-bottom: 4px; }
+  .md-cell code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; background: rgba(0,191,166,.12); color: #5de8c1; padding: 1px 6px; border-radius: 4px; border: 1px solid rgba(0,191,166,.2); }
+  .md-cell strong { color: #eceef8; font-weight: 500; }
+  .md-cell em { color: #f7b955; font-style: italic; }
+
+  /* param-table body */
+  .param-table thead th { background: rgba(0,191,166,.1); color: #7b7d9e; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; padding: 8px 12px; text-align: left; border-bottom: 1px solid #363752; }
+  .param-table tbody td { padding: 7px 12px; border-bottom: 1px solid #2a2b3d; vertical-align: top; line-height: 1.5; }
+  .param-table tbody tr:last-child td { border-bottom: none; }
+
+  /* code-cell pre (for the ones that weren't replaced) */
+  .bg-codebg pre { padding: 18px 22px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.75; color: #d4d5e8; }
+  .bg-codebg code { font-family: inherit; font-size: inherit; background: none; border: none; padding: 0; color: #d4d5e8; }
+
+  /* tags (base) */
+  .tag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 10px; padding: 2px 8px; border-radius: 4px; margin-right: 4px; margin-bottom: 4px; letter-spacing: .04em; }
+
+  /* quickref key/val base */
+  .qr-key { font-family: 'JetBrains Mono', monospace; color: #5de8c1; font-size: 12px; }
+  .qr-val { color: #7b7d9e; font-size: 12px; }
+
+  /* output cell pre — catch-all */
+  .bg-outbg pre { padding: 14px 18px; font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.7; color: #7dffea; overflow-x: auto; }
+</style>
+</head>
+<body class="bg-bg text-tx font-sans text-[15px] leading-[1.65] min-h-screen">
+
+<header class="bg-surface border-b border-bdr pt-12 pb-9 text-center relative overflow-hidden">
+  <div class="inline-block bg-[rgba(0,191,166,.15)] border border-[rgba(0,191,166,.35)] text-accent2 font-mono text-[11px] tracking-[.12em] px-[14px] py-[4px] rounded-full mb-[18px] uppercase">Python Framework Guide</div>
+  <h1 class="font-serif font-extrabold text-txbrt tracking-[-0.02em] leading-[1.1] relative"><span class="text-accent">FastAPI</span> — Modern Python Web APIs</h1>
+  <p class="mt-3 text-txdim text-[15px] font-light relative">A notebook-style reference for backend engineers coming from Django, Flask, or Express</p>
+</header>
+
+<div class="max-w-[860px] mx-auto mt-9 px-6">
+  <div class="bg-surface2 border border-bdr rounded-xl px-7 py-6">
+    <h3 class="font-mono text-[11px] text-txdim tracking-[.12em] uppercase mb-[14px]">Contents</h3>
+    <ol class="list-none grid grid-cols-2 gap-x-8 gap-y-1.5">
+      <li><a class="text-tx no-underline text-[13.5px] flex items-center gap-2 transition-colors hover:text-accent" href="#s1">Installation &amp; Project Structure</a></li>
+      <li><a class="text-tx no-underline text-[13.5px] flex items-center gap-2 transition-colors hover:text-accent" href="#s2">App Instance &amp; Running</a></li>
+      <li><a class="text-tx no-underline text-[13.5px] flex items-center gap-2 transition-colors hover:text-accent" href="#s3">Path Operations &amp; HTTP Methods</a></li>
+      <li><a class="text-tx no-underline text-[13.5px] flex items-center gap-2 transition-colors hover:text-accent" href="#s4">Path &amp; Query Parameters</a></li>
+      <li><a class="text-tx no-underline text-[13.5px] flex items-center gap-2 transition-colors hover:text-accent" href="#s5">Request Body &amp; Pydantic Models</a></li>
+      <li><a class="text-tx no-underline text-[13.5px] flex items-center gap-2 transition-colors hover:text-accent" href="#s6">Response Models &amp; Status Codes</a></li>
+      <li><a class="text-tx no-underline text-[13.5px] flex items-center gap-2 transition-colors hover:text-accent" href="#s7">Data Validation &amp; Field Types</a></li>
+      <li><a class="text-tx no-underline text-[13.5px] flex items-center gap-2 transition-colors hover:text-accent" href="#s8">Dependency Injection</a></li>
+      <li><a class="text-tx no-underline text-[13.5px] flex items-center gap-2 transition-colors hover:text-accent" href="#s9">Routers &amp; App Structure</a></li>
+      <li><a class="text-tx no-underline text-[13.5px] flex items-center gap-2 transition-colors hover:text-accent" href="#s10">Middleware</a></li>
+      <li><a class="text-tx no-underline text-[13.5px] flex items-center gap-2 transition-colors hover:text-accent" href="#s11">Authentication &amp; Security</a></li>
+      <li><a class="text-tx no-underline text-[13.5px] flex items-center gap-2 transition-colors hover:text-accent" href="#s12">Database Integration (SQLAlchemy)</a></li>
+      <li><a class="text-tx no-underline text-[13.5px] flex items-center gap-2 transition-colors hover:text-accent" href="#s13">Async &amp; Background Tasks</a></li>
+      <li><a class="text-tx no-underline text-[13.5px] flex items-center gap-2 transition-colors hover:text-accent" href="#s14">File Uploads &amp; Static Files</a></li>
+      <li><a class="text-tx no-underline text-[13.5px] flex items-center gap-2 transition-colors hover:text-accent" href="#s15">WebSockets</a></li>
+      <li><a class="text-tx no-underline text-[13.5px] flex items-center gap-2 transition-colors hover:text-accent" href="#s16">Error Handling &amp; Exception Handlers</a></li>
+      <li><a class="text-tx no-underline text-[13.5px] flex items-center gap-2 transition-colors hover:text-accent" href="#s17">Testing with pytest</a></li>
+      <li><a class="text-tx no-underline text-[13.5px] flex items-center gap-2 transition-colors hover:text-accent" href="#s18">Deployment &amp; Production</a></li>
+    </ol>
+  </div>
+</div>
+
+<div class="max-w-[860px] mx-auto mt-10 mb-20 px-6 flex flex-col">
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 1: INSTALLATION & PROJECT STRUCTURE           -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s1">
+    <span class="font-serif text-[13px] italic text-accent opacity-70">01</span>
+    <div class="flex-1 h-px bg-bdr"></div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h2>Installation &amp; Project Structure</h2>
+        <p><strong>FastAPI</strong> is a modern, high-performance Python web framework built on top of <strong>Starlette</strong> (ASGI) and <strong>Pydantic</strong> (data validation). It generates OpenAPI docs automatically and is one of the fastest Python frameworks available — on par with Node.js and Go in benchmarks.</p>
+
+        <h3>Key selling points vs Flask/Django</h3>
+        <ul>
+          <li><strong>Automatic docs</strong> — Swagger UI at <code>/docs</code>, ReDoc at <code>/redoc</code>, generated from type hints with zero config</li>
+          <li><strong>Native async</strong> — Built on ASGI; <code>async def</code> route handlers work out of the box</li>
+          <li><strong>Pydantic validation</strong> — Request/response data is validated and serialised automatically</li>
+          <li><strong>Type-hint driven</strong> — Parameters, bodies, query strings all inferred from Python type hints</li>
+        </ul>
+
+        <h4>Install</h4>
+        <p><code>uvicorn</code> is the ASGI server used to run FastAPI applications. <code>python-multipart</code> is required for form and file upload support.</p>
+
+        <h4>Recommended project layout</h4>
+        <div class="quickref grid grid-cols-2 gap-2 mt-3" style="grid-template-columns:1fr;">
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">app/main.py</span><span class="qr-val text-txdim text-[12px]">App instance, startup/shutdown events</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">app/routers/</span><span class="qr-val text-txdim text-[12px]">One file per domain (users.py, items.py …)</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">app/models/</span><span class="qr-val text-txdim text-[12px]">SQLAlchemy ORM models</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">app/schemas/</span><span class="qr-val text-txdim text-[12px]">Pydantic request/response schemas</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">app/dependencies.py</span><span class="qr-val text-txdim text-[12px]">Shared dependency functions (DB session, auth …)</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">app/crud.py</span><span class="qr-val text-txdim text-[12px]">Database query functions</span></div>
+        </div>
+
+        <div class="bg-[rgba(247,185,85,.06)] border-l-[3px] border-l-accent3 px-[14px] py-[10px] mt-3 rounded-r-md text-[13.5px]">
+          <div class="font-mono text-[10px] text-accent3 tracking-[.08em] uppercase mb-[3px]">⚡ vs Flask</div>
+          FastAPI is ASGI, Flask is WSGI. You <em>can</em> use sync <code>def</code> routes, but async unlocks real concurrency. Use <code>uvicorn</code> (or <code>gunicorn + uvicorn workers</code>) — never Flask's dev server.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="cm"># Install FastAPI and the Uvicorn ASGI server</span>
+pip install fastapi uvicorn[standard]
+
+<span class="cm"># Additional common packages</span>
+pip install python-multipart   <span class="cm"># form data / file uploads</span>
+pip install pydantic[email]    <span class="cm"># email validation support</span>
+pip install sqlalchemy         <span class="cm"># database ORM</span>
+pip install python-jose[cryptography]  <span class="cm"># JWT tokens</span>
+pip install passlib[bcrypt]    <span class="cm"># password hashing</span>
+pip install httpx              <span class="cm"># async HTTP client (also used by TestClient)</span></code></pre></div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 2: APP INSTANCE & RUNNING                      -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s2">
+    <span class="font-serif text-[13px] italic text-accent opacity-70">02</span>
+    <div class="flex-1 h-px bg-bdr"></div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h2>App Instance &amp; Running</h2>
+        <p>The <code>FastAPI()</code> class is your application. It extends Starlette, so any Starlette feature works here too. Configuration passed to the constructor is reflected directly in the auto-generated OpenAPI schema.</p>
+
+        <h4>FastAPI() constructor parameters</h4>
+        <table class="param-table w-full border-collapse my-3 text-[13px]">
+          <thead class="[&_th]:bg-[rgba(0,191,166,.1)] [&_th]:text-txdim [&_th]:font-mono [&_th]:text-[10px] [&_th]:tracking-[.08em] [&_th]:uppercase [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:border-b [&_th]:border-bdr2"><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>title</td><td>str</td><td>API title shown in Swagger UI. <span class="default">Default: "FastAPI"</span></td></tr>
+            <tr><td>description</td><td>str</td><td>Markdown-supported description in the docs.</td></tr>
+            <tr><td>version</td><td>str</td><td>API version string. <span class="default">Default: "0.1.0"</span></td></tr>
+            <tr><td>docs_url</td><td>str | None</td><td>Path to Swagger UI. Set to <code>None</code> to disable. <span class="default">Default: "/docs"</span></td></tr>
+            <tr><td>redoc_url</td><td>str | None</td><td>Path to ReDoc UI. <span class="default">Default: "/redoc"</span></td></tr>
+            <tr><td>openapi_url</td><td>str | None</td><td>Path to raw OpenAPI JSON. <span class="default">Default: "/openapi.json"</span></td></tr>
+            <tr><td>lifespan</td><td>callable</td><td>Async context manager for startup/shutdown events (replaces deprecated <code>on_event</code>).</td></tr>
+          </tbody>
+        </table>
+
+        <h4>Running the server</h4>
+        <div class="quickref grid grid-cols-2 gap-2 mt-3">
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">uvicorn app.main:app --reload</span><span class="qr-val text-txdim text-[12px]">Dev mode with auto-reload</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">uvicorn app.main:app --workers 4</span><span class="qr-val text-txdim text-[12px]">Production multi-worker</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">--host 0.0.0.0 --port 8080</span><span class="qr-val text-txdim text-[12px]">Bind address / port</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">--log-level warning</span><span class="qr-val text-txdim text-[12px]">Reduce log noise in prod</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="cm"># app/main.py — minimal but production-conscious boilerplate</span>
+<span class="kw">from</span> contextlib <span class="kw">import</span> asynccontextmanager
+<span class="kw">from</span> fastapi <span class="kw">import</span> <span class="cl">FastAPI</span>
+
+
+<span class="dc">@asynccontextmanager</span>
+<span class="kw">async def</span> <span class="fn">lifespan</span>(app: <span class="cl">FastAPI</span>):
+    <span class="cm"># ── Startup: runs before the server starts accepting requests ──</span>
+    <span class="fn">print</span>(<span class="st">"Starting up: connect DB, warm caches, load models …"</span>)
+    <span class="kw">yield</span>
+    <span class="cm"># ── Shutdown: runs after the last request completes ───────────</span>
+    <span class="fn">print</span>(<span class="st">"Shutting down: close DB connections, flush queues …"</span>)
+
+
+app = <span class="cl">FastAPI</span>(
+    title=<span class="st">"My API"</span>,
+    description=<span class="st">"A well-structured FastAPI service"</span>,
+    version=<span class="st">"1.0.0"</span>,
+    lifespan=lifespan,
+)
+
+
+<span class="dc">@app.get</span>(<span class="st">"/"</span>)
+<span class="kw">async def</span> <span class="fn">root</span>():
+    <span class="kw">return</span> {<span class="st">"message"</span>: <span class="st">"Hello, World"</span>}</code></pre></div>
+      <div class="bg-outbg border border-outbdr rounded-[10px] overflow-hidden mb-2">
+        <div class="px-[14px] py-[5px] bg-[rgba(0,80,80,.5)] flex items-center gap-1.5 font-mono text-[10px] text-[#3dcfb6] tracking-[.08em] uppercase border-b border-outbdr">▶ terminal — uvicorn app.main:app --reload</div>
+        <pre class="px-[18px] py-[14px] font-mono text-[12.5px] leading-[1.7] text-[#7dffea] overflow-x-auto">INFO:     Will watch for changes in these directories: ['/project']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [12345]
+Starting up: connect DB, warm caches, load models …
+INFO:     Application startup complete.</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 3: PATH OPERATIONS & HTTP METHODS              -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s3">
+    <span class="font-serif text-[13px] italic text-accent opacity-70">03</span>
+    <div class="flex-1 h-px bg-bdr"></div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h2>Path Operations &amp; HTTP Methods</h2>
+        <p>A <strong>path operation</strong> is a function decorated with an HTTP method decorator. FastAPI maps decorators to HTTP methods and registers routes automatically. The function return value is serialised to JSON.</p>
+
+        <h4>Available decorators</h4>
+        <div class="quickref grid grid-cols-2 gap-2 mt-3">
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key tag tag-get">GET</span><span class="qr-val text-txdim text-[12px]"><code>@app.get(path)</code> — read data</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key tag tag-post">POST</span><span class="qr-val text-txdim text-[12px]"><code>@app.post(path)</code> — create</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key tag tag-put">PUT</span><span class="qr-val text-txdim text-[12px]"><code>@app.put(path)</code> — full replace</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key tag tag-patch">PATCH</span><span class="qr-val text-txdim text-[12px]"><code>@app.patch(path)</code> — partial update</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key tag tag-delete">DELETE</span><span class="qr-val text-txdim text-[12px]"><code>@app.delete(path)</code> — remove</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">OPTIONS / HEAD</span><span class="qr-val text-txdim text-[12px]"><code>@app.options / @app.head</code></span></div>
+        </div>
+
+        <h4>Decorator parameters</h4>
+        <table class="param-table w-full border-collapse my-3 text-[13px]">
+          <thead class="[&_th]:bg-[rgba(0,191,166,.1)] [&_th]:text-txdim [&_th]:font-mono [&_th]:text-[10px] [&_th]:tracking-[.08em] [&_th]:uppercase [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:border-b [&_th]:border-bdr2"><tr><th>Parameter</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>path</td><td>str</td><td>URL path string. Use <code>{param}</code> for path parameters. <strong>Required.</strong></td></tr>
+            <tr><td>response_model</td><td>Pydantic model</td><td>Schema used to filter and validate the response. Strips extra fields automatically.</td></tr>
+            <tr><td>status_code</td><td>int</td><td>Default HTTP status code for success responses. <span class="default">Default: 200</span></td></tr>
+            <tr><td>tags</td><td>list[str]</td><td>Groups routes in Swagger UI. e.g. <code>["users"]</code></td></tr>
+            <tr><td>summary</td><td>str</td><td>Short description shown in Swagger UI.</td></tr>
+            <tr><td>description</td><td>str</td><td>Markdown-supported longer description.</td></tr>
+            <tr><td>deprecated</td><td>bool</td><td>Marks the route as deprecated in the docs.</td></tr>
+            <tr><td>include_in_schema</td><td>bool</td><td>Set <code>False</code> to hide from OpenAPI docs (e.g. internal health endpoints).</td></tr>
+          </tbody>
+        </table>
+
+        <div class="bg-[rgba(0,191,166,.06)] border-l-[3px] border-l-accent px-[14px] py-[10px] mt-3 rounded-r-md text-[13.5px]">
+          <div class="font-mono text-[10px] text-accent tracking-[.08em] uppercase mb-[3px]">💡 Tip</div>
+          FastAPI executes <code>async def</code> routes in the event loop and <code>def</code> routes in a separate thread pool — so sync routes don't block the loop. Prefer <code>async def</code> for I/O-bound work (DB, HTTP calls) and <code>def</code> is fine for CPU-bound or trivial routes.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="kw">from</span> fastapi <span class="kw">import</span> <span class="cl">FastAPI</span>
+
+app = <span class="cl">FastAPI</span>()
+
+<span class="cm"># ── GET ───────────────────────────────────────────────────────────────────────</span>
+<span class="dc">@app.get</span>(<span class="st">"/items"</span>, tags=[<span class="st">"items"</span>], summary=<span class="st">"List all items"</span>)
+<span class="kw">async def</span> <span class="fn">list_items</span>():
+    <span class="kw">return</span> [{<span class="st">"id"</span>: <span class="nu">1</span>, <span class="st">"name"</span>: <span class="st">"Widget"</span>}]
+
+<span class="cm"># ── POST ──────────────────────────────────────────────────────────────────────</span>
+<span class="dc">@app.post</span>(<span class="st">"/items"</span>, status_code=<span class="nu">201</span>, tags=[<span class="st">"items"</span>])
+<span class="kw">async def</span> <span class="fn">create_item</span>():
+    <span class="kw">return</span> {<span class="st">"id"</span>: <span class="nu">2</span>, <span class="st">"name"</span>: <span class="st">"New item"</span>}
+
+<span class="cm"># ── PUT ───────────────────────────────────────────────────────────────────────</span>
+<span class="dc">@app.put</span>(<span class="st">"/items/{item_id}"</span>, tags=[<span class="st">"items"</span>])
+<span class="kw">async def</span> <span class="fn">replace_item</span>(item_id: <span class="cl">int</span>):
+    <span class="kw">return</span> {<span class="st">"id"</span>: item_id, <span class="st">"updated"</span>: <span class="kw">True</span>}
+
+<span class="cm"># ── DELETE ────────────────────────────────────────────────────────────────────</span>
+<span class="dc">@app.delete</span>(<span class="st">"/items/{item_id}"</span>, status_code=<span class="nu">204</span>, tags=[<span class="st">"items"</span>])
+<span class="kw">async def</span> <span class="fn">delete_item</span>(item_id: <span class="cl">int</span>):
+    <span class="kw">return</span>   <span class="cm"># 204 No Content — return nothing</span>
+
+<span class="cm"># ── Sync route (runs in thread pool, doesn't block event loop) ────────────────</span>
+<span class="dc">@app.get</span>(<span class="st">"/sync-ok"</span>, include_in_schema=<span class="kw">False</span>)
+<span class="kw">def</span> <span class="fn">sync_route</span>():
+    <span class="kw">return</span> {<span class="st">"sync"</span>: <span class="kw">True</span>}</code></pre></div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 4: PATH & QUERY PARAMETERS                     -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s4">
+    <span class="font-serif text-[13px] italic text-accent opacity-70">04</span>
+    <div class="flex-1 h-px bg-bdr"></div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h2>Path &amp; Query Parameters</h2>
+        <p>FastAPI infers parameter source from where it appears: a name matching a <code>{placeholder}</code> in the path is a <strong>path parameter</strong>; any other function argument is a <strong>query parameter</strong>. No decorators or extra config needed.</p>
+
+        <h3>Path Parameters</h3>
+        <p>Declare in the path string with <code>{name}</code> and match with the function argument. Use <code>Path()</code> to add validation and docs metadata.</p>
+
+        <h3>Query Parameters</h3>
+        <p>Any argument not in the path is automatically a query parameter. Optional ones use <code>= None</code> or <code>Optional[T]</code>. Use <code>Query()</code> for constraints.</p>
+
+        <h4>Path() and Query() constraints</h4>
+        <table class="param-table w-full border-collapse my-3 text-[13px]">
+          <thead class="[&_th]:bg-[rgba(0,191,166,.1)] [&_th]:text-txdim [&_th]:font-mono [&_th]:text-[10px] [&_th]:tracking-[.08em] [&_th]:uppercase [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:border-b [&_th]:border-bdr2"><tr><th>Argument</th><th>Applies to</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>default</td><td>Query</td><td>Default value if not supplied. Use <code>...</code> (Ellipsis) to make it required.</td></tr>
+            <tr><td>ge / le</td><td>Path, Query</td><td>Greater-than-or-equal / less-than-or-equal (numeric).</td></tr>
+            <tr><td>gt / lt</td><td>Path, Query</td><td>Strictly greater / less than.</td></tr>
+            <tr><td>min_length / max_length</td><td>Query</td><td>String length constraints.</td></tr>
+            <tr><td>pattern</td><td>Query</td><td>Regex pattern the string must match.</td></tr>
+            <tr><td>alias</td><td>Query</td><td>Different name in the URL (e.g. <code>alias="item-id"</code> for <code>item_id</code>).</td></tr>
+            <tr><td>title / description</td><td>Both</td><td>Shown in Swagger UI docs.</td></tr>
+            <tr><td>deprecated</td><td>Both</td><td>Marks parameter as deprecated in docs.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="kw">from</span> typing <span class="kw">import</span> <span class="cl">Annotated</span>
+<span class="kw">from</span> fastapi <span class="kw">import</span> <span class="cl">FastAPI</span>, <span class="cl">Path</span>, <span class="cl">Query</span>
+
+app = <span class="cl">FastAPI</span>()
+
+<span class="cm"># ── Path parameter — type-annotated, auto-validated ──────────────────────────</span>
+<span class="dc">@app.get</span>(<span class="st">"/users/{user_id}"</span>)
+<span class="kw">async def</span> <span class="fn">get_user</span>(
+    user_id: <span class="cl">Annotated</span>[<span class="cl">int</span>, <span class="cl">Path</span>(ge=<span class="nu">1</span>, title=<span class="st">"User ID"</span>, description=<span class="st">"Must be a positive integer"</span>)]
+):
+    <span class="kw">return</span> {<span class="st">"user_id"</span>: user_id}
+
+<span class="cm"># ── Query parameters — optional, with defaults ────────────────────────────────</span>
+<span class="dc">@app.get</span>(<span class="st">"/items"</span>)
+<span class="kw">async def</span> <span class="fn">list_items</span>(
+    skip:  <span class="cl">int</span>        = <span class="cl">Query</span>(<span class="nu">0</span>,   ge=<span class="nu">0</span>),
+    limit: <span class="cl">int</span>        = <span class="cl">Query</span>(<span class="nu">20</span>,  ge=<span class="nu">1</span>, le=<span class="nu">100</span>),
+    q:     <span class="cl">str</span> | <span class="kw">None</span> = <span class="cl">Query</span>(<span class="kw">None</span>, min_length=<span class="nu">2</span>, max_length=<span class="nu">50</span>),
+):
+    <span class="cm"># GET /items?skip=0&limit=20&q=widget</span>
+    <span class="kw">return</span> {<span class="st">"skip"</span>: skip, <span class="st">"limit"</span>: limit, <span class="st">"q"</span>: q}
+
+<span class="cm"># ── Multiple path params + query params together ──────────────────────────────</span>
+<span class="dc">@app.get</span>(<span class="st">"/users/{user_id}/orders/{order_id}"</span>)
+<span class="kw">async def</span> <span class="fn">get_order</span>(
+    user_id:  <span class="cl">int</span>,
+    order_id: <span class="cl">int</span>,
+    include_items: <span class="cl">bool</span> = <span class="kw">False</span>,   <span class="cm"># query param with default</span>
+):
+    <span class="kw">return</span> {<span class="st">"user_id"</span>: user_id, <span class="st">"order_id"</span>: order_id, <span class="st">"items"</span>: include_items}
+
+<span class="cm"># ── List query param — ?tag=a&tag=b&tag=c ─────────────────────────────────────</span>
+<span class="dc">@app.get</span>(<span class="st">"/search"</span>)
+<span class="kw">async def</span> <span class="fn">search</span>(tags: <span class="cl">list</span>[<span class="cl">str</span>] = <span class="cl">Query</span>(default=[])):
+    <span class="kw">return</span> {<span class="st">"tags"</span>: tags}</code></pre></div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 5: REQUEST BODY & PYDANTIC MODELS              -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s5">
+    <span class="font-serif text-[13px] italic text-accent opacity-70">05</span>
+    <div class="flex-1 h-px bg-bdr"></div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h2>Request Body &amp; Pydantic Models</h2>
+        <span class="inline-block font-mono text-[10px] px-2 py-[2px] rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(247,185,85,.1)] text-accent3 border border-[rgba(247,185,85,.2)]">Pydantic v2</span>
+        <p>Any parameter typed as a Pydantic <code>BaseModel</code> subclass is automatically parsed from the JSON request body. Pydantic v2 (used by FastAPI ≥ 0.100) is significantly faster than v1 and uses <code>model_config</code> instead of inner <code>Config</code> classes.</p>
+
+        <h3>BaseModel essentials</h3>
+        <ul>
+          <li>Fields without defaults are <strong>required</strong>. Fields with defaults are optional.</li>
+          <li>Use <code>Field()</code> to add validation, docs metadata, and examples.</li>
+          <li>Models can be <strong>nested</strong> — declare a field with another model type.</li>
+          <li><code>model_config = ConfigDict(from_attributes=True)</code> enables ORM mode (reading from SQLAlchemy objects).</li>
+        </ul>
+
+        <h4>Body() for extra control</h4>
+        <p>Use <code>Body()</code> to embed multiple body parameters, mark one as the sole body, or add metadata. For simple cases, just type-hint with the Pydantic model.</p>
+
+        <div class="bg-[rgba(0,191,166,.06)] border-l-[3px] border-l-accent px-[14px] py-[10px] mt-3 rounded-r-md text-[13.5px]">
+          <div class="font-mono text-[10px] text-accent tracking-[.08em] uppercase mb-[3px]">💡 Schema separation pattern</div>
+          A common pattern: <code>ItemCreate</code> (input, no id), <code>ItemUpdate</code> (all optional), <code>ItemResponse</code> (output with id). Never reuse one model for both input and output — they have different field requirements.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="kw">from</span> pydantic <span class="kw">import</span> <span class="cl">BaseModel</span>, <span class="cl">Field</span>, <span class="cl">EmailStr</span>, <span class="cl">ConfigDict</span>
+<span class="kw">from</span> typing <span class="kw">import</span> <span class="cl">Annotated</span>
+<span class="kw">from</span> fastapi <span class="kw">import</span> <span class="cl">FastAPI</span>, <span class="cl">Body</span>
+
+app = <span class="cl">FastAPI</span>()
+
+<span class="cm"># ── Input schema (no id — DB assigns it) ─────────────────────────────────────</span>
+<span class="kw">class</span> <span class="cl">ItemCreate</span>(<span class="cl">BaseModel</span>):
+    name:        <span class="cl">str</span>            = <span class="cl">Field</span>(..., min_length=<span class="nu">1</span>, max_length=<span class="nu">100</span>, examples=[<span class="st">"Laptop"</span>])
+    description: <span class="cl">str</span> | <span class="kw">None</span>    = <span class="cl">Field</span>(<span class="kw">None</span>, max_length=<span class="nu">500</span>)
+    price:       <span class="cl">float</span>          = <span class="cl">Field</span>(..., gt=<span class="nu">0</span>, description=<span class="st">"Must be greater than 0"</span>)
+    tax:         <span class="cl">float</span>          = <span class="cl">Field</span>(<span class="nu">0.0</span>, ge=<span class="nu">0</span>)
+    tags:        <span class="cl">list</span>[<span class="cl">str</span>]      = []
+
+<span class="cm"># ── Partial update schema — all fields optional ───────────────────────────────</span>
+<span class="kw">class</span> <span class="cl">ItemUpdate</span>(<span class="cl">BaseModel</span>):
+    name:        <span class="cl">str</span> | <span class="kw">None</span>    = <span class="kw">None</span>
+    description: <span class="cl">str</span> | <span class="kw">None</span>    = <span class="kw">None</span>
+    price:       <span class="cl">float</span> | <span class="kw">None</span>  = <span class="kw">None</span>
+
+<span class="cm"># ── Response schema — includes DB-generated id ────────────────────────────────</span>
+<span class="kw">class</span> <span class="cl">ItemResponse</span>(<span class="cl">BaseModel</span>):
+    model_config = <span class="cl">ConfigDict</span>(from_attributes=<span class="kw">True</span>)   <span class="cm"># ORM mode</span>
+    id:          <span class="cl">int</span>
+    name:        <span class="cl">str</span>
+    price:       <span class="cl">float</span>
+    price_with_tax: <span class="cl">float</span> | <span class="kw">None</span> = <span class="kw">None</span>
+
+<span class="cm"># ── Nested model ──────────────────────────────────────────────────────────────</span>
+<span class="kw">class</span> <span class="cl">Address</span>(<span class="cl">BaseModel</span>):
+    street: <span class="cl">str</span>
+    city:   <span class="cl">str</span>
+    zip:    <span class="cl">str</span>
+
+<span class="kw">class</span> <span class="cl">UserCreate</span>(<span class="cl">BaseModel</span>):
+    email:   <span class="cl">EmailStr</span>
+    address: <span class="cl">Address</span>    <span class="cm"># nested — FastAPI validates recursively</span>
+
+<span class="cm"># ── Routes ────────────────────────────────────────────────────────────────────</span>
+<span class="dc">@app.post</span>(<span class="st">"/items"</span>, response_model=<span class="cl">ItemResponse</span>, status_code=<span class="nu">201</span>)
+<span class="kw">async def</span> <span class="fn">create_item</span>(item: <span class="cl">ItemCreate</span>):
+    price_with_tax = item.price + item.price * item.tax
+    <span class="kw">return</span> {<span class="st">"id"</span>: <span class="nu">1</span>, <span class="st">"name"</span>: item.name, <span class="st">"price"</span>: item.price, <span class="st">"price_with_tax"</span>: price_with_tax}
+
+<span class="dc">@app.patch</span>(<span class="st">"/items/{item_id}"</span>, response_model=<span class="cl">ItemResponse</span>)
+<span class="kw">async def</span> <span class="fn">update_item</span>(item_id: <span class="cl">int</span>, item: <span class="cl">ItemUpdate</span>):
+    <span class="cm"># item.model_dump(exclude_unset=True) — only fields the client sent</span>
+    update_data = item.<span class="fn">model_dump</span>(exclude_unset=<span class="kw">True</span>)
+    <span class="kw">return</span> {<span class="st">"id"</span>: item_id, <span class="st">"name"</span>: <span class="st">"Updated"</span>, <span class="st">"price"</span>: <span class="nu">9.99</span>, **update_data}</code></pre></div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 6: RESPONSE MODELS & STATUS CODES              -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s6">
+    <span class="font-serif text-[13px] italic text-accent opacity-70">06</span>
+    <div class="flex-1 h-px bg-bdr"></div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h2>Response Models &amp; Status Codes</h2>
+        <p><code>response_model</code> in the decorator tells FastAPI what shape to return. Even if your function returns a dict with extra keys, the response model <strong>filters them out</strong>. This prevents accidentally leaking internal fields (e.g. password hashes).</p>
+
+        <h3>Controlling serialisation</h3>
+        <ul>
+          <li><code>response_model_exclude_unset=True</code> — omit fields not explicitly set</li>
+          <li><code>response_model_exclude_none=True</code> — omit <code>None</code> fields from response</li>
+          <li><code>response_model_include={"id", "name"}</code> — whitelist fields</li>
+          <li><code>response_model_exclude={"internal_flag"}</code> — blacklist fields</li>
+        </ul>
+
+        <h3>JSONResponse and custom responses</h3>
+        <p>Return a <code>JSONResponse</code> directly when you need full control over headers, cookies, or status code at runtime. Use <code>Response</code> subclasses for non-JSON formats.</p>
+
+        <h4>Common status codes — use <code>status</code> module, not raw ints</h4>
+        <div class="quickref grid grid-cols-2 gap-2 mt-3">
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">200</span><span class="qr-val text-txdim text-[12px]">HTTP_200_OK — default GET/PUT/PATCH</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">201</span><span class="qr-val text-txdim text-[12px]">HTTP_201_CREATED — POST creates resource</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">204</span><span class="qr-val text-txdim text-[12px]">HTTP_204_NO_CONTENT — DELETE, no body</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">400</span><span class="qr-val text-txdim text-[12px]">HTTP_400_BAD_REQUEST — malformed input</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">401</span><span class="qr-val text-txdim text-[12px]">HTTP_401_UNAUTHORIZED — not authenticated</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">403</span><span class="qr-val text-txdim text-[12px]">HTTP_403_FORBIDDEN — authenticated, no permission</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">404</span><span class="qr-val text-txdim text-[12px]">HTTP_404_NOT_FOUND — resource missing</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">422</span><span class="qr-val text-txdim text-[12px]">HTTP_422_UNPROCESSABLE_ENTITY — validation error (auto)</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="kw">from</span> fastapi <span class="kw">import</span> <span class="cl">FastAPI</span>
+<span class="kw">from</span> fastapi.responses <span class="kw">import</span> <span class="cl">JSONResponse</span>, <span class="cl">PlainTextResponse</span>, <span class="cl">RedirectResponse</span>
+<span class="kw">from</span> fastapi <span class="kw">import</span> status
+<span class="kw">from</span> pydantic <span class="kw">import</span> <span class="cl">BaseModel</span>
+
+app = <span class="cl">FastAPI</span>()
+
+<span class="kw">class</span> <span class="cl">UserPublic</span>(<span class="cl">BaseModel</span>):
+    id:    <span class="cl">int</span>
+    email: <span class="cl">str</span>
+
+<span class="kw">class</span> <span class="cl">UserInternal</span>(<span class="cl">UserPublic</span>):
+    hashed_password: <span class="cl">str</span>   <span class="cm"># filtered out by response_model</span>
+
+<span class="cm"># ── response_model filters out hashed_password automatically ──────────────────</span>
+<span class="dc">@app.get</span>(<span class="st">"/users/{id}"</span>, response_model=<span class="cl">UserPublic</span>)
+<span class="kw">async def</span> <span class="fn">get_user</span>(id: <span class="cl">int</span>):
+    <span class="kw">return</span> <span class="cl">UserInternal</span>(id=id, email=<span class="st">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="6c191f091e2c09140d011c0009420f0301">[email&#160;protected]</a>"</span>, hashed_password=<span class="st">"$2b$..."</span>)
+
+<span class="cm"># ── Runtime status code — determined after the function runs ──────────────────</span>
+<span class="dc">@app.get</span>(<span class="st">"/items/{id}"</span>)
+<span class="kw">async def</span> <span class="fn">get_item</span>(id: <span class="cl">int</span>):
+    item = <span class="kw">None</span>  <span class="cm"># simulate DB miss</span>
+    <span class="kw">if</span> <span class="kw">not</span> item:
+        <span class="kw">return</span> <span class="cl">JSONResponse</span>(status_code=status.<span class="at">HTTP_404_NOT_FOUND</span>,
+                             content={<span class="st">"detail"</span>: <span class="st">"Item not found"</span>})
+    <span class="kw">return</span> item
+
+<span class="cm"># ── Exclude None fields from response ─────────────────────────────────────────</span>
+<span class="kw">class</span> <span class="cl">Item</span>(<span class="cl">BaseModel</span>):
+    id:          <span class="cl">int</span>
+    name:        <span class="cl">str</span>
+    description: <span class="cl">str</span> | <span class="kw">None</span> = <span class="kw">None</span>
+
+<span class="dc">@app.get</span>(<span class="st">"/items-clean/{id}"</span>, response_model=<span class="cl">Item</span>, response_model_exclude_none=<span class="kw">True</span>)
+<span class="kw">async def</span> <span class="fn">get_item_clean</span>(id: <span class="cl">int</span>):
+    <span class="kw">return</span> <span class="cl">Item</span>(id=id, name=<span class="st">"Widget"</span>)  <span class="cm"># description omitted from JSON response</span>
+
+<span class="cm"># ── Non-JSON responses ────────────────────────────────────────────────────────</span>
+<span class="dc">@app.get</span>(<span class="st">"/health"</span>, response_class=<span class="cl">PlainTextResponse</span>, include_in_schema=<span class="kw">False</span>)
+<span class="kw">async def</span> <span class="fn">health</span>():
+    <span class="kw">return</span> <span class="st">"OK"</span>
+
+<span class="dc">@app.get</span>(<span class="st">"/old-url"</span>)
+<span class="kw">async def</span> <span class="fn">redirect</span>():
+    <span class="kw">return</span> <span class="cl">RedirectResponse</span>(url=<span class="st">"/new-url"</span>, status_code=<span class="nu">301</span>)</code></pre></div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 7: DATA VALIDATION & FIELD TYPES               -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s7">
+    <span class="font-serif text-[13px] italic text-accent opacity-70">07</span>
+    <div class="flex-1 h-px bg-bdr"></div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h2>Data Validation &amp; Field Types</h2>
+        <p>Pydantic v2 validates data at parse time and raises structured errors. FastAPI catches these and returns a <code>422 Unprocessable Entity</code> with full details — which field failed, what value was received, what was expected.</p>
+
+        <h3>Common Pydantic field types</h3>
+        <table class="param-table w-full border-collapse my-3 text-[13px]">
+          <thead class="[&_th]:bg-[rgba(0,191,166,.1)] [&_th]:text-txdim [&_th]:font-mono [&_th]:text-[10px] [&_th]:tracking-[.08em] [&_th]:uppercase [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:border-b [&_th]:border-bdr2"><tr><th>Type</th><th>Import</th><th>Validates</th></tr></thead>
+          <tbody>
+            <tr><td>EmailStr</td><td>pydantic</td><td>Valid email format</td></tr>
+            <tr><td>HttpUrl</td><td>pydantic</td><td>Valid HTTP/HTTPS URL</td></tr>
+            <tr><td>AnyUrl</td><td>pydantic</td><td>Any valid URL</td></tr>
+            <tr><td>UUID</td><td>uuid</td><td>UUID string or object</td></tr>
+            <tr><td>datetime</td><td>datetime</td><td>ISO 8601 datetime string</td></tr>
+            <tr><td>Enum</td><td>enum</td><td>Value must be a valid enum member</td></tr>
+            <tr><td>Literal["a","b"]</td><td>typing</td><td>Exact string values only</td></tr>
+            <tr><td>constr(pattern=...)</td><td>pydantic</td><td>String matching regex</td></tr>
+            <tr><td>confloat(ge=0, le=1)</td><td>pydantic</td><td>Float in range [0,1]</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Custom validators (Pydantic v2)</h3>
+        <p>Use <code>@field_validator</code> for per-field logic and <code>@model_validator</code> for cross-field validation. Replace Pydantic v1's <code>@validator</code>.</p>
+
+        <div class="bg-[rgba(247,185,85,.06)] border-l-[3px] border-l-accent3 px-[14px] py-[10px] mt-3 rounded-r-md text-[13.5px]">
+          <div class="font-mono text-[10px] text-accent3 tracking-[.08em] uppercase mb-[3px]">⚠ Pydantic v1 → v2 migration</div>
+          If migrating from FastAPI &lt; 0.100: <code>@validator</code> → <code>@field_validator</code>, <code>class Config</code> → <code>model_config = ConfigDict()</code>, <code>.dict()</code> → <code>.model_dump()</code>, <code>.json()</code> → <code>.model_dump_json()</code>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="kw">from</span> pydantic <span class="kw">import</span> <span class="cl">BaseModel</span>, <span class="cl">Field</span>, <span class="cl">EmailStr</span>, <span class="cl">HttpUrl</span>, field_validator, model_validator
+<span class="kw">from</span> enum <span class="kw">import</span> <span class="cl">Enum</span>
+<span class="kw">from</span> datetime <span class="kw">import</span> datetime
+<span class="kw">from</span> uuid <span class="kw">import</span> <span class="cl">UUID</span>
+<span class="kw">from</span> typing <span class="kw">import</span> <span class="cl">Literal</span>
+
+<span class="cm"># ── Enum field ─────────────────────────────────────────────────────────────────</span>
+<span class="kw">class</span> <span class="cl">Status</span>(<span class="cl">str</span>, <span class="cl">Enum</span>):
+    active   = <span class="st">"active"</span>
+    inactive = <span class="st">"inactive"</span>
+    pending  = <span class="st">"pending"</span>
+
+<span class="cm"># ── Rich validation model ──────────────────────────────────────────────────────</span>
+<span class="kw">class</span> <span class="cl">UserCreate</span>(<span class="cl">BaseModel</span>):
+    id:          <span class="cl">UUID</span>                          <span class="cm"># auto-parsed from string</span>
+    email:       <span class="cl">EmailStr</span>
+    website:     <span class="cl">HttpUrl</span> | <span class="kw">None</span>   = <span class="kw">None</span>
+    status:      <span class="cl">Status</span>            = <span class="cl">Status</span>.active
+    role:        <span class="cl">Literal</span>[<span class="st">"admin"</span>, <span class="st">"user"</span>, <span class="st">"guest"</span>] = <span class="st">"user"</span>
+    created_at:  datetime           = <span class="cl">Field</span>(default_factory=datetime.<span class="fn">utcnow</span>)
+    age:         <span class="cl">int</span>               = <span class="cl">Field</span>(..., ge=<span class="nu">0</span>, le=<span class="nu">150</span>)
+    username:    <span class="cl">str</span>               = <span class="cl">Field</span>(..., pattern=<span class="st">r"^[a-zA-Z0-9_]{3,30}$"</span>)
+    password:    <span class="cl">str</span>               = <span class="cl">Field</span>(..., min_length=<span class="nu">8</span>)
+    confirm_pw:  <span class="cl">str</span>
+
+    <span class="cm"># ── Field validator — runs on a single field ──────────────────────────────</span>
+    <span class="dc">@field_validator</span>(<span class="st">"username"</span>)
+    <span class="dc">@classmethod</span>
+    <span class="kw">def</span> <span class="fn">username_lowercase</span>(cls, v: <span class="cl">str</span>) -> <span class="cl">str</span>:
+        <span class="kw">return</span> v.<span class="fn">lower</span>()
+
+    <span class="cm"># ── Model validator — cross-field checks ──────────────────────────────────</span>
+    <span class="dc">@model_validator</span>(mode=<span class="st">"after"</span>)
+    <span class="kw">def</span> <span class="fn">passwords_match</span>(self) -> <span class="st">"UserCreate"</span>:
+        <span class="kw">if</span> self.password != self.confirm_pw:
+            <span class="kw">raise</span> <span class="cl">ValueError</span>(<span class="st">"Passwords do not match"</span>)
+        <span class="kw">return</span> self</code></pre></div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 8: DEPENDENCY INJECTION                        -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s8">
+    <span class="font-serif text-[13px] italic text-accent opacity-70">08</span>
+    <div class="flex-1 h-px bg-bdr"></div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h2>Dependency Injection</h2>
+        <p>FastAPI's DI system is one of its most powerful features. Dependencies are callables (functions or classes) declared with <code>Depends()</code>. They can have their own dependencies, forming a tree. FastAPI resolves and caches them per-request automatically.</p>
+
+        <h3>Why use dependencies?</h3>
+        <ul>
+          <li>Share logic: authentication checks, DB sessions, pagination params</li>
+          <li>Testable: swap real deps with mocks in tests via <code>app.dependency_overrides</code></li>
+          <li>Clean routes: route functions stay thin, logic lives in reusable deps</li>
+        </ul>
+
+        <h3>Dependency types</h3>
+        <table class="param-table w-full border-collapse my-3 text-[13px]">
+          <thead class="[&_th]:bg-[rgba(0,191,166,.1)] [&_th]:text-txdim [&_th]:font-mono [&_th]:text-[10px] [&_th]:tracking-[.08em] [&_th]:uppercase [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:border-b [&_th]:border-bdr2"><tr><th>Type</th><th>When to use</th></tr></thead>
+          <tbody>
+            <tr><td>Regular function</td><td>Stateless logic — parse pagination, common headers</td></tr>
+            <tr><td>Class with <code>__init__</code></td><td>Configurable deps — parameterisable permission checker</td></tr>
+            <tr><td><code>async</code> generator (yield)</td><td>Resource management — DB session open/close, lock acquire/release</td></tr>
+            <tr><td>Route-level <code>dependencies=[]</code></td><td>Run deps for side-effects only (auth, rate limiting) without injecting return value</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="kw">from</span> fastapi <span class="kw">import</span> <span class="cl">FastAPI</span>, <span class="cl">Depends</span>, <span class="cl">HTTPException</span>, status
+<span class="kw">from</span> typing <span class="kw">import</span> <span class="cl">Annotated</span>
+
+app = <span class="cl">FastAPI</span>()
+
+<span class="cm"># ── Simple function dependency ─────────────────────────────────────────────────</span>
+<span class="kw">def</span> <span class="fn">pagination</span>(skip: <span class="cl">int</span> = <span class="nu">0</span>, limit: <span class="cl">int</span> = <span class="nu">20</span>) -> dict:
+    <span class="kw">return</span> {<span class="st">"skip"</span>: skip, <span class="st">"limit"</span>: limit}
+
+<span class="dc">@app.get</span>(<span class="st">"/items"</span>)
+<span class="kw">async def</span> <span class="fn">list_items</span>(page: <span class="cl">Annotated</span>[dict, <span class="cl">Depends</span>(pagination)]):
+    <span class="kw">return</span> page
+
+<span class="cm"># ── Class-based dep — configurable ────────────────────────────────────────────</span>
+<span class="kw">class</span> <span class="cl">RoleChecker</span>:
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, allowed_roles: <span class="cl">list</span>[<span class="cl">str</span>]):
+        self.allowed_roles = allowed_roles
+
+    <span class="kw">def</span> <span class="fn">__call__</span>(self, current_user: dict = {<span class="st">"role"</span>: <span class="st">"user"</span>}):
+        <span class="kw">if</span> current_user[<span class="st">"role"</span>] <span class="kw">not in</span> self.allowed_roles:
+            <span class="kw">raise</span> <span class="cl">HTTPException</span>(status_code=<span class="nu">403</span>, detail=<span class="st">"Forbidden"</span>)
+
+allow_admin = <span class="cl">RoleChecker</span>([<span class="st">"admin"</span>])
+
+<span class="dc">@app.delete</span>(<span class="st">"/users/{id}"</span>, dependencies=[<span class="cl">Depends</span>(allow_admin)])
+<span class="kw">async def</span> <span class="fn">delete_user</span>(id: <span class="cl">int</span>):
+    <span class="kw">return</span> {<span class="st">"deleted"</span>: id}
+
+<span class="cm"># ── Generator dependency — DB session (yield pattern) ─────────────────────────</span>
+<span class="kw">from</span> sqlalchemy.orm <span class="kw">import</span> <span class="cl">Session</span>
+
+<span class="kw">def</span> <span class="fn">get_db</span>() -> <span class="cl">Session</span>:
+    db = SessionLocal()  <span class="cm"># create session (see Section 12)</span>
+    <span class="kw">try</span>:
+        <span class="kw">yield</span> db          <span class="cm"># inject into route</span>
+    <span class="kw">finally</span>:
+        db.<span class="fn">close</span>()       <span class="cm"># always close, even on exception</span>
+
+<span class="cl">DB</span> = <span class="cl">Annotated</span>[<span class="cl">Session</span>, <span class="cl">Depends</span>(get_db)]  <span class="cm"># reusable type alias</span>
+
+<span class="dc">@app.get</span>(<span class="st">"/users"</span>)
+<span class="kw">async def</span> <span class="fn">get_users</span>(db: <span class="cl">DB</span>):
+    <span class="kw">return</span> db.<span class="fn">query</span>(<span class="cl">User</span>).<span class="fn">all</span>()
+
+<span class="cm"># ── Override in tests ─────────────────────────────────────────────────────────</span>
+<span class="kw">def</span> <span class="fn">override_get_db</span>():
+    <span class="kw">yield</span> test_db_session
+
+app.dependency_overrides[get_db] = override_get_db  <span class="cm"># swap for tests</span></code></pre></div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 9: ROUTERS & APP STRUCTURE                     -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s9">
+    <span class="font-serif text-[13px] italic text-accent opacity-70">09</span>
+    <div class="flex-1 h-px bg-bdr"></div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h2>Routers &amp; App Structure</h2>
+        <p><code>APIRouter</code> is FastAPI's equivalent of Flask Blueprints or Express Routers. Each domain (users, items, orders) gets its own router file. The main app includes them with a prefix and shared metadata.</p>
+
+        <h4>APIRouter() parameters</h4>
+        <table class="param-table w-full border-collapse my-3 text-[13px]">
+          <thead class="[&_th]:bg-[rgba(0,191,166,.1)] [&_th]:text-txdim [&_th]:font-mono [&_th]:text-[10px] [&_th]:tracking-[.08em] [&_th]:uppercase [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:border-b [&_th]:border-bdr2"><tr><th>Parameter</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>prefix</td><td>URL prefix added to all routes in this router. e.g. <code>"/users"</code></td></tr>
+            <tr><td>tags</td><td>Swagger UI group label for all routes. e.g. <code>["users"]</code></td></tr>
+            <tr><td>dependencies</td><td>Dependencies applied to every route in this router (e.g. auth check).</td></tr>
+            <tr><td>responses</td><td>Common response schemas (e.g. <code>{404: {"description": "Not found"}}</code>).</td></tr>
+          </tbody>
+        </table>
+
+        <div class="bg-[rgba(0,191,166,.06)] border-l-[3px] border-l-accent px-[14px] py-[10px] mt-3 rounded-r-md text-[13.5px]">
+          <div class="font-mono text-[10px] text-accent tracking-[.08em] uppercase mb-[3px]">💡 Pattern</div>
+          Declare your router in each domain file. Import and include all routers in <code>main.py</code>. Keep <code>main.py</code> thin — only app creation, middleware, and includes.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="cm"># ── app/routers/users.py ──────────────────────────────────────────────────────</span>
+<span class="kw">from</span> fastapi <span class="kw">import</span> <span class="cl">APIRouter</span>, <span class="cl">Depends</span>, <span class="cl">HTTPException</span>
+
+router = <span class="cl">APIRouter</span>(
+    prefix=<span class="st">"/users"</span>,
+    tags=[<span class="st">"users"</span>],
+    responses={<span class="nu">404</span>: {<span class="st">"description"</span>: <span class="st">"User not found"</span>}},
+)
+
+<span class="dc">@router.get</span>(<span class="st">"/"</span>)                          <span class="cm"># resolves to GET /users/</span>
+<span class="kw">async def</span> <span class="fn">list_users</span>(): ...
+
+<span class="dc">@router.get</span>(<span class="st">"/{user_id}"</span>)               <span class="cm"># resolves to GET /users/{user_id}</span>
+<span class="kw">async def</span> <span class="fn">get_user</span>(user_id: <span class="cl">int</span>): ...
+
+<span class="dc">@router.post</span>(<span class="st">"/"</span>, status_code=<span class="nu">201</span>)      <span class="cm"># resolves to POST /users/</span>
+<span class="kw">async def</span> <span class="fn">create_user</span>(): ...
+
+
+<span class="cm"># ── app/routers/items.py ──────────────────────────────────────────────────────</span>
+items_router = <span class="cl">APIRouter</span>(prefix=<span class="st">"/items"</span>, tags=[<span class="st">"items"</span>])
+
+<span class="dc">@items_router.get</span>(<span class="st">"/"</span>)
+<span class="kw">async def</span> <span class="fn">list_items</span>(): ...
+
+
+<span class="cm"># ── app/main.py — include all routers ─────────────────────────────────────────</span>
+<span class="kw">from</span> fastapi <span class="kw">import</span> <span class="cl">FastAPI</span>
+<span class="kw">from</span> app.routers <span class="kw">import</span> users, items
+<span class="kw">from</span> app.dependencies <span class="kw">import</span> verify_api_key   <span class="cm"># shared auth dep</span>
+
+app = <span class="cl">FastAPI</span>()
+
+<span class="cm"># Apply auth to all /admin routes; open access for /users</span>
+app.<span class="fn">include_router</span>(users.router)
+app.<span class="fn">include_router</span>(items.items_router)
+app.<span class="fn">include_router</span>(
+    admin_router,
+    prefix=<span class="st">"/admin"</span>,
+    dependencies=[<span class="cl">Depends</span>(verify_api_key)],
+)</code></pre></div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 10: MIDDLEWARE                                  -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s10">
+    <span class="font-serif text-[13px] italic text-accent opacity-70">10</span>
+    <div class="flex-1 h-px bg-bdr"></div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h2>Middleware</h2>
+        <p>Middleware intercepts every request before it reaches a route and every response before it leaves. Use it for cross-cutting concerns: CORS, request logging, timing, compression, rate limiting.</p>
+
+        <h3>Built-in middleware</h3>
+        <ul>
+          <li><code>CORSMiddleware</code> — Cross-Origin Resource Sharing headers</li>
+          <li><code>GZipMiddleware</code> — Compress responses above a size threshold</li>
+          <li><code>HTTPSRedirectMiddleware</code> — Force HTTPS</li>
+          <li><code>TrustedHostMiddleware</code> — Reject requests with wrong <code>Host</code> header</li>
+        </ul>
+
+        <h4>CORS configuration</h4>
+        <table class="param-table w-full border-collapse my-3 text-[13px]">
+          <thead class="[&_th]:bg-[rgba(0,191,166,.1)] [&_th]:text-txdim [&_th]:font-mono [&_th]:text-[10px] [&_th]:tracking-[.08em] [&_th]:uppercase [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:border-b [&_th]:border-bdr2"><tr><th>Parameter</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>allow_origins</td><td>List of allowed origins. Use <code>["*"]</code> for public APIs only.</td></tr>
+            <tr><td>allow_credentials</td><td>Set <code>True</code> to allow cookies/auth headers. Cannot combine with <code>allow_origins=["*"]</code>.</td></tr>
+            <tr><td>allow_methods</td><td>HTTP methods allowed. <span class="default">Default: ["GET"]</span></td></tr>
+            <tr><td>allow_headers</td><td>Headers allowed in preflight. <code>["*"]</code> to allow all.</td></tr>
+            <tr><td>max_age</td><td>Seconds to cache preflight response. <span class="default">Default: 600</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="kw">import</span> time
+<span class="kw">from</span> fastapi <span class="kw">import</span> <span class="cl">FastAPI</span>, <span class="cl">Request</span>
+<span class="kw">from</span> fastapi.middleware.cors <span class="kw">import</span> <span class="cl">CORSMiddleware</span>
+<span class="kw">from</span> fastapi.middleware.gzip <span class="kw">import</span> <span class="cl">GZipMiddleware</span>
+<span class="kw">from</span> starlette.middleware.base <span class="kw">import</span> <span class="cl">BaseHTTPMiddleware</span>
+
+app = <span class="cl">FastAPI</span>()
+
+<span class="cm"># ── CORS — configure before other middleware ───────────────────────────────────</span>
+app.<span class="fn">add_middleware</span>(
+    <span class="cl">CORSMiddleware</span>,
+    allow_origins=[<span class="st">"https://myapp.com"</span>, <span class="st">"http://localhost:3000"</span>],
+    allow_credentials=<span class="kw">True</span>,
+    allow_methods=[<span class="st">"*"</span>],
+    allow_headers=[<span class="st">"*"</span>],
+)
+
+<span class="cm"># ── GZip compression for large responses ──────────────────────────────────────</span>
+app.<span class="fn">add_middleware</span>(<span class="cl">GZipMiddleware</span>, minimum_size=<span class="nu">1000</span>)
+
+<span class="cm"># ── Custom middleware — request timing + correlation ID ───────────────────────</span>
+<span class="kw">class</span> <span class="cl">TimingMiddleware</span>(<span class="cl">BaseHTTPMiddleware</span>):
+    <span class="kw">async def</span> <span class="fn">dispatch</span>(self, request: <span class="cl">Request</span>, call_next):
+        start = time.<span class="fn">perf_counter</span>()
+        response = <span class="kw">await</span> <span class="fn">call_next</span>(request)
+        duration = time.<span class="fn">perf_counter</span>() - start
+        response.headers[<span class="st">"X-Process-Time"</span>] = <span class="st">f"</span><span class="at">{duration:.4f}</span><span class="st">s"</span>
+        <span class="kw">return</span> response
+
+app.<span class="fn">add_middleware</span>(<span class="cl">TimingMiddleware</span>)
+
+<span class="cm"># ── Middleware via decorator (Starlette style) ────────────────────────────────</span>
+<span class="dc">@app.middleware</span>(<span class="st">"http"</span>)
+<span class="kw">async def</span> <span class="fn">log_requests</span>(request: <span class="cl">Request</span>, call_next):
+    <span class="fn">print</span>(<span class="st">f"→ </span><span class="at">{request.method}</span><span class="st"> </span><span class="at">{request.url}</span><span class="st">"</span>)
+    response = <span class="kw">await</span> <span class="fn">call_next</span>(request)
+    <span class="fn">print</span>(<span class="st">f"← </span><span class="at">{response.status_code}</span><span class="st">"</span>)
+    <span class="kw">return</span> response</code></pre></div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 11: AUTHENTICATION & SECURITY                  -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s11">
+    <span class="font-serif text-[13px] italic text-accent opacity-70">11</span>
+    <div class="flex-1 h-px bg-bdr"></div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h2>Authentication &amp; Security</h2>
+        <p>FastAPI provides security scheme classes in <code>fastapi.security</code> that integrate with the OpenAPI docs — the Swagger UI shows an <strong>Authorize</strong> button automatically. The most common pattern is JWT Bearer tokens via <code>OAuth2PasswordBearer</code>.</p>
+
+        <h3>Security schemes</h3>
+        <div class="quickref grid grid-cols-2 gap-2 mt-3">
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">OAuth2PasswordBearer</span><span class="qr-val text-txdim text-[12px]">Bearer JWT token in Authorization header</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">OAuth2PasswordRequestForm</span><span class="qr-val text-txdim text-[12px]">username+password form body (login endpoint)</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">HTTPBasic</span><span class="qr-val text-txdim text-[12px]">Basic auth (username:password base64)</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">APIKeyHeader</span><span class="qr-val text-txdim text-[12px]">API key in a request header</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">APIKeyQuery</span><span class="qr-val text-txdim text-[12px]">API key as query parameter</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">APIKeyCookie</span><span class="qr-val text-txdim text-[12px]">API key in cookie</span></div>
+        </div>
+
+        <h3>JWT token flow</h3>
+        <ul>
+          <li>Client sends <code>POST /token</code> with credentials → server returns <code>access_token</code></li>
+          <li>Client sends <code>Authorization: Bearer &lt;token&gt;</code> on subsequent requests</li>
+          <li>Dependency decodes token, fetches user, raises <code>401</code> if invalid/expired</li>
+        </ul>
+
+        <div class="bg-[rgba(247,185,85,.06)] border-l-[3px] border-l-accent3 px-[14px] py-[10px] mt-3 rounded-r-md text-[13.5px]">
+          <div class="font-mono text-[10px] text-accent3 tracking-[.08em] uppercase mb-[3px]">⚠ Never store passwords in plaintext</div>
+          Use <code>passlib</code> with bcrypt. Never use MD5 or SHA1 for passwords. Always use <code>secrets.compare_digest()</code> for constant-time string comparison to prevent timing attacks.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="kw">from</span> datetime <span class="kw">import</span> datetime, timedelta
+<span class="kw">from</span> fastapi <span class="kw">import</span> <span class="cl">FastAPI</span>, <span class="cl">Depends</span>, <span class="cl">HTTPException</span>, status
+<span class="kw">from</span> fastapi.security <span class="kw">import</span> <span class="cl">OAuth2PasswordBearer</span>, <span class="cl">OAuth2PasswordRequestForm</span>
+<span class="kw">from</span> jose <span class="kw">import</span> JWTError, jwt
+<span class="kw">from</span> passlib.context <span class="kw">import</span> <span class="cl">CryptContext</span>
+<span class="kw">from</span> pydantic <span class="kw">import</span> <span class="cl">BaseModel</span>
+
+<span class="cm"># ── Config ────────────────────────────────────────────────────────────────────</span>
+SECRET_KEY = <span class="st">"change-this-to-a-long-random-secret-in-production"</span>
+ALGORITHM  = <span class="st">"HS256"</span>
+ACCESS_TOKEN_EXPIRE_MINUTES = <span class="nu">30</span>
+
+pwd_ctx = <span class="cl">CryptContext</span>(schemes=[<span class="st">"bcrypt"</span>], deprecated=<span class="st">"auto"</span>)
+oauth2_scheme = <span class="cl">OAuth2PasswordBearer</span>(tokenUrl=<span class="st">"token"</span>)
+
+app = <span class="cl">FastAPI</span>()
+
+<span class="cm"># ── Token schema ──────────────────────────────────────────────────────────────</span>
+<span class="kw">class</span> <span class="cl">Token</span>(<span class="cl">BaseModel</span>):
+    access_token: <span class="cl">str</span>
+    token_type:   <span class="cl">str</span>
+
+<span class="cm"># ── Helpers ───────────────────────────────────────────────────────────────────</span>
+<span class="kw">def</span> <span class="fn">verify_password</span>(plain: <span class="cl">str</span>, hashed: <span class="cl">str</span>) -> <span class="cl">bool</span>:
+    <span class="kw">return</span> pwd_ctx.<span class="fn">verify</span>(plain, hashed)
+
+<span class="kw">def</span> <span class="fn">create_access_token</span>(data: dict, expires_delta: timedelta | <span class="kw">None</span> = <span class="kw">None</span>) -> <span class="cl">str</span>:
+    payload = data.copy()
+    expire = datetime.<span class="fn">utcnow</span>() + (expires_delta <span class="kw">or</span> timedelta(minutes=<span class="nu">15</span>))
+    payload.<span class="fn">update</span>({<span class="st">"exp"</span>: expire})
+    <span class="kw">return</span> jwt.<span class="fn">encode</span>(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+<span class="cm"># ── Login endpoint — returns JWT ──────────────────────────────────────────────</span>
+<span class="dc">@app.post</span>(<span class="st">"/token"</span>, response_model=<span class="cl">Token</span>)
+<span class="kw">async def</span> <span class="fn">login</span>(form: <span class="cl">OAuth2PasswordRequestForm</span> = <span class="cl">Depends</span>()):
+    user = <span class="fn">fake_authenticate</span>(form.username, form.password)  <span class="cm"># your DB lookup</span>
+    <span class="kw">if not</span> user:
+        <span class="kw">raise</span> <span class="cl">HTTPException</span>(status_code=<span class="nu">401</span>, detail=<span class="st">"Incorrect credentials"</span>,
+                            headers={<span class="st">"WWW-Authenticate"</span>: <span class="st">"Bearer"</span>})
+    token = <span class="fn">create_access_token</span>({<span class="st">"sub"</span>: user.email},
+                                 timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    <span class="kw">return</span> {<span class="st">"access_token"</span>: token, <span class="st">"token_type"</span>: <span class="st">"bearer"</span>}
+
+<span class="cm"># ── Reusable auth dependency ───────────────────────────────────────────────────</span>
+<span class="kw">async def</span> <span class="fn">get_current_user</span>(token: <span class="cl">str</span> = <span class="cl">Depends</span>(oauth2_scheme)):
+    credentials_exc = <span class="cl">HTTPException</span>(
+        status_code=status.<span class="at">HTTP_401_UNAUTHORIZED</span>,
+        detail=<span class="st">"Could not validate credentials"</span>,
+        headers={<span class="st">"WWW-Authenticate"</span>: <span class="st">"Bearer"</span>},
+    )
+    <span class="kw">try</span>:
+        payload = jwt.<span class="fn">decode</span>(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: <span class="cl">str</span> = payload.<span class="fn">get</span>(<span class="st">"sub"</span>)
+        <span class="kw">if</span> email <span class="kw">is None</span>: <span class="kw">raise</span> credentials_exc
+    <span class="kw">except</span> JWTError:
+        <span class="kw">raise</span> credentials_exc
+    <span class="kw">return</span> <span class="fn">get_user_from_db</span>(email)   <span class="cm"># your DB lookup</span>
+
+<span class="dc">@app.get</span>(<span class="st">"/me"</span>)
+<span class="kw">async def</span> <span class="fn">read_me</span>(current_user = <span class="cl">Depends</span>(get_current_user)):
+    <span class="kw">return</span> current_user</code></pre></div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 12: DATABASE INTEGRATION (SQLALCHEMY)          -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s12">
+    <span class="font-serif text-[13px] italic text-accent opacity-70">12</span>
+    <div class="flex-1 h-px bg-bdr"></div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h2>Database Integration (SQLAlchemy)</h2>
+        <p>FastAPI has no built-in ORM — you choose. SQLAlchemy 2.0+ with its new-style <code>mapped_column</code> API is the most common choice. Each request gets its own DB session, managed by a generator dependency (see Section 8).</p>
+
+        <h3>Setup checklist</h3>
+        <ul>
+          <li><strong>Engine</strong> — single instance, created once at startup</li>
+          <li><strong>SessionLocal</strong> — factory that creates per-request sessions</li>
+          <li><strong>Base</strong> — all ORM models extend this</li>
+          <li><strong>get_db()</strong> — yield dependency that opens/closes sessions</li>
+        </ul>
+
+        <h4>Database URL formats</h4>
+        <div class="quickref grid grid-cols-2 gap-2 mt-3">
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">SQLite</span><span class="qr-val text-txdim text-[12px]">sqlite:///./app.db</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">PostgreSQL</span><span class="qr-val text-txdim text-[12px]">postgresql+psycopg2://user:pw@host/db</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">MySQL</span><span class="qr-val text-txdim text-[12px]">mysql+pymysql://user:pw@host/db</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">Async Postgres</span><span class="qr-val text-txdim text-[12px]">postgresql+asyncpg://user:pw@host/db</span></div>
+        </div>
+
+        <div class="bg-[rgba(247,185,85,.06)] border-l-[3px] border-l-accent3 px-[14px] py-[10px] mt-3 rounded-r-md text-[13.5px]">
+          <div class="font-mono text-[10px] text-accent3 tracking-[.08em] uppercase mb-[3px]">⚠ SQLite + async</div>
+          SQLite's default driver is synchronous. For async FastAPI with SQLite in dev, use <code>aiosqlite</code> with <code>create_async_engine</code>. For production, use PostgreSQL with <code>asyncpg</code>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="cm"># ── app/database.py ───────────────────────────────────────────────────────────</span>
+<span class="kw">from</span> sqlalchemy <span class="kw">import</span> <span class="fn">create_engine</span>
+<span class="kw">from</span> sqlalchemy.orm <span class="kw">import</span> sessionmaker, <span class="cl">DeclarativeBase</span>
+
+DATABASE_URL = <span class="st">"postgresql+psycopg2://user:password@localhost/mydb"</span>
+
+engine       = <span class="fn">create_engine</span>(DATABASE_URL, pool_pre_ping=<span class="kw">True</span>)
+SessionLocal = <span class="fn">sessionmaker</span>(autocommit=<span class="kw">False</span>, autoflush=<span class="kw">False</span>, bind=engine)
+
+<span class="kw">class</span> <span class="cl">Base</span>(<span class="cl">DeclarativeBase</span>): <span class="kw">pass</span>
+
+<span class="cm"># ── app/models/user.py — ORM model ────────────────────────────────────────────</span>
+<span class="kw">from</span> sqlalchemy.orm <span class="kw">import</span> <span class="cl">Mapped</span>, mapped_column, relationship
+<span class="kw">from</span> sqlalchemy <span class="kw">import</span> <span class="cl">String</span>, <span class="cl">Boolean</span>
+<span class="kw">from</span> app.database <span class="kw">import</span> <span class="cl">Base</span>
+
+<span class="kw">class</span> <span class="cl">User</span>(<span class="cl">Base</span>):
+    __tablename__ = <span class="st">"users"</span>
+
+    id:       <span class="cl">Mapped</span>[<span class="cl">int</span>]   = <span class="fn">mapped_column</span>(primary_key=<span class="kw">True</span>, index=<span class="kw">True</span>)
+    email:    <span class="cl">Mapped</span>[<span class="cl">str</span>]   = <span class="fn">mapped_column</span>(<span class="cl">String</span>(<span class="nu">255</span>), unique=<span class="kw">True</span>, index=<span class="kw">True</span>)
+    is_active:<span class="cl">Mapped</span>[<span class="cl">bool</span>]  = <span class="fn">mapped_column</span>(<span class="cl">Boolean</span>, default=<span class="kw">True</span>)
+    hashed_password: <span class="cl">Mapped</span>[<span class="cl">str</span>] = <span class="fn">mapped_column</span>(<span class="cl">String</span>)
+
+<span class="cm"># ── app/crud.py — thin query layer ────────────────────────────────────────────</span>
+<span class="kw">from</span> sqlalchemy.orm <span class="kw">import</span> <span class="cl">Session</span>
+
+<span class="kw">def</span> <span class="fn">get_user</span>(db: <span class="cl">Session</span>, user_id: <span class="cl">int</span>) -> <span class="cl">User</span> | <span class="kw">None</span>:
+    <span class="kw">return</span> db.<span class="fn">get</span>(<span class="cl">User</span>, user_id)
+
+<span class="kw">def</span> <span class="fn">get_users</span>(db: <span class="cl">Session</span>, skip: <span class="cl">int</span> = <span class="nu">0</span>, limit: <span class="cl">int</span> = <span class="nu">100</span>) -> list[<span class="cl">User</span>]:
+    <span class="kw">return</span> db.<span class="fn">query</span>(<span class="cl">User</span>).<span class="fn">offset</span>(skip).<span class="fn">limit</span>(limit).<span class="fn">all</span>()
+
+<span class="kw">def</span> <span class="fn">create_user</span>(db: <span class="cl">Session</span>, email: <span class="cl">str</span>, hashed_pw: <span class="cl">str</span>) -> <span class="cl">User</span>:
+    user = <span class="cl">User</span>(email=email, hashed_password=hashed_pw)
+    db.<span class="fn">add</span>(user)
+    db.<span class="fn">commit</span>()
+    db.<span class="fn">refresh</span>(user)   <span class="cm"># reload from DB to get generated id</span>
+    <span class="kw">return</span> user
+
+<span class="cm"># ── Route using DB ────────────────────────────────────────────────────────────</span>
+<span class="kw">from</span> fastapi <span class="kw">import</span> <span class="cl">FastAPI</span>, <span class="cl">Depends</span>, <span class="cl">HTTPException</span>
+<span class="kw">from</span> app.dependencies <span class="kw">import</span> get_db
+
+<span class="dc">@router.get</span>(<span class="st">"/{user_id}"</span>)
+<span class="kw">def</span> <span class="fn">read_user</span>(user_id: <span class="cl">int</span>, db: <span class="cl">Session</span> = <span class="cl">Depends</span>(get_db)):
+    user = crud.<span class="fn">get_user</span>(db, user_id)
+    <span class="kw">if not</span> user:
+        <span class="kw">raise</span> <span class="cl">HTTPException</span>(status_code=<span class="nu">404</span>, detail=<span class="st">"User not found"</span>)
+    <span class="kw">return</span> user</code></pre></div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 13: ASYNC & BACKGROUND TASKS                   -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s13">
+    <span class="font-serif text-[13px] italic text-accent opacity-70">13</span>
+    <div class="flex-1 h-px bg-bdr"></div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h2>Async &amp; Background Tasks</h2>
+        <span class="inline-block font-mono text-[10px] px-2 py-[2px] rounded mr-1 mb-1 tracking-[.04em] bg-[rgba(192,125,240,.1)] text-[#c07df0] border border-[rgba(192,125,240,.2)]">async</span>
+        <p><strong>BackgroundTasks</strong> runs a function <em>after</em> the HTTP response is sent — without blocking the client. Use it for fire-and-forget work: sending emails, writing audit logs, triggering webhooks. For heavy workloads, use Celery or ARQ instead.</p>
+
+        <h3>Async patterns</h3>
+        <ul>
+          <li>Use <code>asyncio.gather()</code> to run multiple coroutines concurrently</li>
+          <li>Use <code>httpx.AsyncClient</code> for async outbound HTTP calls — never <code>requests</code> in async routes</li>
+          <li>Use <code>asyncio.create_task()</code> for truly detached fire-and-forget</li>
+        </ul>
+
+        <div class="bg-[rgba(0,191,166,.06)] border-l-[3px] border-l-accent px-[14px] py-[10px] mt-3 rounded-r-md text-[13.5px]">
+          <div class="font-mono text-[10px] text-accent tracking-[.08em] uppercase mb-[3px]">💡 When to use each</div>
+          <strong>BackgroundTasks</strong> — simple post-response work, no retry logic needed. <strong>Celery / ARQ</strong> — retries, scheduling, distributed workers, long-running jobs.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="kw">import</span> asyncio
+<span class="kw">import</span> httpx
+<span class="kw">from</span> fastapi <span class="kw">import</span> <span class="cl">FastAPI</span>, <span class="cl">BackgroundTasks</span>
+
+app = <span class="cl">FastAPI</span>()
+
+<span class="cm"># ── Background task function (can be sync or async) ───────────────────────────</span>
+<span class="kw">def</span> <span class="fn">send_welcome_email</span>(email: <span class="cl">str</span>, username: <span class="cl">str</span>):
+    <span class="cm"># runs after response is sent — blocking here doesn't affect the client</span>
+    <span class="fn">print</span>(<span class="st">f"Sending welcome email to </span><span class="at">{email}</span><span class="st">…"</span>)
+
+<span class="dc">@app.post</span>(<span class="st">"/users"</span>, status_code=<span class="nu">201</span>)
+<span class="kw">async def</span> <span class="fn">create_user</span>(background_tasks: <span class="cl">BackgroundTasks</span>):
+    user = {<span class="st">"id"</span>: <span class="nu">1</span>, <span class="st">"email"</span>: <span class="st">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="7005031502301508111d001c155e131f1d">[email&#160;protected]</a>"</span>, <span class="st">"username"</span>: <span class="st">"alice"</span>}
+    background_tasks.<span class="fn">add_task</span>(send_welcome_email, user[<span class="st">"email"</span>], user[<span class="st">"username"</span>])
+    <span class="kw">return</span> user   <span class="cm"># response sent immediately; email fires after</span>
+
+<span class="cm"># ── Concurrent async calls — fetch multiple APIs at once ──────────────────────</span>
+<span class="dc">@app.get</span>(<span class="st">"/aggregate"</span>)
+<span class="kw">async def</span> <span class="fn">aggregate</span>():
+    <span class="kw">async with</span> httpx.<span class="cl">AsyncClient</span>() <span class="kw">as</span> client:
+        users_task  = client.<span class="fn">get</span>(<span class="st">"https://api.example.com/users"</span>)
+        orders_task = client.<span class="fn">get</span>(<span class="st">"https://api.example.com/orders"</span>)
+        users_r, orders_r = <span class="kw">await</span> asyncio.<span class="fn">gather</span>(users_task, orders_task)
+    <span class="kw">return</span> {<span class="st">"users"</span>: users_r.<span class="fn">json</span>(), <span class="st">"orders"</span>: orders_r.<span class="fn">json</span>()}
+
+<span class="cm"># ── Run CPU-heavy code in thread pool (don't block the event loop) ────────────</span>
+<span class="kw">import</span> hashlib
+<span class="kw">from</span> fastapi.concurrency <span class="kw">import</span> run_in_threadpool
+
+<span class="dc">@app.post</span>(<span class="st">"/hash"</span>)
+<span class="kw">async def</span> <span class="fn">hash_data</span>(data: <span class="cl">str</span>):
+    result = <span class="kw">await</span> <span class="fn">run_in_threadpool</span>(hashlib.sha256, data.<span class="fn">encode</span>())
+    <span class="kw">return</span> {<span class="st">"hash"</span>: result.<span class="fn">hexdigest</span>()}</code></pre></div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 14: FILE UPLOADS & STATIC FILES                -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s14">
+    <span class="font-serif text-[13px] italic text-accent opacity-70">14</span>
+    <div class="flex-1 h-px bg-bdr"></div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h2>File Uploads &amp; Static Files</h2>
+        <p>Use <code>UploadFile</code> for file uploads — it wraps the file with metadata and exposes an async read interface. <code>File()</code> is the equivalent of <code>Form()</code> for file fields. Requires <code>python-multipart</code> installed.</p>
+
+        <h4>UploadFile attributes</h4>
+        <table class="param-table w-full border-collapse my-3 text-[13px]">
+          <thead><tr><th>Attribute / Method</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>filename</td><td>Original filename from the client (str)</td></tr>
+            <tr><td>content_type</td><td>MIME type e.g. <code>"image/jpeg"</code></td></tr>
+            <tr><td>file</td><td>Underlying <code>SpooledTemporaryFile</code> object</td></tr>
+            <tr><td>await read(size)</td><td>Read bytes. <code>await f.read()</code> reads all.</td></tr>
+            <tr><td>await seek(offset)</td><td>Move file pointer</td></tr>
+            <tr><td>await close()</td><td>Close file — call when done to free memory</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="kw">from</span> fastapi <span class="kw">import</span> <span class="cl">FastAPI</span>, <span class="cl">File</span>, <span class="cl">UploadFile</span>, <span class="cl">Form</span>, <span class="cl">HTTPException</span>
+<span class="kw">from</span> fastapi.staticfiles <span class="kw">import</span> <span class="cl">StaticFiles</span>
+<span class="kw">import</span> shutil, pathlib
+
+app = <span class="cl">FastAPI</span>()
+
+<span class="cm"># ── Serve static files (images, CSS, JS) ──────────────────────────────────────</span>
+app.<span class="fn">mount</span>(<span class="st">"/static"</span>, <span class="cl">StaticFiles</span>(directory=<span class="st">"static"</span>), name=<span class="st">"static"</span>)
+
+UPLOAD_DIR = pathlib.<span class="cl">Path</span>(<span class="st">"uploads"</span>)
+UPLOAD_DIR.<span class="fn">mkdir</span>(exist_ok=<span class="kw">True</span>)
+ALLOWED_TYPES = {<span class="st">"image/jpeg"</span>, <span class="st">"image/png"</span>, <span class="st">"application/pdf"</span>}
+MAX_SIZE = <span class="nu">5</span> * <span class="nu">1024</span> * <span class="nu">1024</span>  <span class="cm"># 5 MB</span>
+
+<span class="cm"># ── Single file upload ────────────────────────────────────────────────────────</span>
+<span class="dc">@app.post</span>(<span class="st">"/upload"</span>)
+<span class="kw">async def</span> <span class="fn">upload_file</span>(file: <span class="cl">UploadFile</span> = <span class="cl">File</span>(...)):
+    <span class="kw">if</span> file.content_type <span class="kw">not in</span> ALLOWED_TYPES:
+        <span class="kw">raise</span> <span class="cl">HTTPException</span>(<span class="nu">400</span>, detail=<span class="st">f"File type not allowed: </span><span class="at">{file.content_type}</span><span class="st">"</span>)
+
+    contents = <span class="kw">await</span> file.<span class="fn">read</span>()
+    <span class="kw">if</span> <span class="fn">len</span>(contents) > MAX_SIZE:
+        <span class="kw">raise</span> <span class="cl">HTTPException</span>(<span class="nu">413</span>, detail=<span class="st">"File too large (max 5 MB)"</span>)
+
+    dest = UPLOAD_DIR / file.filename
+    <span class="kw">with</span> <span class="fn">open</span>(dest, <span class="st">"wb"</span>) <span class="kw">as</span> f:
+        f.<span class="fn">write</span>(contents)
+
+    <span class="kw">await</span> file.<span class="fn">close</span>()
+    <span class="kw">return</span> {<span class="st">"filename"</span>: file.filename, <span class="st">"size"</span>: <span class="fn">len</span>(contents)}
+
+<span class="cm"># ── File + form fields together ───────────────────────────────────────────────</span>
+<span class="dc">@app.post</span>(<span class="st">"/upload-with-meta"</span>)
+<span class="kw">async def</span> <span class="fn">upload_with_meta</span>(
+    file:        <span class="cl">UploadFile</span> = <span class="cl">File</span>(...),
+    description: <span class="cl">str</span>        = <span class="cl">Form</span>(...),
+    is_public:   <span class="cl">bool</span>       = <span class="cl">Form</span>(<span class="kw">False</span>),
+):
+    <span class="kw">return</span> {<span class="st">"filename"</span>: file.filename, <span class="st">"description"</span>: description, <span class="st">"public"</span>: is_public}
+
+<span class="cm"># ── Multiple files ────────────────────────────────────────────────────────────</span>
+<span class="dc">@app.post</span>(<span class="st">"/upload-many"</span>)
+<span class="kw">async def</span> <span class="fn">upload_many</span>(files: <span class="cl">list</span>[<span class="cl">UploadFile</span>] = <span class="cl">File</span>(...)):
+    <span class="kw">return</span> [{<span class="st">"filename"</span>: f.filename, <span class="st">"type"</span>: f.content_type} <span class="kw">for</span> f <span class="kw">in</span> files]</code></pre></div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 15: WEBSOCKETS                                  -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s15">
+    <span class="font-serif text-[13px] italic text-accent opacity-70">15</span>
+    <div class="flex-1 h-px bg-bdr"></div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative">
+      <span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h2>WebSockets</h2>
+        <p>WebSockets maintain a persistent, bidirectional connection between client and server — unlike HTTP where the client always initiates. FastAPI wraps Starlette's WebSocket support cleanly. The mental model has three layers: the <strong>connection</strong> (one per connected client), the <strong>manager</strong> (tracks all active connections), and the <strong>room</strong> (a named group of connections).</p>
+
+        <h3>Mental model: three message patterns</h3>
+        <div class="quickref grid grid-cols-1 gap-2 mt-3">
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">Echo (1 client → server → same client)</span><span class="qr-val text-txdim text-[12px]">Simplest form. Server reflects back to sender.</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">1-to-1 (client A → server → client B)</span><span class="qr-val text-txdim text-[12px]">Server looks up target by user_id and sends only to them.</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">Group / Room (client → server → all in room)</span><span class="qr-val text-txdim text-[12px]">Server fans out to every connection in the room.</span></div>
+        </div>
+
+        <h3>Key considerations before you build</h3>
+        <ul>
+          <li><strong>Authentication</strong> — HTTP cookies and <code>Authorization</code> headers work during the handshake. Query params (<code>?token=...</code>) work but are visible in server logs. Validate before <code>ws.accept()</code> — once accepted the connection is open.</li>
+          <li><strong>Disconnection is normal</strong> — always wrap the receive loop in <code>try/except WebSocketDisconnect</code> and clean up the manager.</li>
+          <li><strong>Single process limitation</strong> — a plain <code>dict</code>-based manager only works if all clients connect to the same process. For multi-worker deployments, use Redis Pub/Sub as the broadcast layer.</li>
+          <li><strong>Message envelope</strong> — use a typed JSON envelope (<code>{"type": "...", "payload": ...}</code>) from day one; retrofitting it later is painful.</li>
+          <li><strong>Heartbeat / ping-pong</strong> — browsers disconnect idle WebSockets after ~60s. Send periodic pings or configure Uvicorn's <code>--ws-ping-interval</code>.</li>
+        </ul>
+
+        <h3>Project structure for WebSocket features</h3>
+        <div class="quickref grid grid-cols-1 gap-2 mt-3">
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">app/ws/manager.py</span><span class="qr-val text-txdim text-[12px]">ConnectionManager class — all connection state lives here</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">app/ws/router.py</span><span class="qr-val text-txdim text-[12px]">@router.websocket() endpoints, thin — delegate to manager</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">app/ws/schemas.py</span><span class="qr-val text-txdim text-[12px]">Pydantic models for inbound/outbound message envelopes</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">app/ws/handlers.py</span><span class="qr-val text-txdim text-[12px]">Business logic per message type (send_dm, join_room, etc.)</span></div>
+        </div>
+
+        <h4>WebSocket object methods</h4>
+        <table class="param-table w-full border-collapse my-3 text-[13px]">
+          <thead><tr><th>Method</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>await ws.accept()</td><td>Complete the WebSocket handshake. Must call before sending/receiving.</td></tr>
+            <tr><td>await ws.receive_text()</td><td>Receive next text message (blocks until message arrives)</td></tr>
+            <tr><td>await ws.receive_json()</td><td>Receive and parse JSON message</td></tr>
+            <tr><td>await ws.send_text(data)</td><td>Send a text message</td></tr>
+            <tr><td>await ws.send_json(data)</td><td>Serialise dict and send as JSON</td></tr>
+            <tr><td>await ws.close(code)</td><td>Close the connection. Default code: 1000 (normal closure)</td></tr>
+            <tr><td>ws.query_params</td><td>Access URL query params — used for passing auth tokens at handshake</td></tr>
+            <tr><td>ws.headers</td><td>HTTP headers sent during the handshake (cookies, auth headers)</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Schemas -->
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative">
+      <span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre class="px-[22px] py-[18px] overflow-x-auto font-mono text-[13px] leading-[1.75] text-tx"><code><span class="cm"># ── app/ws/schemas.py — typed message envelope ────────────────────────────────</span>
+<span class="kw">from</span> pydantic <span class="kw">import</span> <span class="cl">BaseModel</span>
+<span class="kw">from</span> typing <span class="kw">import</span> <span class="cl">Literal</span>, <span class="cl">Any</span>
+
+<span class="cm"># Every message from the client carries a "type" discriminator field.</span>
+<span class="cm"># This lets the server route to the correct handler without if/elif chains.</span>
+
+<span class="kw">class</span> <span class="cl">InboundMessage</span>(<span class="cl">BaseModel</span>):
+    type:    <span class="cl">Literal</span>[<span class="st">"dm"</span>, <span class="st">"room_msg"</span>, <span class="st">"join_room"</span>, <span class="st">"leave_room"</span>, <span class="st">"create_room"</span>]
+    payload: dict[<span class="cl">str</span>, <span class="cl">Any</span>]
+
+<span class="kw">class</span> <span class="cl">OutboundMessage</span>(<span class="cl">BaseModel</span>):
+    type:      <span class="cl">str</span>              <span class="cm"># "dm", "room_msg", "system", "error"</span>
+    payload:   dict[<span class="cl">str</span>, <span class="cl">Any</span>]
+    sender_id: <span class="cl">str</span> | <span class="kw">None</span> = <span class="kw">None</span>
+
+<span class="cm"># Example messages the client sends:</span>
+<span class="cm"># {"type": "dm",          "payload": {"to_user_id": "u_42", "text": "Hey!"}}</span>
+<span class="cm"># {"type": "room_msg",   "payload": {"room_id": "general", "text": "Hello room"}}</span>
+<span class="cm"># {"type": "join_room",  "payload": {"room_id": "general"}}</span>
+<span class="cm"># {"type": "create_room","payload": {"room_id": "my-team", "private": true}}</span></code></pre></div>
+    </div>
+  </div>
+
+  <!-- Connection Manager -->
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative">
+      <span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h3>The ConnectionManager</h3>
+        <p>The manager is a singleton (module-level instance) that owns two data structures: a <code>dict</code> mapping <strong>user_id → WebSocket</strong> for 1-to-1 messages, and a <code>dict</code> mapping <strong>room_id → set of user_ids</strong> for group messages. When you need to send to a user, look up their socket. When you need to broadcast to a room, iterate the room's member set and look up each socket.</p>
+        <div class="bg-[rgba(0,191,166,.06)] border-l-[3px] border-l-accent px-[14px] py-[10px] mt-3 rounded-r-md text-[13.5px]">
+          <div class="font-mono text-[10px] text-accent tracking-[.08em] uppercase mb-[3px]">Why two separate dicts?</div>
+          One user can be in many rooms simultaneously. Storing <code>user_id → socket</code> separately from <code>room_id → {user_ids}</code> avoids duplicating socket objects and makes disconnect cleanup straightforward: remove the user from the user dict, then scan and remove from all rooms.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative">
+      <span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre class="px-[22px] py-[18px] overflow-x-auto font-mono text-[13px] leading-[1.75] text-tx"><code><span class="cm"># ── app/ws/manager.py ─────────────────────────────────────────────────────────</span>
+<span class="kw">from</span> fastapi <span class="kw">import</span> <span class="cl">WebSocket</span>
+<span class="kw">from</span> .schemas <span class="kw">import</span> <span class="cl">OutboundMessage</span>
+
+<span class="kw">class</span> <span class="cl">ConnectionManager</span>:
+    <span class="st">"""
+    Owns all live WebSocket state for a single process.
+    For multi-worker deployments, replace send_* methods with Redis pub/sub calls.
+    """</span>
+
+    <span class="kw">def</span> <span class="fn">__init__</span>(self):
+        <span class="cm"># user_id (str) → WebSocket</span>
+        self._users: dict[<span class="cl">str</span>, <span class="cl">WebSocket</span>] = {}
+        <span class="cm"># room_id (str) → set of user_ids currently in that room</span>
+        self._rooms: dict[<span class="cl">str</span>, set[<span class="cl">str</span>]] = {}
+
+    <span class="cm"># ── Connection lifecycle ──────────────────────────────────────────────────────</span>
+
+    <span class="kw">async def</span> <span class="fn">connect</span>(self, user_id: <span class="cl">str</span>, ws: <span class="cl">WebSocket</span>) -> <span class="kw">None</span>:
+        <span class="kw">await</span> ws.<span class="fn">accept</span>()
+        self._users[user_id] = ws
+
+    <span class="kw">def</span> <span class="fn">disconnect</span>(self, user_id: <span class="cl">str</span>) -> <span class="kw">None</span>:
+        self._users.<span class="fn">pop</span>(user_id, <span class="kw">None</span>)
+        <span class="cm"># Clean up from every room this user was in</span>
+        <span class="kw">for</span> members <span class="kw">in</span> self._rooms.<span class="fn">values</span>():
+            members.<span class="fn">discard</span>(user_id)
+        <span class="cm"># Remove any rooms that are now empty</span>
+        self._rooms = {rid: m <span class="kw">for</span> rid, m <span class="kw">in</span> self._rooms.<span class="fn">items</span>() <span class="kw">if</span> m}
+
+    <span class="kw">def</span> <span class="fn">is_online</span>(self, user_id: <span class="cl">str</span>) -> <span class="cl">bool</span>:
+        <span class="kw">return</span> user_id <span class="kw">in</span> self._users
+
+    <span class="cm"># ── Room management ───────────────────────────────────────────────────────────</span>
+
+    <span class="kw">def</span> <span class="fn">create_room</span>(self, room_id: <span class="cl">str</span>) -> <span class="kw">None</span>:
+        <span class="st">"""Create a room. No-op if it already exists."""</span>
+        self._rooms.<span class="fn">setdefault</span>(room_id, set())
+
+    <span class="kw">def</span> <span class="fn">join_room</span>(self, user_id: <span class="cl">str</span>, room_id: <span class="cl">str</span>) -> <span class="kw">None</span>:
+        <span class="kw">if</span> room_id <span class="kw">not in</span> self._rooms:
+            <span class="kw">raise</span> <span class="cl">KeyError</span>(<span class="st">f"Room '{room_id}' does not exist"</span>)
+        self._rooms[room_id].<span class="fn">add</span>(user_id)
+
+    <span class="kw">def</span> <span class="fn">leave_room</span>(self, user_id: <span class="cl">str</span>, room_id: <span class="cl">str</span>) -> <span class="kw">None</span>:
+        self._rooms.<span class="fn">get</span>(room_id, set()).<span class="fn">discard</span>(user_id)
+
+    <span class="kw">def</span> <span class="fn">list_rooms</span>(self) -> list[<span class="cl">str</span>]:
+        <span class="kw">return</span> <span class="fn">list</span>(self._rooms.<span class="fn">keys</span>())
+
+    <span class="kw">def</span> <span class="fn">room_members</span>(self, room_id: <span class="cl">str</span>) -> set[<span class="cl">str</span>]:
+        <span class="kw">return</span> self._rooms.<span class="fn">get</span>(room_id, set()).<span class="fn">copy</span>()
+
+    <span class="cm"># ── Sending ───────────────────────────────────────────────────────────────────</span>
+
+    <span class="kw">async def</span> <span class="fn">send_to_user</span>(self, user_id: <span class="cl">str</span>, msg: <span class="cl">OutboundMessage</span>) -> <span class="cl">bool</span>:
+        <span class="st">"""Send a message to a single user. Returns False if user is offline."""</span>
+        ws = self._users.<span class="fn">get</span>(user_id)
+        <span class="kw">if not</span> ws:
+            <span class="kw">return</span> <span class="kw">False</span>
+        <span class="kw">await</span> ws.<span class="fn">send_json</span>(msg.<span class="fn">model_dump</span>())
+        <span class="kw">return</span> <span class="kw">True</span>
+
+    <span class="kw">async def</span> <span class="fn">broadcast_to_room</span>(
+        self,
+        room_id: <span class="cl">str</span>,
+        msg: <span class="cl">OutboundMessage</span>,
+        exclude: <span class="cl">str</span> | <span class="kw">None</span> = <span class="kw">None</span>,
+    ) -> <span class="kw">None</span>:
+        <span class="st">"""Fan out a message to every online member of a room.
+        Pass exclude=sender_id to skip echoing back to the sender.
+        """</span>
+        members = self._rooms.<span class="fn">get</span>(room_id, set())
+        <span class="kw">for</span> uid <span class="kw">in</span> members:
+            <span class="kw">if</span> uid == exclude:
+                <span class="kw">continue</span>
+            <span class="kw">await</span> self.<span class="fn">send_to_user</span>(uid, msg)
+
+    <span class="kw">async def</span> <span class="fn">broadcast_to_all</span>(self, msg: <span class="cl">OutboundMessage</span>) -> <span class="kw">None</span>:
+        <span class="st">"""Send to every connected user (e.g. server-wide announcements)."""</span>
+        <span class="kw">for</span> ws <span class="kw">in</span> self._users.<span class="fn">values</span>():
+            <span class="kw">await</span> ws.<span class="fn">send_json</span>(msg.<span class="fn">model_dump</span>())
+
+<span class="cm"># Module-level singleton — import this everywhere that needs it</span>
+manager = <span class="cl">ConnectionManager</span>()</code></pre></div>
+    </div>
+  </div>
+
+  <!-- Message Dispatcher -->
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative">
+      <span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h3>Message Dispatcher &amp; Handlers</h3>
+        <p>The router endpoint is intentionally thin — it handles connection, disconnection, and routing only. Business logic per message type lives in <code>handlers.py</code>. This makes individual handlers unit-testable without a live WebSocket.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative">
+      <span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre class="px-[22px] py-[18px] overflow-x-auto font-mono text-[13px] leading-[1.75] text-tx"><code><span class="cm"># ── app/ws/handlers.py — one function per message type ────────────────────────</span>
+<span class="kw">from</span> .manager <span class="kw">import</span> manager
+<span class="kw">from</span> .schemas <span class="kw">import</span> <span class="cl">OutboundMessage</span>
+
+<span class="kw">async def</span> <span class="fn">handle_create_room</span>(sender_id: <span class="cl">str</span>, payload: dict) -> <span class="kw">None</span>:
+    room_id = payload[<span class="st">"room_id"</span>]
+    manager.<span class="fn">create_room</span>(room_id)
+    manager.<span class="fn">join_room</span>(sender_id, room_id)        <span class="cm"># creator auto-joins</span>
+    <span class="kw">await</span> manager.<span class="fn">send_to_user</span>(sender_id, <span class="cl">OutboundMessage</span>(
+        type=<span class="st">"system"</span>,
+        payload={<span class="st">"text"</span>: <span class="st">f"Room '{room_id}' created."</span>, <span class="st">"room_id"</span>: room_id},
+    ))
+
+<span class="kw">async def</span> <span class="fn">handle_join_room</span>(sender_id: <span class="cl">str</span>, payload: dict) -> <span class="kw">None</span>:
+    room_id = payload[<span class="st">"room_id"</span>]
+    <span class="kw">try</span>:
+        manager.<span class="fn">join_room</span>(sender_id, room_id)
+    <span class="kw">except</span> <span class="cl">KeyError</span>:
+        <span class="kw">await</span> manager.<span class="fn">send_to_user</span>(sender_id, <span class="cl">OutboundMessage</span>(
+            type=<span class="st">"error"</span>, payload={<span class="st">"text"</span>: <span class="st">f"Room '{room_id}' not found."</span>}
+        ))
+        <span class="kw">return</span>
+    <span class="cm"># Notify room that someone joined</span>
+    <span class="kw">await</span> manager.<span class="fn">broadcast_to_room</span>(room_id, <span class="cl">OutboundMessage</span>(
+        type=<span class="st">"system"</span>,
+        payload={<span class="st">"text"</span>: <span class="st">f"User {sender_id} joined the room."</span>, <span class="st">"room_id"</span>: room_id},
+    ))
+
+<span class="kw">async def</span> <span class="fn">handle_leave_room</span>(sender_id: <span class="cl">str</span>, payload: dict) -> <span class="kw">None</span>:
+    room_id = payload[<span class="st">"room_id"</span>]
+    manager.<span class="fn">leave_room</span>(sender_id, room_id)
+    <span class="kw">await</span> manager.<span class="fn">broadcast_to_room</span>(room_id, <span class="cl">OutboundMessage</span>(
+        type=<span class="st">"system"</span>,
+        payload={<span class="st">"text"</span>: <span class="st">f"User {sender_id} left the room."</span>, <span class="st">"room_id"</span>: room_id},
+    ))
+
+<span class="kw">async def</span> <span class="fn">handle_room_message</span>(sender_id: <span class="cl">str</span>, payload: dict) -> <span class="kw">None</span>:
+    room_id = payload[<span class="st">"room_id"</span>]
+    text    = payload[<span class="st">"text"</span>]
+    <span class="kw">await</span> manager.<span class="fn">broadcast_to_room</span>(
+        room_id,
+        <span class="cl">OutboundMessage</span>(
+            type=<span class="st">"room_msg"</span>,
+            payload={<span class="st">"room_id"</span>: room_id, <span class="st">"text"</span>: text},
+            sender_id=sender_id,
+        ),
+        exclude=sender_id,   <span class="cm"># don't echo back to sender</span>
+    )
+
+<span class="kw">async def</span> <span class="fn">handle_direct_message</span>(sender_id: <span class="cl">str</span>, payload: dict) -> <span class="kw">None</span>:
+    to_id = payload[<span class="st">"to_user_id"</span>]
+    text  = payload[<span class="st">"text"</span>]
+    delivered = <span class="kw">await</span> manager.<span class="fn">send_to_user</span>(to_id, <span class="cl">OutboundMessage</span>(
+        type=<span class="st">"dm"</span>,
+        payload={<span class="st">"text"</span>: text},
+        sender_id=sender_id,
+    ))
+    <span class="cm"># Confirm to sender (with delivery status)</span>
+    <span class="kw">await</span> manager.<span class="fn">send_to_user</span>(sender_id, <span class="cl">OutboundMessage</span>(
+        type=<span class="st">"dm_ack"</span>,
+        payload={<span class="st">"to_user_id"</span>: to_id, <span class="st">"delivered"</span>: delivered, <span class="st">"text"</span>: text},
+    ))</code></pre></div>
+    </div>
+  </div>
+
+  <!-- WebSocket Router -->
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative">
+      <span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h3>WebSocket Router — the thin endpoint</h3>
+        <p>The endpoint does one thing: authenticate the user, register the connection, run the receive loop, and clean up on disconnect. All routing is a <code>match</code> statement dispatching to handlers. Authentication happens <em>before</em> <code>ws.accept()</code> — if the token is invalid, we close with code 1008 (policy violation) without ever accepting the connection.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative">
+      <span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre class="px-[22px] py-[18px] overflow-x-auto font-mono text-[13px] leading-[1.75] text-tx"><code><span class="cm"># ── app/ws/router.py ──────────────────────────────────────────────────────────</span>
+<span class="kw">from</span> fastapi <span class="kw">import</span> <span class="cl">APIRouter</span>, <span class="cl">WebSocket</span>, <span class="cl">WebSocketDisconnect</span>
+<span class="kw">from</span> pydantic <span class="kw">import</span> <span class="cl">ValidationError</span>
+<span class="kw">from</span> .manager <span class="kw">import</span> manager
+<span class="kw">from</span> .schemas <span class="kw">import</span> <span class="cl">InboundMessage</span>, <span class="cl">OutboundMessage</span>
+<span class="kw">from</span> .handlers <span class="kw">import</span> (
+    handle_direct_message, handle_room_message,
+    handle_join_room, handle_leave_room, handle_create_room,
+)
+<span class="kw">from</span> app.auth <span class="kw">import</span> <span class="fn">decode_token</span>   <span class="cm"># your JWT decode function</span>
+
+router = <span class="cl">APIRouter</span>()
+
+<span class="dc">@router.websocket</span>(<span class="st">"/ws"</span>)
+<span class="kw">async def</span> <span class="fn">websocket_endpoint</span>(ws: <span class="cl">WebSocket</span>):
+    <span class="cm"># ── 1. Authenticate before accepting ──────────────────────────────────────</span>
+    token = ws.query_params.<span class="fn">get</span>(<span class="st">"token"</span>)
+    user_id = <span class="fn">decode_token</span>(token)   <span class="cm"># returns None on invalid/expired</span>
+    <span class="kw">if not</span> user_id:
+        <span class="kw">await</span> ws.<span class="fn">close</span>(code=<span class="nu">1008</span>)   <span class="cm"># 1008 = policy violation</span>
+        <span class="kw">return</span>
+
+    <span class="cm"># ── 2. Register connection ────────────────────────────────────────────────</span>
+    <span class="kw">await</span> manager.<span class="fn">connect</span>(user_id, ws)
+    <span class="kw">await</span> manager.<span class="fn">send_to_user</span>(user_id, <span class="cl">OutboundMessage</span>(
+        type=<span class="st">"system"</span>,
+        payload={
+            <span class="st">"text"</span>:  <span class="st">"Connected."</span>,
+            <span class="st">"rooms"</span>: manager.<span class="fn">list_rooms</span>(),
+        },
+    ))
+
+    <span class="cm"># ── 3. Message receive loop ────────────────────────────────────────────────</span>
+    <span class="kw">try</span>:
+        <span class="kw">while</span> <span class="kw">True</span>:
+            raw = <span class="kw">await</span> ws.<span class="fn">receive_json</span>()
+
+            <span class="cm"># Validate envelope shape — reject malformed messages</span>
+            <span class="kw">try</span>:
+                msg = <span class="cl">InboundMessage</span>(**raw)
+            <span class="kw">except</span> <span class="cl">ValidationError</span> <span class="kw">as</span> e:
+                <span class="kw">await</span> manager.<span class="fn">send_to_user</span>(user_id, <span class="cl">OutboundMessage</span>(
+                    type=<span class="st">"error"</span>, payload={<span class="st">"text"</span>: <span class="st">"Invalid message format."</span>, <span class="st">"detail"</span>: e.<span class="fn">errors</span>()}
+                ))
+                <span class="kw">continue</span>
+
+            <span class="cm"># Dispatch to the correct handler by message type</span>
+            <span class="kw">match</span> msg.type:
+                <span class="kw">case</span> <span class="st">"dm"</span>:
+                    <span class="kw">await</span> <span class="fn">handle_direct_message</span>(user_id, msg.payload)
+                <span class="kw">case</span> <span class="st">"room_msg"</span>:
+                    <span class="kw">await</span> <span class="fn">handle_room_message</span>(user_id, msg.payload)
+                <span class="kw">case</span> <span class="st">"join_room"</span>:
+                    <span class="kw">await</span> <span class="fn">handle_join_room</span>(user_id, msg.payload)
+                <span class="kw">case</span> <span class="st">"leave_room"</span>:
+                    <span class="kw">await</span> <span class="fn">handle_leave_room</span>(user_id, msg.payload)
+                <span class="kw">case</span> <span class="st">"create_room"</span>:
+                    <span class="kw">await</span> <span class="fn">handle_create_room</span>(user_id, msg.payload)
+
+    <span class="kw">except</span> <span class="cl">WebSocketDisconnect</span>:
+        <span class="cm"># ── 4. Cleanup on disconnect ─────────────────────────────────────────────</span>
+        manager.<span class="fn">disconnect</span>(user_id)
+        <span class="cm"># Notify all rooms this user was in</span>
+        <span class="kw">for</span> room_id <span class="kw">in</span> manager.<span class="fn">list_rooms</span>():
+            <span class="kw">if</span> user_id <span class="kw">in</span> manager.<span class="fn">room_members</span>(room_id):
+                <span class="kw">await</span> manager.<span class="fn">broadcast_to_room</span>(room_id, <span class="cl">OutboundMessage</span>(
+                    type=<span class="st">"system"</span>,
+                    payload={<span class="st">"text"</span>: <span class="st">f"User {user_id} disconnected."</span>, <span class="st">"room_id"</span>: room_id},
+                ))</code></pre></div>
+    </div>
+  </div>
+
+  <!-- Multi-worker note -->
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative">
+      <span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h3>Scaling beyond one process — Redis Pub/Sub</h3>
+        <p>The <code>ConnectionManager</code> above stores sockets in process memory. With Gunicorn running 4 workers, two users connected to different workers cannot message each other via the dict. The solution is to use <strong>Redis as a message bus</strong>: when worker A needs to send to a user on worker B, it publishes to a Redis channel. All workers subscribe to that channel and deliver to their locally connected users.</p>
+        <div class="bg-[rgba(247,185,85,.06)] border-l-[3px] border-l-accent3 px-[14px] py-[10px] mt-3 rounded-r-md text-[13.5px]">
+          <div class="font-mono text-[10px] text-accent3 tracking-[.08em] uppercase mb-[3px]">Production pattern</div>
+          Replace <code>send_to_user</code> and <code>broadcast_to_room</code> with <code>redis.publish(channel, payload)</code> calls. Each worker runs a background task subscribed to the Redis channel, receives published messages, and delivers them to its locally connected sockets. Libraries: <code>aioredis</code> or <code>redis.asyncio</code>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative">
+      <span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre class="px-[22px] py-[18px] overflow-x-auto font-mono text-[13px] leading-[1.75] text-tx"><code><span class="cm"># ── Redis-backed send (replaces in-memory send_to_user) ───────────────────────</span>
+<span class="kw">import</span> json
+<span class="kw">import</span> asyncio
+<span class="kw">from</span> redis.asyncio <span class="kw">import</span> <span class="cl">Redis</span>
+
+<span class="cm"># In app/ws/manager.py — swap out send_to_user for this pattern</span>
+<span class="kw">class</span> <span class="cl">RedisBackedManager</span>(<span class="cl">ConnectionManager</span>):
+    <span class="st">"""ConnectionManager with Redis pub/sub for cross-worker delivery."""</span>
+
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, redis: <span class="cl">Redis</span>):
+        <span class="fn">super</span>().<span class="fn">__init__</span>()
+        self._redis = redis
+
+    <span class="kw">async def</span> <span class="fn">send_to_user</span>(self, user_id: <span class="cl">str</span>, msg: <span class="cl">OutboundMessage</span>) -> <span class="cl">bool</span>:
+        <span class="cm"># Try local delivery first (same worker)</span>
+        <span class="kw">if</span> <span class="kw">await</span> <span class="fn">super</span>().<span class="fn">send_to_user</span>(user_id, msg):
+            <span class="kw">return</span> <span class="kw">True</span>
+        <span class="cm"># Fall back to Redis for cross-worker delivery</span>
+        <span class="kw">await</span> self._redis.<span class="fn">publish</span>(
+            <span class="st">f"ws:user:{user_id}"</span>,
+            msg.<span class="fn">model_dump_json</span>(),
+        )
+        <span class="kw">return</span> <span class="kw">True</span>   <span class="cm"># we can't know if other worker will deliver</span>
+
+    <span class="kw">async def</span> <span class="fn">start_subscriber</span>(self) -> <span class="kw">None</span>:
+        <span class="st">"""Run as a background task. Receives from Redis, delivers locally."""</span>
+        pubsub = self._redis.<span class="fn">pubsub</span>()
+        <span class="kw">await</span> pubsub.<span class="fn">psubscribe</span>(<span class="st">"ws:user:*"</span>)
+        <span class="kw">async for</span> message <span class="kw">in</span> pubsub.<span class="fn">listen</span>():
+            <span class="kw">if</span> message[<span class="st">"type"</span>] != <span class="st">"pmessage"</span>:
+                <span class="kw">continue</span>
+            channel: <span class="cl">str</span> = message[<span class="st">"channel"</span>].<span class="fn">decode</span>()
+            user_id = channel.<span class="fn">split</span>(<span class="st">":"</span>)[-<span class="nu">1</span>]
+            ws = self._users.<span class="fn">get</span>(user_id)
+            <span class="kw">if</span> ws:
+                <span class="kw">await</span> ws.<span class="fn">send_text</span>(message[<span class="st">"data"</span>].<span class="fn">decode</span>())
+
+<span class="cm"># ── Wire into lifespan ────────────────────────────────────────────────────────</span>
+<span class="dc">@asynccontextmanager</span>
+<span class="kw">async def</span> <span class="fn">lifespan</span>(app: <span class="cl">FastAPI</span>):
+    redis = <span class="kw">await</span> <span class="cl">Redis</span>.<span class="fn">from_url</span>(<span class="st">"redis://localhost"</span>)
+    app.state.ws_manager = <span class="cl">RedisBackedManager</span>(redis)
+    subscriber_task = asyncio.<span class="fn">create_task</span>(app.state.ws_manager.<span class="fn">start_subscriber</span>())
+    <span class="kw">yield</span>
+    subscriber_task.<span class="fn">cancel</span>()
+    <span class="kw">await</span> redis.<span class="fn">aclose</span>()</code></pre></div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 16: ERROR HANDLING & EXCEPTION HANDLERS        -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s16">
+    <span class="font-serif text-[13px] italic text-accent opacity-70">16</span>
+    <div class="flex-1 h-px bg-bdr"></div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h2>Error Handling &amp; Exception Handlers</h2>
+        <p>Raise <code>HTTPException</code> for expected client errors. Register custom exception handlers for app-level exceptions using <code>@app.exception_handler()</code>. FastAPI's default 422 validation error response can also be overridden.</p>
+
+        <h3>HTTPException</h3>
+        <p><code>HTTPException(status_code, detail, headers)</code> — <code>detail</code> can be a string, dict, or any JSON-serialisable value. It appears in the <code>"detail"</code> key of the response body.</p>
+
+        <h3>Custom exception classes</h3>
+        <p>Define domain-specific exceptions (e.g. <code>ItemNotFoundException</code>) and register a handler. Keeps routes clean and centralises error formatting.</p>
+
+        <div class="bg-[rgba(247,185,85,.06)] border-l-[3px] border-l-accent3 px-[14px] py-[10px] mt-3 rounded-r-md text-[13.5px]">
+          <div class="font-mono text-[10px] text-accent3 tracking-[.08em] uppercase mb-[3px]">⚠ Validation errors (422)</div>
+          FastAPI automatically catches Pydantic <code>ValidationError</code> and returns a structured 422 with per-field error details. Override <code>RequestValidationError</code> handler to customise the format.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="kw">from</span> fastapi <span class="kw">import</span> <span class="cl">FastAPI</span>, <span class="cl">HTTPException</span>, <span class="cl">Request</span>
+<span class="kw">from</span> fastapi.responses <span class="kw">import</span> <span class="cl">JSONResponse</span>
+<span class="kw">from</span> fastapi.exceptions <span class="kw">import</span> <span class="cl">RequestValidationError</span>
+
+app = <span class="cl">FastAPI</span>()
+
+<span class="cm"># ── Standard HTTPException ────────────────────────────────────────────────────</span>
+<span class="dc">@app.get</span>(<span class="st">"/items/{item_id}"</span>)
+<span class="kw">async def</span> <span class="fn">get_item</span>(item_id: <span class="cl">int</span>):
+    item = db.<span class="fn">get</span>(item_id)
+    <span class="kw">if not</span> item:
+        <span class="kw">raise</span> <span class="cl">HTTPException</span>(
+            status_code=<span class="nu">404</span>,
+            detail={<span class="st">"message"</span>: <span class="st">"Item not found"</span>, <span class="st">"item_id"</span>: item_id}
+        )
+    <span class="kw">return</span> item
+
+<span class="cm"># ── Custom exception class ────────────────────────────────────────────────────</span>
+<span class="kw">class</span> <span class="cl">EntityNotFoundError</span>(<span class="cl">Exception</span>):
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, entity: <span class="cl">str</span>, id: <span class="cl">int</span>):
+        self.entity = entity
+        self.id = id
+
+<span class="dc">@app.exception_handler</span>(<span class="cl">EntityNotFoundError</span>)
+<span class="kw">async def</span> <span class="fn">not_found_handler</span>(request: <span class="cl">Request</span>, exc: <span class="cl">EntityNotFoundError</span>):
+    <span class="kw">return</span> <span class="cl">JSONResponse</span>(
+        status_code=<span class="nu">404</span>,
+        content={<span class="st">"error"</span>: <span class="st">"NOT_FOUND"</span>, <span class="st">"entity"</span>: exc.entity, <span class="st">"id"</span>: exc.id}
+    )
+
+<span class="dc">@app.get</span>(<span class="st">"/users/{id}"</span>)
+<span class="kw">async def</span> <span class="fn">get_user</span>(id: <span class="cl">int</span>):
+    <span class="kw">raise</span> <span class="cl">EntityNotFoundError</span>(<span class="st">"User"</span>, id)   <span class="cm"># handled globally</span>
+
+<span class="cm"># ── Override default 422 validation error format ──────────────────────────────</span>
+<span class="dc">@app.exception_handler</span>(<span class="cl">RequestValidationError</span>)
+<span class="kw">async def</span> <span class="fn">validation_exception_handler</span>(request: <span class="cl">Request</span>, exc: <span class="cl">RequestValidationError</span>):
+    errors = [
+        {<span class="st">"field"</span>: <span class="st">"."</span>.<span class="fn">join</span>(<span class="fn">str</span>(l) <span class="kw">for</span> l <span class="kw">in</span> e[<span class="st">"loc"</span>][<span class="nu">1</span>:]), <span class="st">"msg"</span>: e[<span class="st">"msg"</span>]}
+        <span class="kw">for</span> e <span class="kw">in</span> exc.<span class="fn">errors</span>()
+    ]
+    <span class="kw">return</span> <span class="cl">JSONResponse</span>(
+        status_code=<span class="nu">422</span>,
+        content={<span class="st">"error"</span>: <span class="st">"VALIDATION_ERROR"</span>, <span class="st">"fields"</span>: errors}
+    )</code></pre></div>
+      <div class="bg-outbg border border-outbdr rounded-[10px] overflow-hidden mb-2">
+        <div class="px-[14px] py-[5px] bg-[rgba(0,80,80,.5)] flex items-center gap-1.5 font-mono text-[10px] text-[#3dcfb6] tracking-[.08em] uppercase border-b border-outbdr">▶ 422 response — custom format</div>
+        <pre class="px-[18px] py-[14px] font-mono text-[12.5px] leading-[1.7] text-[#7dffea] overflow-x-auto">{
+  "error": "VALIDATION_ERROR",
+  "fields": [
+    {"field": "price", "msg": "Input should be greater than 0"},
+    {"field": "email", "msg": "value is not a valid email address"}
+  ]
+}</pre>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 17: TESTING WITH PYTEST                        -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s17">
+    <span class="font-serif text-[13px] italic text-accent opacity-70">17</span>
+    <div class="flex-1 h-px bg-bdr"></div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h2>Testing with pytest</h2>
+        <p>FastAPI's <code>TestClient</code> wraps <code>httpx</code> and runs your app in-process — no server needed. It also supports async tests via <code>AsyncClient</code>. Swap dependencies using <code>app.dependency_overrides</code> for clean, isolated tests.</p>
+
+        <h3>Testing strategy</h3>
+        <ul>
+          <li><strong>Use a test database</strong> — separate SQLite or an in-memory DB, never touch production</li>
+          <li><strong>Override <code>get_db</code></strong> — inject a test session that rolls back after each test</li>
+          <li><strong>Use fixtures</strong> — <code>conftest.py</code> for app, client, and DB session setup</li>
+          <li><strong>Test the contract</strong> — status codes, response shape, error cases</li>
+        </ul>
+
+        <div class="bg-[rgba(0,191,166,.06)] border-l-[3px] border-l-accent px-[14px] py-[10px] mt-3 rounded-r-md text-[13.5px]">
+          <div class="font-mono text-[10px] text-accent tracking-[.08em] uppercase mb-[3px]">💡 Async tests</div>
+          For async route tests use <code>httpx.AsyncClient</code> with <code>ASGITransport</code>. Install <code>pytest-asyncio</code> and mark tests with <code>@pytest.mark.asyncio</code>.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="cm"># tests/conftest.py ───────────────────────────────────────────────────────────</span>
+<span class="kw">import</span> pytest
+<span class="kw">from</span> fastapi.testclient <span class="kw">import</span> <span class="cl">TestClient</span>
+<span class="kw">from</span> sqlalchemy <span class="kw">import</span> <span class="fn">create_engine</span>
+<span class="kw">from</span> sqlalchemy.orm <span class="kw">import</span> sessionmaker
+<span class="kw">from</span> app.main <span class="kw">import</span> app
+<span class="kw">from</span> app.database <span class="kw">import</span> <span class="cl">Base</span>, get_db
+
+TEST_DB_URL = <span class="st">"sqlite:///./test.db"</span>
+engine      = <span class="fn">create_engine</span>(TEST_DB_URL, connect_args={<span class="st">"check_same_thread"</span>: <span class="kw">False</span>})
+TestSession = <span class="fn">sessionmaker</span>(bind=engine)
+
+<span class="dc">@pytest.fixture</span>(scope=<span class="st">"session"</span>, autouse=<span class="kw">True</span>)
+<span class="kw">def</span> <span class="fn">create_tables</span>():
+    <span class="cl">Base</span>.metadata.<span class="fn">create_all</span>(bind=engine)
+    <span class="kw">yield</span>
+    <span class="cl">Base</span>.metadata.<span class="fn">drop_all</span>(bind=engine)
+
+<span class="dc">@pytest.fixture</span>
+<span class="kw">def</span> <span class="fn">db</span>():
+    session = <span class="fn">TestSession</span>()
+    <span class="kw">try</span>:
+        <span class="kw">yield</span> session
+    <span class="kw">finally</span>:
+        session.<span class="fn">rollback</span>()   <span class="cm"># each test is isolated</span>
+        session.<span class="fn">close</span>()
+
+<span class="dc">@pytest.fixture</span>
+<span class="kw">def</span> <span class="fn">client</span>(db):
+    app.dependency_overrides[get_db] = <span class="kw">lambda</span>: db
+    <span class="kw">with</span> <span class="cl">TestClient</span>(app) <span class="kw">as</span> c:
+        <span class="kw">yield</span> c
+    app.dependency_overrides.<span class="fn">clear</span>()
+
+
+<span class="cm"># tests/test_users.py ──────────────────────────────────────────────────────────</span>
+<span class="kw">def</span> <span class="fn">test_create_user</span>(client):
+    response = client.<span class="fn">post</span>(<span class="st">"/users"</span>, json={<span class="st">"email"</span>: <span class="st">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="6f0e03060c0a2f0a170e021f030a410c0002">[email&#160;protected]</a>"</span>, <span class="st">"password"</span>: <span class="st">"secret123"</span>})
+    <span class="kw">assert</span> response.status_code == <span class="nu">201</span>
+    data = response.<span class="fn">json</span>()
+    <span class="kw">assert</span> data[<span class="st">"email"</span>] == <span class="st">"<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="bbdad7d2d8defbdec3dad6cbd7de95d8d4d6">[email&#160;protected]</a>"</span>
+    <span class="kw">assert</span> <span class="st">"password"</span> <span class="kw">not in</span> data       <span class="cm"># response_model must filter it</span>
+
+<span class="kw">def</span> <span class="fn">test_get_user_not_found</span>(client):
+    response = client.<span class="fn">get</span>(<span class="st">"/users/99999"</span>)
+    <span class="kw">assert</span> response.status_code == <span class="nu">404</span>
+
+<span class="kw">def</span> <span class="fn">test_validation_error</span>(client):
+    response = client.<span class="fn">post</span>(<span class="st">"/users"</span>, json={<span class="st">"email"</span>: <span class="st">"not-an-email"</span>})
+    <span class="kw">assert</span> response.status_code == <span class="nu">422</span>
+
+<span class="kw">def</span> <span class="fn">test_authenticated_route</span>(client):
+    token_r  = client.<span class="fn">post</span>(<span class="st">"/token"</span>, data={<span class="st">"username"</span>: <span class="st">"alice"</span>, <span class="st">"password"</span>: <span class="st">"secret123"</span>})
+    token    = token_r.<span class="fn">json</span>()[<span class="st">"access_token"</span>]
+    response = client.<span class="fn">get</span>(<span class="st">"/me"</span>, headers={<span class="st">"Authorization"</span>: <span class="st">f"Bearer </span><span class="at">{token}</span><span class="st">"</span>})
+    <span class="kw">assert</span> response.status_code == <span class="nu">200</span></code></pre></div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- SECTION 18: DEPLOYMENT & PRODUCTION                    -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s18">
+    <span class="font-serif text-[13px] italic text-accent opacity-70">18</span>
+    <div class="flex-1 h-px bg-bdr"></div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h2>Deployment &amp; Production</h2>
+        <p>For production, run FastAPI with <strong>Gunicorn</strong> managing <strong>Uvicorn</strong> worker processes. Gunicorn handles process management and restarts; Uvicorn handles the async ASGI requests.</p>
+
+        <h3>Gunicorn + Uvicorn workers</h3>
+        <p>The worker count formula: <em>2 × CPU cores + 1</em>. For an 8-core server, use <code>--workers 17</code>. More workers = more memory; tune for your instance.</p>
+
+        <h3>Configuration checklist for production</h3>
+        <ul>
+          <li>Set <code>docs_url=None, redoc_url=None</code> in <code>FastAPI()</code> to disable public docs</li>
+          <li>Load secrets from environment variables — never hardcode them</li>
+          <li>Use <code>pool_pre_ping=True</code> on your DB engine to detect stale connections</li>
+          <li>Add <code>TrustedHostMiddleware</code> to prevent host header injection</li>
+          <li>Set a reverse proxy (nginx) in front to handle TLS, rate limiting, static files</li>
+          <li>Use structured JSON logging — log request ID, method, path, status, duration</li>
+        </ul>
+
+        <h4>Docker — minimal production image</h4>
+        <div class="quickref grid grid-cols-2 gap-2 mt-3" style="grid-template-columns:1fr;">
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">python:3.12-slim</span><span class="qr-val text-txdim text-[12px]">Smallest official Python base</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">--no-cache-dir</span><span class="qr-val text-txdim text-[12px]">Reduce image size — no pip cache needed in containers</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">COPY only requirements first</span><span class="qr-val text-txdim text-[12px]">Layer caching — rebuild app layer, not deps layer, on code change</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">Non-root USER</span><span class="qr-val text-txdim text-[12px]">Always run as non-root for security</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="cm"># ── Gunicorn launch command ────────────────────────────────────────────────────</span>
+gunicorn app.main:app \
+  --workers <span class="nu">4</span> \
+  --worker-class uvicorn.workers.<span class="cl">UvicornWorker</span> \
+  --bind <span class="nu">0.0.0</span>.<span class="nu">0</span>:<span class="nu">8000</span> \
+  --timeout <span class="nu">120</span> \
+  --access-logfile - \
+  --error-logfile -
+
+<span class="cm"># ── Dockerfile ────────────────────────────────────────────────────────────────</span>
+FROM python:<span class="nu">3.12</span>-slim
+
+WORKDIR /app
+
+<span class="cm"># Install deps in a separate layer for better caching</span>
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+<span class="cm"># Copy application code</span>
+COPY ./app ./app
+
+<span class="cm"># Create non-root user</span>
+RUN adduser --disabled-password --no-create-home appuser
+USER appuser
+
+EXPOSE <span class="nu">8000</span>
+CMD [<span class="st">"gunicorn"</span>, <span class="st">"app.main:app"</span>, <span class="st">"--workers"</span>, <span class="st">"4"</span>,
+     <span class="st">"--worker-class"</span>, <span class="st">"uvicorn.workers.UvicornWorker"</span>, <span class="st">"--bind"</span>, <span class="st">"0.0.0.0:8000"</span>]</code></pre></div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative"><span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span></div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre><code><span class="cm"># ── Production-hardened app/main.py ──────────────────────────────────────────</span>
+<span class="kw">import</span> os
+<span class="kw">from</span> contextlib <span class="kw">import</span> asynccontextmanager
+<span class="kw">from</span> fastapi <span class="kw">import</span> <span class="cl">FastAPI</span>
+<span class="kw">from</span> fastapi.middleware.cors <span class="kw">import</span> <span class="cl">CORSMiddleware</span>
+<span class="kw">from</span> fastapi.middleware.trustedhost <span class="kw">import</span> <span class="cl">TrustedHostMiddleware</span>
+<span class="kw">from</span> starlette.middleware.gzip <span class="kw">import</span> <span class="cl">GZipMiddleware</span>
+
+IS_PROD = os.<span class="fn">getenv</span>(<span class="st">"ENV"</span>) == <span class="st">"production"</span>
+
+<span class="dc">@asynccontextmanager</span>
+<span class="kw">async def</span> <span class="fn">lifespan</span>(app: <span class="cl">FastAPI</span>):
+    <span class="cm"># startup: connect DB pool, warm caches</span>
+    <span class="kw">yield</span>
+    <span class="cm"># shutdown: flush, close connections</span>
+
+app = <span class="cl">FastAPI</span>(
+    title=<span class="st">"My API"</span>,
+    version=<span class="st">"1.0.0"</span>,
+    lifespan=lifespan,
+    docs_url=<span class="kw">None</span> <span class="kw">if</span> IS_PROD <span class="kw">else</span> <span class="st">"/docs"</span>,
+    redoc_url=<span class="kw">None</span> <span class="kw">if</span> IS_PROD <span class="kw">else</span> <span class="st">"/redoc"</span>,
+)
+
+<span class="cm"># Middleware — order matters: first added = outermost layer</span>
+app.<span class="fn">add_middleware</span>(<span class="cl">TrustedHostMiddleware</span>, allowed_hosts=[<span class="st">"api.myapp.com"</span>, <span class="st">"*.myapp.com"</span>])
+app.<span class="fn">add_middleware</span>(<span class="cl">GZipMiddleware</span>, minimum_size=<span class="nu">1000</span>)
+app.<span class="fn">add_middleware</span>(
+    <span class="cl">CORSMiddleware</span>,
+    allow_origins=os.<span class="fn">getenv</span>(<span class="st">"ALLOWED_ORIGINS"</span>, <span class="st">""</span>).<span class="fn">split</span>(<span class="st">","</span>),
+    allow_credentials=<span class="kw">True</span>,
+    allow_methods=[<span class="st">"*"</span>],
+    allow_headers=[<span class="st">"*"</span>],
+)
+
+<span class="cm"># ── Include all routers ───────────────────────────────────────────────────────</span>
+<span class="kw">from</span> app.routers <span class="kw">import</span> users, items
+<span class="kw">from</span> app.ws.router <span class="kw">import</span> router <span class="kw">as</span> ws_router
+
+app.<span class="fn">include_router</span>(users.router)
+app.<span class="fn">include_router</span>(items.items_router)
+app.<span class="fn">include_router</span>(ws_router)</code></pre></div>
+    </div>
+  </div>
+
+  <div class="section-div"></div>
+
+  <!-- ─────────────────────────────────────────────────────── -->
+  <!-- END SECTION: COMPLETE PROJECT STRUCTURE                 -->
+  <!-- ─────────────────────────────────────────────────────── -->
+  <div class="flex items-center gap-3 pt-9 pb-1.5" id="s19">
+    <span class="font-serif text-[13px] italic text-accent opacity-70">19</span>
+    <div class="flex-1 h-px bg-bdr"></div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative">
+      <span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7b7d9e">markdown</span>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="md-cell bg-mdbg border border-bdr rounded-[10px] p-[22px_26px] mb-0.5 relative">
+        <h2>Complete Production Project Structure</h2>
+        <p>This is the folder layout a real production FastAPI service grows into. Everything has a single clear home. New developers can navigate it without asking questions.</p>
+
+        <h3>Mental model: layered architecture</h3>
+        <p>Each layer only talks to the layer directly below it. A route calls a CRUD function. A CRUD function calls the database. A route never builds SQL. A database model never knows about HTTP. Middleware never touches business logic.</p>
+        <div class="quickref grid grid-cols-1 gap-2 mt-3">
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">HTTP layer</span><span class="qr-val text-txdim text-[12px]">routers/ — parse input, call CRUD, return response</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">Schema layer</span><span class="qr-val text-txdim text-[12px]">schemas/ — Pydantic models for request / response shapes</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">Business layer</span><span class="qr-val text-txdim text-[12px]">crud/ — all database queries, no HTTP knowledge</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">Data layer</span><span class="qr-val text-txdim text-[12px]">models/ — SQLAlchemy ORM models, table definitions</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">Real-time layer</span><span class="qr-val text-txdim text-[12px]">ws/ — WebSocket manager, handlers, schemas</span></div>
+          <div class="bg-white/[.03] border border-bdr rounded-[7px] px-[13px] py-[10px] flex justify-between items-center text-[13px]"><span class="qr-key font-mono text-accent2 text-[12px]">Cross-cutting</span><span class="qr-val text-txdim text-[12px]">dependencies.py, middleware/ — auth, DB session, timing</span></div>
+        </div>
+
+        <h3>Key production decisions</h3>
+        <ul>
+          <li><strong>Never import from routers into other routers</strong> — if two routers share logic, it belongs in <code>crud/</code> or <code>services/</code></li>
+          <li><strong>One Pydantic model per purpose</strong> — <code>UserCreate</code>, <code>UserUpdate</code>, <code>UserResponse</code> are three different classes, never one reused class</li>
+          <li><strong>Secrets via environment only</strong> — use <code>pydantic-settings</code> (<code>BaseSettings</code>) with a <code>.env</code> file; never hardcode</li>
+          <li><strong>All config in one place</strong> — <code>app/core/config.py</code> reads env vars; every other file imports from there</li>
+          <li><strong>Migrations, not <code>create_all</code></strong> — use Alembic for schema migrations in production; <code>Base.metadata.create_all</code> is for tests only</li>
+          <li><strong>Log structured JSON</strong> — use <code>structlog</code> or <code>python-json-logger</code>; plain <code>print()</code> is not observable in production</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative">
+      <span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre class="px-[22px] py-[18px] overflow-x-auto font-mono text-[13px] leading-[1.75] text-tx"><code><span class="cm"># ── Complete production project structure ─────────────────────────────────────</span>
+myproject/
+├── app/
+│   ├── main.py                 <span class="cm"># FastAPI() instance, middleware, router includes</span>
+│   ├── core/
+│   │   ├── config.py           <span class="cm"># BaseSettings — all env vars in one place</span>
+│   │   └── security.py         <span class="cm"># JWT encode/decode, password hashing</span>
+│   ├── routers/
+│   │   ├── users.py            <span class="cm"># GET/POST/PUT/DELETE /users</span>
+│   │   ├── items.py            <span class="cm"># GET/POST/PUT/DELETE /items</span>
+│   │   └── auth.py             <span class="cm"># POST /token, POST /refresh</span>
+│   ├── schemas/
+│   │   ├── user.py             <span class="cm"># UserCreate, UserUpdate, UserResponse</span>
+│   │   └── item.py             <span class="cm"># ItemCreate, ItemUpdate, ItemResponse</span>
+│   ├── models/
+│   │   ├── user.py             <span class="cm"># SQLAlchemy ORM model for User table</span>
+│   │   └── item.py             <span class="cm"># SQLAlchemy ORM model for Item table</span>
+│   ├── crud/
+│   │   ├── user.py             <span class="cm"># get_user(), create_user(), update_user(), etc.</span>
+│   │   └── item.py             <span class="cm"># CRUD functions for items</span>
+│   ├── ws/
+│   │   ├── manager.py          <span class="cm"># ConnectionManager singleton</span>
+│   │   ├── router.py           <span class="cm"># @router.websocket("/ws") endpoint</span>
+│   │   ├── handlers.py         <span class="cm"># handle_dm(), handle_room_msg(), etc.</span>
+│   │   └── schemas.py          <span class="cm"># InboundMessage, OutboundMessage</span>
+│   ├── middleware/
+│   │   └── timing.py           <span class="cm"># Custom BaseHTTPMiddleware classes</span>
+│   ├── database.py             <span class="cm"># engine, SessionLocal, Base</span>
+│   └── dependencies.py         <span class="cm"># get_db(), get_current_user(), pagination()</span>
+├── alembic/
+│   ├── env.py                  <span class="cm"># Alembic migration environment</span>
+│   └── versions/               <span class="cm"># One .py file per migration</span>
+├── tests/
+│   ├── conftest.py             <span class="cm"># Fixtures: app, client, test DB session</span>
+│   ├── test_users.py
+│   ├── test_items.py
+│   └── test_ws.py              <span class="cm"># WebSocket tests via TestClient</span>
+├── .env                        <span class="cm"># Local secrets — never commit</span>
+├── .env.example                <span class="cm"># Committed template with dummy values</span>
+├── requirements.txt            <span class="cm"># Pinned production deps</span>
+├── requirements-dev.txt        <span class="cm"># pytest, httpx, ruff, mypy</span>
+├── Dockerfile
+├── docker-compose.yml          <span class="cm"># app + postgres + redis for local dev</span>
+└── alembic.ini</code></pre></div>
+    </div>
+  </div>
+
+  <div class="flex relative">
+    <div class="w-[52px] shrink-0 flex flex-col items-end pt-[14px] pr-[10px] gap-1 relative">
+      <span class="cell-type font-mono text-[9px] tracking-[.08em] uppercase opacity-[.35] py-1.5" style="color:#7c6af7">code</span>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="bg-codebg border border-bdr rounded-[10px] overflow-hidden mb-0.5"><pre class="px-[22px] py-[18px] overflow-x-auto font-mono text-[13px] leading-[1.75] text-tx"><code><span class="cm"># ── app/core/config.py — all configuration in one place ──────────────────────</span>
+<span class="kw">from</span> pydantic_settings <span class="kw">import</span> <span class="cl">BaseSettings</span>
+<span class="kw">from</span> functools <span class="kw">import</span> lru_cache
+
+<span class="kw">class</span> <span class="cl">Settings</span>(<span class="cl">BaseSettings</span>):
+    <span class="cm"># App</span>
+    env:          <span class="cl">str</span>  = <span class="st">"development"</span>
+    debug:        <span class="cl">bool</span> = <span class="kw">False</span>
+    allowed_hosts: <span class="cl">list</span>[<span class="cl">str</span>] = [<span class="st">"*"</span>]
+
+    <span class="cm"># Database</span>
+    database_url: <span class="cl">str</span>
+
+    <span class="cm"># Auth</span>
+    secret_key:   <span class="cl">str</span>
+    algorithm:    <span class="cl">str</span>  = <span class="st">"HS256"</span>
+    token_expire_minutes: <span class="cl">int</span> = <span class="nu">60</span>
+
+    <span class="cm"># Redis (for WebSocket pub/sub in production)</span>
+    redis_url:    <span class="cl">str</span>  = <span class="st">"redis://localhost:6379"</span>
+
+    <span class="cm"># CORS</span>
+    allowed_origins: <span class="cl">list</span>[<span class="cl">str</span>] = [<span class="st">"http://localhost:3000"</span>]
+
+    <span class="kw">class</span> <span class="cl">Config</span>:
+        env_file = <span class="st">".env"</span>
+
+<span class="dc">@lru_cache</span>
+<span class="kw">def</span> <span class="fn">get_settings</span>() -> <span class="cl">Settings</span>:
+    <span class="kw">return</span> <span class="cl">Settings</span>()
+
+settings = <span class="fn">get_settings</span>()
+
+<span class="cm"># ── Usage anywhere in the codebase ────────────────────────────────────────────</span>
+<span class="kw">from</span> app.core.config <span class="kw">import</span> settings
+
+<span class="fn">create_engine</span>(settings.database_url, pool_pre_ping=<span class="kw">True</span>)
+<span class="fn">jwt.encode</span>(payload, settings.secret_key, algorithm=settings.algorithm)</code></pre></div>
+    </div>
+  </div>
+
+</div><!-- /notebook -->
+</body>
+</html>
