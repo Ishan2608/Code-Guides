@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Clustering & Dimensionality Reduction</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0b0d11;
+    --surface: #111318;
+    --card: #161a22;
+    --border: #1f2430;
+    --border2: #2a3040;
+    --muted: #3d4558;
+    --dim: #6b7794;
+    --text: #c9d1e0;
+    --bright: #eef1f8;
+
+    --c-orange: #e8743a;
+    --c-blue: #4a9eff;
+    --c-green: #3ecf8e;
+    --c-purple: #a78bfa;
+    --c-yellow: #f6c344;
+    --c-red: #f06575;
+    --c-cyan: #22d3ee;
+
+    --cluster-accent: #e8743a;
+    --dim-accent: #4a9eff;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Open Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  /* ── Typography ── */
+  .display { font-family: 'Open Sans', sans-serif; font-weight: 800; letter-spacing: -0.02em; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .label { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--dim); }
+  .bright { color: var(--bright); }
+
+  /* ── Layout ── */
+  .page { margin: 0 auto; padding: 0 32px 80px; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .card-inner {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+
+  /* ── Section divider ── */
+  .sec-rule { border: none; border-top: 1px solid var(--border); }
+
+  /* ── Code block ── */
+  .code-wrap {
+    background: #080a0f;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .code-dots { display: flex; gap: 5px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; }
+  pre {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.76rem;
+    line-height: 1.85;
+    padding: 18px 20px;
+    overflow-x: auto;
+    color: #abb2bf;
+  }
+
+  /* ── Syntax colours ── */
+  .kw  { color: #c678dd; }
+  .fn  { color: #61afef; }
+  .cls { color: #e5c07b; }
+  .str { color: #98c379; }
+  .cm  { color: #4b5568; font-style: italic; }
+  .num { color: #d19a66; }
+  .op  { color: #56b6c2; }
+  .prp { color: #e06c75; }
+  .var { color: #abb2bf; }
+
+  /* ── Steps ── */
+  .step-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    width: 22px; height: 22px;
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* ── Callout boxes ── */
+  .callout {
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+  .callout-note { background: #0d1a2b; border-left: 3px solid var(--c-blue); }
+  .callout-warn { background: #1e1209; border-left: 3px solid var(--c-orange); }
+  .callout-good { background: #0a1e14; border-left: 3px solid var(--c-green); }
+  .callout-purple { background: #130e1f; border-left: 3px solid var(--c-purple); }
+  .callout-key { background: #12100a; border-left: 3px solid var(--c-yellow); }
+
+  /* ── Algo pill tag ── */
+  .pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 3px 9px;
+    border-radius: 3px;
+    border: 1px solid;
+    white-space: nowrap;
+  }
+
+  /* ── Table ── */
+  table { border-collapse: collapse; width: 100%; font-size: 0.8rem; }
+  
+  thead th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    text-align: left;
+    background: var(--surface);
+    color: var(--dim);
+    border-bottom: 1px solid var(--border2);
+  }
+  
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td:first-child { color: var(--bright); font-weight: 500; }
+
+  /* ── Algo type list ── */
+  .algo-type-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .algo-type-item:last-child { border-bottom: none; }
+  .algo-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    margin-top: 7px; flex-shrink: 0;
+  }
+
+  /* ── TOC ── */
+  .toc-link {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--dim);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 0;
+    transition: color 0.15s;
+  }
+  .toc-link:hover { color: var(--bright); }
+
+  /* ── Section header strip ── */
+  .section-header {
+    border-radius: 8px 8px 0 0;
+    padding: 28px 28px 20px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .section-header::after {
+    content: attr(data-bg);
+    position: absolute;
+    right: -8px; top: 50%;
+    transform: translateY(-50%);
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 5.5rem;
+    letter-spacing: -0.04em;
+    opacity: 0.04;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  /* ── Formal sentence box ── */
+  .formal-sentence {
+    font-size: 0.9rem;
+    line-height: 1.75;
+    color: var(--text);
+    border-left: 2px solid var(--muted);
+    padding-left: 14px;
+  }
+
+  /* grid utility */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media(max-width: 680px) { .grid-2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<header class="page pt-14 pb-4">
+  <div class="label mb-4">Machine Learning · Recall Notes · v2</div>
+
+  <h1 class="display mb-2" style="font-size:clamp(2.4rem,6vw,4.2rem); line-height:1.05; color:var(--bright);">
+    Unsupervised<br>
+    <span style="color:var(--cluster-accent);">Cluster</span>
+    <span style="color:var(--muted);font-size:0.5em;vertical-align:middle;"> + </span>
+    <span style="color:var(--dim-accent);">Reduce</span>
+  </h1>
+  <p class="mono mt-3 mb-8" style="font-size:0.72rem; color:var(--dim); max-width:440px; line-height:1.7;">
+    Clustering · Dimensionality Reduction<br>
+    Algorithms · Steps · Syntax
+  </p>
+
+  <!-- TOC card -->
+  <div class="card p-5" style="max-width:480px;">
+    <div class="label mb-4">Contents</div>
+    <div class="grid-2">
+      <div>
+        <div class="mono mb-2" style="font-size:0.62rem; color:var(--cluster-accent);">CLUSTERING</div>
+        <a href="#cl-intro"        class="toc-link"><span style="color:var(--cluster-accent);">›</span> Introduction</a>
+        <a href="#cl-types"        class="toc-link"><span style="color:var(--cluster-accent);">›</span> Algorithm Types</a>
+        <a href="#kmeans"          class="toc-link"><span style="color:var(--cluster-accent);">›</span> K-Means</a>
+        <a href="#hierarchical"    class="toc-link"><span style="color:var(--cluster-accent);">›</span> Hierarchical</a>
+        <a href="#dbscan"          class="toc-link"><span style="color:var(--cluster-accent);">›</span> DBSCAN</a>
+      </div>
+      <div>
+        <div class="mono mb-2" style="font-size:0.62rem; color:var(--dim-accent);">DIM. REDUCTION</div>
+        <a href="#dr-intro"        class="toc-link"><span style="color:var(--dim-accent);">›</span> Introduction</a>
+        <a href="#dr-types"        class="toc-link"><span style="color:var(--dim-accent);">›</span> Algorithm Types</a>
+        <a href="#pca"             class="toc-link"><span style="color:var(--dim-accent);">›</span> PCA</a>
+        <a href="#lda"             class="toc-link"><span style="color:var(--dim-accent);">›</span> LDA</a>
+        <a href="#compare"         class="toc-link"><span style="color:var(--dim-accent);">›</span> PCA vs LDA</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+
+<!-- ════════════════════════════════════════════
+     SECTION 1 — CLUSTERING
+════════════════════════════════════════════ -->
+<section class="mt-12">
+
+  <!-- Section header -->
+  <div class="card mb-1" id="cl-intro">
+    <div class="section-header" data-bg="CLUSTER" style="background:linear-gradient(135deg,#1a0e07 0%,var(--card) 60%);">
+      <div class="label mb-2">Topic 01</div>
+      <div class="display mb-3" style="font-size:2rem; color:var(--cluster-accent);">Clustering</div>
+      <div class="flex items-center gap-4 mb-5">
+        <span class="label">One-word definition</span>
+        <span class="mono bright" style="font-size:1rem; color:var(--cluster-accent);">Grouping</span>
+      </div>
+      <!-- Formal sentence -->
+      <div id="cl-intro" class="formal-sentence" style="border-color:var(--cluster-accent); max-width:640px;">
+        Clustering is an unsupervised machine learning technique that partitions unlabelled data into meaningful groups based on intrinsic similarity, enabling pattern discovery without prior class definitions or target variables.
+      </div>
+    </div>
+
+    <!-- Algorithm types -->
+    <div id="cl-types" class="p-6">
+      <div class="label mb-4">Types of Clustering Algorithms</div>
+      <div class="grid-2">
+        <div>
+          <div class="algo-type-item">
+            <div class="algo-dot" style="background:var(--cluster-accent);"></div>
+            <div>
+              <div class="bright mono" style="font-size:0.8rem;">Centroid-Based</div>
+              <div style="font-size:0.78rem; color:var(--dim); margin-top:2px;">Groups data around central points (centroids). Partition-based, requires K upfront.</div>
+              <div class="mono mt-1" style="font-size:0.65rem; color:var(--cluster-accent);">→ K-Means, K-Medoids</div>
+            </div>
+          </div>
+          <div class="algo-type-item">
+            <div class="algo-dot" style="background:var(--c-purple);"></div>
+            <div>
+              <div class="bright mono" style="font-size:0.8rem;">Connectivity-Based (Hierarchical)</div>
+              <div style="font-size:0.78rem; color:var(--dim); margin-top:2px;">Builds a tree (dendrogram) by iteratively merging or splitting clusters.</div>
+              <div class="mono mt-1" style="font-size:0.65rem; color:var(--c-purple);">→ Agglomerative, Divisive</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="algo-type-item">
+            <div class="algo-dot" style="background:var(--c-green);"></div>
+            <div>
+              <div class="bright mono" style="font-size:0.8rem;">Density-Based</div>
+              <div style="font-size:0.78rem; color:var(--dim); margin-top:2px;">Defines clusters as dense regions separated by sparse space. Handles noise natively.</div>
+              <div class="mono mt-1" style="font-size:0.65rem; color:var(--c-green);">→ DBSCAN, HDBSCAN, OPTICS</div>
+            </div>
+          </div>
+          <div class="algo-type-item">
+            <div class="algo-dot" style="background:var(--c-yellow);"></div>
+            <div>
+              <div class="bright mono" style="font-size:0.8rem;">Distribution-Based</div>
+              <div style="font-size:0.78rem; color:var(--dim); margin-top:2px;">Assumes data fits a statistical distribution (e.g. Gaussian). Soft cluster membership.</div>
+              <div class="mono mt-1" style="font-size:0.65rem; color:var(--c-yellow);">→ Gaussian Mixture Models (GMM)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────── K-MEANS ─────────────────── -->
+  <div id="kmeans" class="card mt-6 p-6">
+    <div class="flex items-start justify-between mb-5">
+      <div>
+        <div class="label mb-1">Centroid-Based · Algorithm 01</div>
+        <div class="display bright" style="font-size:1.5rem;">K-Means</div>
+      </div>
+      <span class="pill" style="color:var(--cluster-accent); border-color:var(--cluster-accent);">centroid-based</span>
+    </div>
+
+    <div class="grid-2 gap-6">
+      <!-- Steps -->
+      <div>
+        <div class="label mb-3">How it works — Steps</div>
+        <div class="space-y-3">
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#2a1505; color:var(--cluster-accent);">01</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Choose K</div>
+              <div style="font-size:0.77rem; color:var(--dim);">Decide how many clusters to form. Use the <strong style="color:var(--text);">Elbow Method</strong>: plot WCSS vs K, pick the bend.</div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#2a1505; color:var(--cluster-accent);">02</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Place K centroids randomly</div>
+              <div style="font-size:0.77rem; color:var(--dim);">Scatter K random seed points in the feature space.</div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#2a1505; color:var(--cluster-accent);">03</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Assign each point to nearest centroid</div>
+              <div style="font-size:0.77rem; color:var(--dim);">Measure Euclidean distance from each point to every centroid. Assign to the closest.</div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#2a1505; color:var(--cluster-accent);">04</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Recompute centroids</div>
+              <div style="font-size:0.77rem; color:var(--dim);">New centroid = mean of all points currently in that cluster.</div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#2a1505; color:var(--cluster-accent);">05</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Repeat until convergence</div>
+              <div style="font-size:0.77rem; color:var(--dim);">Iterate steps 3–4 until centroids no longer move (or max iterations reached).</div>
+            </div>
+          </div>
+        </div>
+        <div class="callout callout-warn mt-4">
+          <span style="color:var(--c-orange); font-weight:600;">WCSS / Inertia</span> = sum of squared distances of each point to its assigned centroid. Lower = tighter clusters.
+        </div>
+        <div class="callout callout-note mt-2">
+          <span style="color:var(--c-blue); font-weight:600;">Limitation:</span> Assumes spherical clusters · Sensitive to outliers · Must pre-define K.
+        </div>
+      </div>
+
+      <!-- Code -->
+      <div>
+        <div class="label mb-3">Code Syntax</div>
+        <div class="code-wrap">
+          <div class="code-header">
+            <div class="code-dots">
+              <div class="dot" style="background:#ff5f57;"></div>
+              <div class="dot" style="background:#febc2e;"></div>
+              <div class="dot" style="background:#28c840;"></div>
+            </div>
+            <span class="mono" style="font-size:0.6rem; color:var(--dim);">kmeans.py</span>
+          </div>
+          <pre><span class="cm"># ── 1. Import ────────────────────────</span>
+<span class="kw">from</span> <span class="var">sklearn.cluster</span> <span class="kw">import</span> <span class="cls">KMeans</span>
+
+<span class="cm"># ── 2. Initialise ────────────────────</span>
+<span class="var">model</span> <span class="op">=</span> <span class="cls">KMeans</span>(
+    n_clusters<span class="op">=</span><span class="num">3</span>,
+    init<span class="op">=</span><span class="str">'k-means++'</span>,   <span class="cm"># smart seeding</span>
+    random_state<span class="op">=</span><span class="num">42</span>
+)
+
+<span class="cm"># ── 3. Train ─────────────────────────</span>
+<span class="var">model</span>.<span class="fn">fit</span>(<span class="var">X</span>)
+
+<span class="cm"># ── 4. Get values ────────────────────</span>
+<span class="var">labels</span>     <span class="op">=</span> <span class="var">model</span>.<span class="prp">labels_</span>           <span class="cm"># cluster per point</span>
+<span class="var">centroids</span>  <span class="op">=</span> <span class="var">model</span>.<span class="prp">cluster_centers_</span>  <span class="cm"># centroid coords</span>
+<span class="var">inertia</span>    <span class="op">=</span> <span class="var">model</span>.<span class="prp">inertia_</span>          <span class="cm"># WCSS score</span>
+
+<span class="cm"># ── 5. Predict new points ────────────</span>
+<span class="var">pred</span> <span class="op">=</span> <span class="var">model</span>.<span class="fn">predict</span>(<span class="var">X_new</span>)</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────── HIERARCHICAL ─────────────────── -->
+  <div id="hierarchical" class="card mt-6 p-6">
+    <div class="flex items-start justify-between mb-4">
+      <div>
+        <div class="label mb-1">Connectivity-Based · Algorithm 02</div>
+        <div class="display bright" style="font-size:1.5rem;">Hierarchical Clustering</div>
+      </div>
+      <span class="pill" style="color:var(--c-purple); border-color:var(--c-purple);">dendrogram-based</span>
+    </div>
+
+    <!-- Direction toggle strip -->
+    <div class="grid-2 gap-3 mb-6">
+      <div class="card-inner p-3" style="border-left:3px solid var(--c-purple);">
+        <div class="mono mb-1" style="font-size:0.65rem; color:var(--c-purple);">↑ BOTTOM-UP</div>
+        <div class="bright" style="font-size:0.85rem; font-weight:600;">Agglomerative</div>
+        <div style="font-size:0.75rem; color:var(--dim); margin-top:3px;">Starts with each point as its own cluster. Merges up. Most common approach.</div>
+      </div>
+      <div class="card-inner p-3" style="border-left:3px solid var(--c-cyan);">
+        <div class="mono mb-1" style="font-size:0.65rem; color:var(--c-cyan);">↓ TOP-DOWN</div>
+        <div class="bright" style="font-size:0.85rem; font-weight:600;">Divisive</div>
+        <div style="font-size:0.75rem; color:var(--dim); margin-top:3px;">Starts with all points in one cluster. Splits down. Less common but more precise.</div>
+      </div>
+    </div>
+
+    <!-- ── Agglomerative (Bottom-Up) ── -->
+    <div style="border:1px solid var(--border2); border-radius:6px; overflow:hidden;" class="mb-5">
+      <div class="px-5 py-3 flex items-center gap-3" style="background:#100d1e; border-bottom:1px solid var(--border2);">
+        <span style="font-size:1rem;">↑</span>
+        <div>
+          <span class="bright" style="font-size:0.88rem; font-weight:700;">Agglomerative</span>
+          <span class="mono ml-3" style="font-size:0.62rem; color:var(--c-purple);">BOTTOM-UP · merge</span>
+        </div>
+      </div>
+      <div class="p-5">
+        <div class="grid-2 gap-6">
+          <div>
+            <div class="label mb-3">Steps</div>
+            <div class="space-y-3">
+              <div class="flex gap-3">
+                <div class="step-num" style="background:#100d1e; color:var(--c-purple);">01</div>
+                <div>
+                  <div class="bright" style="font-size:0.82rem; font-weight:600;">Every point is its own cluster</div>
+                  <div style="font-size:0.76rem; color:var(--dim);">Start with N clusters (one per data point).</div>
+                </div>
+              </div>
+              <div class="flex gap-3">
+                <div class="step-num" style="background:#100d1e; color:var(--c-purple);">02</div>
+                <div>
+                  <div class="bright" style="font-size:0.82rem; font-weight:600;">Compute pairwise distances</div>
+                  <div style="font-size:0.76rem; color:var(--dim);">Calculate distance between every cluster pair using the chosen linkage method.</div>
+                </div>
+              </div>
+              <div class="flex gap-3">
+                <div class="step-num" style="background:#100d1e; color:var(--c-purple);">03</div>
+                <div>
+                  <div class="bright" style="font-size:0.82rem; font-weight:600;">Merge the two closest clusters</div>
+                  <div style="font-size:0.76rem; color:var(--dim);">Combine the most similar pair into one new cluster. Record the merge height.</div>
+                </div>
+              </div>
+              <div class="flex gap-3">
+                <div class="step-num" style="background:#100d1e; color:var(--c-purple);">04</div>
+                <div>
+                  <div class="bright" style="font-size:0.82rem; font-weight:600;">Repeat until one cluster remains</div>
+                  <div style="font-size:0.76rem; color:var(--dim);">Each merge builds the dendrogram tree from the leaves up to the root.</div>
+                </div>
+              </div>
+              <div class="flex gap-3">
+                <div class="step-num" style="background:#100d1e; color:var(--c-purple);">05</div>
+                <div>
+                  <div class="bright" style="font-size:0.82rem; font-weight:600;">Cut the dendrogram</div>
+                  <div style="font-size:0.76rem; color:var(--dim);">Draw a horizontal line at a chosen height. Lines crossed = number of clusters.</div>
+                </div>
+              </div>
+            </div>
+            <div class="callout callout-purple mt-4">
+              <span style="color:var(--c-purple); font-weight:600;">Linkage:</span>
+              <span class="mono" style="font-size:0.73rem;"> ward</span> (best default — minimises variance) ·
+              <span class="mono" style="font-size:0.73rem;">complete</span> ·
+              <span class="mono" style="font-size:0.73rem;">average</span> ·
+              <span class="mono" style="font-size:0.73rem;">single</span>
+            </div>
+          </div>
+          <div>
+            <div class="label mb-3">Code Syntax</div>
+            <div class="code-wrap">
+              <div class="code-header">
+                <div class="code-dots">
+                  <div class="dot" style="background:#ff5f57;"></div>
+                  <div class="dot" style="background:#febc2e;"></div>
+                  <div class="dot" style="background:#28c840;"></div>
+                </div>
+                <span class="mono" style="font-size:0.6rem; color:var(--dim);">agglomerative.py</span>
+              </div>
+              <pre><span class="cm"># ── 1. Import ─────────────────────</span>
+<span class="kw">from</span> <span class="var">sklearn.cluster</span> <span class="kw">import</span> <span class="cls">AgglomerativeClustering</span>
+<span class="kw">import</span> <span class="var">scipy.cluster.hierarchy</span> <span class="kw">as</span> <span class="var">sch</span>
+
+<span class="cm"># ── Visualise dendrogram first ────</span>
+<span class="var">sch</span>.<span class="fn">dendrogram</span>(<span class="var">sch</span>.<span class="fn">linkage</span>(<span class="var">X</span>, method<span class="op">=</span><span class="str">'ward'</span>))
+
+<span class="cm"># ── 2. Initialise ─────────────────</span>
+<span class="var">model</span> <span class="op">=</span> <span class="cls">AgglomerativeClustering</span>(
+    n_clusters<span class="op">=</span><span class="num">3</span>,
+    linkage<span class="op">=</span><span class="str">'ward'</span>
+)
+
+<span class="cm"># ── 3. Train ──────────────────────</span>
+<span class="var">model</span>.<span class="fn">fit</span>(<span class="var">X</span>)
+
+<span class="cm"># ── 4. Get values ─────────────────</span>
+<span class="var">labels</span> <span class="op">=</span> <span class="var">model</span>.<span class="prp">labels_</span>
+
+<span class="cm"># ⚠ No .predict() — re-fit for new data</span></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Divisive (Top-Down) ── -->
+    <div style="border:1px solid var(--border2); border-radius:6px; overflow:hidden;">
+      <div class="px-5 py-3 flex items-center gap-3" style="background:#061618; border-bottom:1px solid var(--border2);">
+        <span style="font-size:1rem;">↓</span>
+        <div>
+          <span class="bright" style="font-size:0.88rem; font-weight:700;">Divisive</span>
+          <span class="mono ml-3" style="font-size:0.62rem; color:var(--c-cyan);">TOP-DOWN · split</span>
+        </div>
+      </div>
+      <div class="p-5">
+        <div class="grid-2 gap-6">
+          <div>
+            <div class="label mb-3">Steps</div>
+            <div class="space-y-3">
+              <div class="flex gap-3">
+                <div class="step-num" style="background:#061618; color:var(--c-cyan);">01</div>
+                <div>
+                  <div class="bright" style="font-size:0.82rem; font-weight:600;">All points form one giant cluster</div>
+                  <div style="font-size:0.76rem; color:var(--dim);">Start with the entire dataset as a single cluster — the root of the tree.</div>
+                </div>
+              </div>
+              <div class="flex gap-3">
+                <div class="step-num" style="background:#061618; color:var(--c-cyan);">02</div>
+                <div>
+                  <div class="bright" style="font-size:0.82rem; font-weight:600;">Find the most heterogeneous cluster</div>
+                  <div style="font-size:0.76rem; color:var(--dim);">Identify the cluster with the highest internal dissimilarity (most spread out).</div>
+                </div>
+              </div>
+              <div class="flex gap-3">
+                <div class="step-num" style="background:#061618; color:var(--c-cyan);">03</div>
+                <div>
+                  <div class="bright" style="font-size:0.82rem; font-weight:600;">Split it into two sub-clusters</div>
+                  <div style="font-size:0.76rem; color:var(--dim);">Use a flat clustering method (e.g. K-Means with K=2) to divide it optimally.</div>
+                </div>
+              </div>
+              <div class="flex gap-3">
+                <div class="step-num" style="background:#061618; color:var(--c-cyan);">04</div>
+                <div>
+                  <div class="bright" style="font-size:0.82rem; font-weight:600;">Repeat on each sub-cluster</div>
+                  <div style="font-size:0.76rem; color:var(--dim);">Continue splitting the most heterogeneous cluster at each step, building the tree downward.</div>
+                </div>
+              </div>
+              <div class="flex gap-3">
+                <div class="step-num" style="background:#061618; color:var(--c-cyan);">05</div>
+                <div>
+                  <div class="bright" style="font-size:0.82rem; font-weight:600;">Stop at K clusters or leaf nodes</div>
+                  <div style="font-size:0.76rem; color:var(--dim);">Stop when each point is its own cluster, or cut the tree at the desired level of K.</div>
+                </div>
+              </div>
+            </div>
+            <div class="callout mt-4" style="background:#061618; border-left:3px solid var(--c-cyan);">
+              <span style="color:var(--c-cyan); font-weight:600;">Key difference from Agglomerative:</span> Decisions made early (at the top) are final — there is no merging back. This makes divisive more computationally expensive but more globally aware.
+            </div>
+            <div class="callout callout-warn mt-2">
+              <span style="color:var(--c-orange); font-weight:600;">Sklearn note:</span> No native divisive implementation. Use <span class="mono" style="font-size:0.73rem;">sklearn</span> + <span class="mono" style="font-size:0.73rem;">scipy</span> manually, or the <span class="mono" style="font-size:0.73rem;">DIANA</span> algorithm via the <span class="mono" style="font-size:0.73rem;">pyclust</span> library.
+            </div>
+          </div>
+          <div>
+            <div class="label mb-3">Code Syntax (manual implementation)</div>
+            <div class="code-wrap">
+              <div class="code-header">
+                <div class="code-dots">
+                  <div class="dot" style="background:#ff5f57;"></div>
+                  <div class="dot" style="background:#febc2e;"></div>
+                  <div class="dot" style="background:#28c840;"></div>
+                </div>
+                <span class="mono" style="font-size:0.6rem; color:var(--dim);">divisive.py</span>
+              </div>
+              <pre><span class="cm"># ── 1. Import ─────────────────────</span>
+<span class="kw">from</span> <span class="var">sklearn.cluster</span> <span class="kw">import</span> <span class="cls">KMeans</span>
+<span class="kw">import</span> <span class="var">numpy</span> <span class="kw">as</span> <span class="var">np</span>
+
+<span class="cm"># ── 2. Recursive split function ───</span>
+<span class="kw">def</span> <span class="fn">divisive_split</span>(<span class="var">X</span>, <span class="var">min_size</span><span class="op">=</span><span class="num">2</span>):
+    <span class="kw">if</span> <span class="fn">len</span>(<span class="var">X</span>) <span class="op">&lt;=</span> <span class="var">min_size</span>:
+        <span class="kw">return</span> [<span class="var">X</span>]
+    <span class="cm"># Split current cluster into 2</span>
+    <span class="var">km</span> <span class="op">=</span> <span class="cls">KMeans</span>(n_clusters<span class="op">=</span><span class="num">2</span>, random_state<span class="op">=</span><span class="num">42</span>)
+    <span class="var">labels</span> <span class="op">=</span> <span class="var">km</span>.<span class="fn">fit_predict</span>(<span class="var">X</span>)
+    <span class="var">left</span>  <span class="op">=</span> <span class="var">X</span>[<span class="var">labels</span> <span class="op">==</span> <span class="num">0</span>]
+    <span class="var">right</span> <span class="op">=</span> <span class="var">X</span>[<span class="var">labels</span> <span class="op">==</span> <span class="num">1</span>]
+    <span class="cm"># Recurse on each sub-cluster</span>
+    <span class="kw">return</span> <span class="fn">divisive_split</span>(<span class="var">left</span>) <span class="op">+</span> \
+           <span class="fn">divisive_split</span>(<span class="var">right</span>)
+
+<span class="cm"># ── 3. Run ────────────────────────</span>
+<span class="var">clusters</span> <span class="op">=</span> <span class="fn">divisive_split</span>(<span class="var">X</span>)
+
+<span class="cm"># ── 4. Get values ─────────────────</span>
+<span class="cm"># clusters = list of sub-arrays,</span>
+<span class="cm"># each sub-array = one final cluster</span></pre>
+            </div>
+          </div>
+        </div>
+
+        <!-- Side-by-side compare strip -->
+        <div class="mt-5 grid-2 gap-3">
+          <div class="callout callout-good">
+            <span style="color:var(--c-green); font-weight:600;">Agglomerative is preferred when:</span><br>
+            You don't know K. You want to explore all granularities. Dataset is small-to-medium.
+          </div>
+          <div class="callout" style="background:#061618; border-left:3px solid var(--c-cyan);">
+            <span style="color:var(--c-cyan); font-weight:600;">Divisive is preferred when:</span><br>
+            You have a clear top-level split in mind. You want a more globally consistent tree structure.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────── DBSCAN ─────────────────── -->
+  <div id="dbscan" class="card mt-6 p-6">
+    <div class="flex items-start justify-between mb-3">
+      <div>
+        <div class="label mb-1">Density-Based · Algorithm 03</div>
+        <div class="display bright" style="font-size:1.5rem;">DBSCAN</div>
+        <div class="mono" style="font-size:0.62rem; color:var(--dim); margin-top:2px;">Density-Based Spatial Clustering of Applications with Noise</div>
+      </div>
+      <span class="pill" style="color:var(--c-green); border-color:var(--c-green);">density-based</span>
+    </div>
+
+    <!-- Key params -->
+    <div class="grid mt-4 mb-5" style="grid-template-columns:1fr 1fr 1fr; gap:10px;">
+      <div class="card-inner p-3 text-center">
+        <div class="mono mb-1" style="font-size:0.75rem; color:var(--c-green);">eps</div>
+        <div style="font-size:0.75rem; color:var(--dim);">Radius of the neighbourhood around a point</div>
+      </div>
+      <div class="card-inner p-3 text-center">
+        <div class="mono mb-1" style="font-size:0.75rem; color:var(--c-green);">min_samples</div>
+        <div style="font-size:0.75rem; color:var(--dim);">Min. points inside eps to be a core point</div>
+      </div>
+      <div class="card-inner p-3 text-center">
+        <div class="mono mb-1" style="font-size:0.75rem; color:var(--c-red);">label = -1</div>
+        <div style="font-size:0.75rem; color:var(--dim);">Points that don't belong to any cluster (outliers)</div>
+      </div>
+    </div>
+
+    <div class="grid-2 gap-6">
+      <div>
+        <div class="label mb-3">How it works — Steps</div>
+        <div class="space-y-3">
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#091a10; color:var(--c-green);">01</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Pick any unvisited point</div>
+              <div style="font-size:0.77rem; color:var(--dim);">Draw a circle of radius eps around it.</div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#091a10; color:var(--c-green);">02</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Count neighbours inside eps</div>
+              <div style="font-size:0.77rem; color:var(--dim);">If count ≥ min_samples → <strong style="color:var(--c-green);">core point</strong>. Else → border or noise.</div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#091a10; color:var(--c-green);">03</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Expand the cluster</div>
+              <div style="font-size:0.77rem; color:var(--dim);">Add all density-connected points. If they are also core points, expand further.</div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#091a10; color:var(--c-green);">04</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Move to next unvisited point</div>
+              <div style="font-size:0.77rem; color:var(--dim);">Repeat steps 1–3 until all points are visited.</div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#091a10; color:var(--c-green);">05</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Label unreached points as noise</div>
+              <div style="font-size:0.77rem; color:var(--dim);">Points never added to any cluster get label = <span class="mono" style="color:var(--c-red);">-1</span>.</div>
+            </div>
+          </div>
+        </div>
+        <div class="callout callout-good mt-4">
+          <span style="color:var(--c-green); font-weight:600;">Superpower:</span> Finds arbitrary-shaped clusters. Auto-detects outliers. No K needed.
+        </div>
+        <div class="callout callout-warn mt-2">
+          <span style="color:var(--c-orange); font-weight:600;">Limitation:</span> Struggles with varying density. Very sensitive to eps and min_samples values.
+        </div>
+      </div>
+
+      <div>
+        <div class="label mb-3">Code Syntax</div>
+        <div class="code-wrap">
+          <div class="code-header">
+            <div class="code-dots">
+              <div class="dot" style="background:#ff5f57;"></div>
+              <div class="dot" style="background:#febc2e;"></div>
+              <div class="dot" style="background:#28c840;"></div>
+            </div>
+            <span class="mono" style="font-size:0.6rem; color:var(--dim);">dbscan.py</span>
+          </div>
+          <pre><span class="cm"># ── 1. Import ────────────────────────</span>
+<span class="kw">from</span> <span class="var">sklearn.cluster</span> <span class="kw">import</span> <span class="cls">DBSCAN</span>
+
+<span class="cm"># ── 2. Initialise ────────────────────</span>
+<span class="var">model</span> <span class="op">=</span> <span class="cls">DBSCAN</span>(
+    eps<span class="op">=</span><span class="num">0.5</span>,        <span class="cm"># neighbourhood radius</span>
+    min_samples<span class="op">=</span><span class="num">5</span>   <span class="cm"># core point threshold</span>
+)
+
+<span class="cm"># ── 3. Train ─────────────────────────</span>
+<span class="var">model</span>.<span class="fn">fit</span>(<span class="var">X</span>)
+
+<span class="cm"># ── 4. Get values ────────────────────</span>
+<span class="var">labels</span>       <span class="op">=</span> <span class="var">model</span>.<span class="prp">labels_</span>             <span class="cm"># -1 = outlier</span>
+<span class="var">core_idx</span>     <span class="op">=</span> <span class="var">model</span>.<span class="prp">core_sample_indices_</span>
+
+<span class="cm"># Count real clusters (exclude noise)</span>
+<span class="var">n_clusters</span> <span class="op">=</span> <span class="fn">len</span>(<span class="fn">set</span>(<span class="var">labels</span>)) <span class="op">-</span> (
+    <span class="num">1</span> <span class="kw">if</span> <span class="op">-</span><span class="num">1</span> <span class="kw">in</span> <span class="var">labels</span> <span class="kw">else</span> <span class="num">0</span>
+)</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clustering Quick Compare -->
+  <div class="card mt-6 overflow-hidden">
+    <div class="p-4 border-b" style="border-color:var(--border);">
+      <div class="label">Clustering — Quick Comparison</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Algorithm</th>
+          <th>Needs K?</th>
+          <th>Handles Outliers?</th>
+          <th>Cluster Shape</th>
+          <th>Best For</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="color:var(--cluster-accent);">K-Means</td>
+          <td><span style="color:var(--c-red);">✕ Yes (required)</span></td>
+          <td><span style="color:var(--c-red);">✕ No</span></td>
+          <td>Spherical</td>
+          <td>Large, well-separated, similarly-sized blobs</td>
+        </tr>
+        <tr>
+          <td style="color:var(--c-purple);">Hierarchical</td>
+          <td><span style="color:var(--c-yellow);">~ Post-hoc cut</span></td>
+          <td>Partially</td>
+          <td>Any (ward → compact)</td>
+          <td>Small datasets, exploring hierarchy of clusters</td>
+        </tr>
+        <tr>
+          <td style="color:var(--c-green);">DBSCAN</td>
+          <td><span style="color:var(--c-green);">✓ No</span></td>
+          <td><span style="color:var(--c-green);">✓ Yes (native)</span></td>
+          <td>Arbitrary</td>
+          <td>Irregular shapes, anomaly detection</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</section>
+
+<!-- ════════════════════════════════════════════
+     SECTION 2 — DIMENSIONALITY REDUCTION
+════════════════════════════════════════════ -->
+<section class="mt-16">
+
+  <div class="card mb-1" id="dr-intro">
+    <div class="section-header" data-bg="REDUCE" style="background:linear-gradient(135deg,#061625 0%,var(--card) 60%);">
+      <div class="label mb-2">Topic 02</div>
+      <div class="display mb-3" style="font-size:2rem; color:var(--dim-accent);">Dimensionality Reduction</div>
+      <div class="flex items-center gap-4 mb-5">
+        <span class="label">One-word definition</span>
+        <span class="mono bright" style="font-size:1rem; color:var(--dim-accent);">Compression</span>
+      </div>
+      <div class="formal-sentence" style="border-color:var(--dim-accent); max-width:640px;">
+        Dimensionality reduction transforms high-dimensional data into a lower-dimensional representation, preserving the most statistically significant structure while discarding redundant features, noise, and collinear information that impede model performance.
+      </div>
+    </div>
+
+    <!-- Why Reduce -->
+    <div class="p-5 border-b" style="border-color:var(--border);">
+      <div class="label mb-3">Why reduce dimensions?</div>
+      <div class="grid" style="grid-template-columns:repeat(4,1fr); gap:10px;">
+        <div class="card-inner p-3">
+          <div class="mono mb-1" style="font-size:0.68rem; color:var(--dim-accent);">Speed</div>
+          <div style="font-size:0.75rem; color:var(--dim);">Fewer features → faster training & inference</div>
+        </div>
+        <div class="card-inner p-3">
+          <div class="mono mb-1" style="font-size:0.68rem; color:var(--dim-accent);">Visualise</div>
+          <div style="font-size:0.75rem; color:var(--dim);">Reduce to 2D/3D for human-readable plots</div>
+        </div>
+        <div class="card-inner p-3">
+          <div class="mono mb-1" style="font-size:0.68rem; color:var(--dim-accent);">Noise</div>
+          <div style="font-size:0.75rem; color:var(--dim);">Remove low-variance, redundant features</div>
+        </div>
+        <div class="card-inner p-3">
+          <div class="mono mb-1" style="font-size:0.68rem; color:var(--dim-accent);">Overfitting</div>
+          <div style="font-size:0.75rem; color:var(--dim);">Simpler representation → better generalisation</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Algorithm types -->
+    <div id="dr-types" class="p-6">
+      <div class="label mb-4">Types of Dimensionality Reduction Algorithms</div>
+      <div class="grid-2">
+        <div>
+          <div class="algo-type-item">
+            <div class="algo-dot" style="background:var(--dim-accent);"></div>
+            <div>
+              <div class="bright mono" style="font-size:0.8rem;">Linear Methods</div>
+              <div style="font-size:0.78rem; color:var(--dim); margin-top:2px;">Find linear combinations of features that preserve structure (variance or class separability).</div>
+              <div class="mono mt-1" style="font-size:0.65rem; color:var(--dim-accent);">→ PCA, LDA, Factor Analysis, ICA</div>
+            </div>
+          </div>
+          <div class="algo-type-item">
+            <div class="algo-dot" style="background:var(--c-cyan);"></div>
+            <div>
+              <div class="bright mono" style="font-size:0.8rem;">Non-Linear (Manifold) Methods</div>
+              <div style="font-size:0.78rem; color:var(--dim); margin-top:2px;">Capture complex, curved structure in data that linear methods miss.</div>
+              <div class="mono mt-1" style="font-size:0.65rem; color:var(--c-cyan);">→ t-SNE, UMAP, Kernel PCA, Isomap</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="algo-type-item">
+            <div class="algo-dot" style="background:var(--c-yellow);"></div>
+            <div>
+              <div class="bright mono" style="font-size:0.8rem;">Matrix Factorisation</div>
+              <div style="font-size:0.78rem; color:var(--dim); margin-top:2px;">Decompose the data matrix into smaller factor matrices.</div>
+              <div class="mono mt-1" style="font-size:0.65rem; color:var(--c-yellow);">→ SVD, NMF, Truncated SVD</div>
+            </div>
+          </div>
+          <div class="algo-type-item">
+            <div class="algo-dot" style="background:var(--c-purple);"></div>
+            <div>
+              <div class="bright mono" style="font-size:0.8rem;">Autoencoder (Deep Learning)</div>
+              <div style="font-size:0.78rem; color:var(--dim); margin-top:2px;">Neural networks that learn compressed representations in a bottleneck layer.</div>
+              <div class="mono mt-1" style="font-size:0.65rem; color:var(--c-purple);">→ Vanilla, Variational (VAE), Sparse AE</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────── PCA ─────────────────── -->
+  <div id="pca" class="card mt-6 p-6">
+    <div class="flex items-start justify-between mb-3">
+      <div>
+        <div class="label mb-1">Linear · Unsupervised · Algorithm 01</div>
+        <div class="display bright" style="font-size:1.5rem;">PCA</div>
+        <div class="mono" style="font-size:0.62rem; color:var(--dim); margin-top:2px;">Principal Component Analysis</div>
+      </div>
+      <span class="pill" style="color:var(--dim-accent); border-color:var(--dim-accent);">unsupervised</span>
+    </div>
+
+    <div class="callout callout-note mb-5">
+      <span style="color:var(--c-blue); font-weight:600;">Core Intuition:</span> PCA finds the directions in which your data varies the most, ranks them by importance, and projects your data onto the top-K directions — discarding the rest. It doesn't use labels; it purely follows variance.
+    </div>
+
+    <div class="grid-2 gap-6">
+      <div>
+        <div class="label mb-3">Step-by-Step — PCA Internals</div>
+        <div class="space-y-3">
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#061625; color:var(--dim-accent);">01</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Standardise the data</div>
+              <div style="font-size:0.77rem; color:var(--dim);">Scale each feature to mean=0, std=1. PCA is variance-based, so large-scale features dominate without scaling.</div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#061625; color:var(--dim-accent);">02</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Compute the Covariance Matrix</div>
+              <div style="font-size:0.77rem; color:var(--dim);">An n×n matrix showing how every pair of features co-varies. Captures linear relationships between features.</div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#061625; color:var(--dim-accent);">03</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Compute Eigenvalues & Eigenvectors</div>
+              <div style="font-size:0.77rem; color:var(--dim);"><strong style="color:var(--text);">Eigenvectors</strong> = directions of max variance (the axes). <strong style="color:var(--text);">Eigenvalues</strong> = magnitude of variance in each direction.</div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#061625; color:var(--dim-accent);">04</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Sort by Eigenvalue (descending)</div>
+              <div style="font-size:0.77rem; color:var(--dim);">PC1 = most variance, PC2 = second most, … Each PC is orthogonal (perpendicular) to all others.</div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#061625; color:var(--dim-accent);">05</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Select top K components</div>
+              <div style="font-size:0.77rem; color:var(--dim);">Choose K so that cumulative explained variance ≥ 95%. Use Scree Plot to visualise the elbow.</div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#061625; color:var(--dim-accent);">06</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Project data onto new axes</div>
+              <div style="font-size:0.77rem; color:var(--dim);">Multiply original data by the K eigenvectors. Result: a dataset with K columns instead of n.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="label mb-3">Key Terms</div>
+        <div class="space-y-2 mb-4">
+          <div class="callout callout-note">
+            <span style="color:var(--c-blue); font-weight:600;">Principal Component (PC)</span><br>
+            A new axis = a linear combination of all original features. PCs always point in the direction of maximum remaining variance and are perpendicular to each other.
+          </div>
+          <div class="callout callout-note">
+            <span style="color:var(--c-blue); font-weight:600;">Explained Variance Ratio</span><br>
+            What fraction of total variance does each PC capture? Sum them cumulatively to see how much information you retain.
+          </div>
+          <div class="callout callout-note">
+            <span style="color:var(--c-blue); font-weight:600;">Loadings</span><br>
+            Values in each eigenvector. High loading = that original feature contributes strongly to that PC.
+          </div>
+          <div class="callout callout-warn">
+            <span style="color:var(--c-orange); font-weight:600;">Loss of interpretability</span><br>
+            PC1 is NOT a single original feature — it's a weighted mix of all features. You can no longer say "this is the age column."
+          </div>
+        </div>
+
+        <div class="label mb-3">Code Syntax</div>
+        <div class="code-wrap">
+          <div class="code-header">
+            <div class="code-dots">
+              <div class="dot" style="background:#ff5f57;"></div>
+              <div class="dot" style="background:#febc2e;"></div>
+              <div class="dot" style="background:#28c840;"></div>
+            </div>
+            <span class="mono" style="font-size:0.6rem; color:var(--dim);">pca.py</span>
+          </div>
+          <pre><span class="cm"># ── 1. Import ────────────────────────</span>
+<span class="kw">from</span> <span class="var">sklearn.decomposition</span> <span class="kw">import</span> <span class="cls">PCA</span>
+<span class="kw">from</span> <span class="var">sklearn.preprocessing</span> <span class="kw">import</span> <span class="cls">StandardScaler</span>
+
+<span class="cm"># ── Standardise first (mandatory) ────</span>
+<span class="var">scaler</span>   <span class="op">=</span> <span class="cls">StandardScaler</span>()
+<span class="var">X_scaled</span> <span class="op">=</span> <span class="var">scaler</span>.<span class="fn">fit_transform</span>(<span class="var">X</span>)
+
+<span class="cm"># ── 2. Initialise ────────────────────</span>
+<span class="var">pca</span> <span class="op">=</span> <span class="cls">PCA</span>(n_components<span class="op">=</span><span class="num">2</span>)
+<span class="cm"># Or keep 95% variance: PCA(n_components=0.95)</span>
+
+<span class="cm"># ── 3. Train ─────────────────────────</span>
+<span class="var">pca</span>.<span class="fn">fit</span>(<span class="var">X_scaled</span>)
+
+<span class="cm"># ── 4. Get values ────────────────────</span>
+<span class="var">X_pca</span>      <span class="op">=</span> <span class="var">pca</span>.<span class="fn">transform</span>(<span class="var">X_scaled</span>)
+<span class="var">var_ratio</span>  <span class="op">=</span> <span class="var">pca</span>.<span class="prp">explained_variance_ratio_</span>
+<span class="var">cum_var</span>    <span class="op">=</span> <span class="var">var_ratio</span>.<span class="fn">cumsum</span>()
+<span class="var">components</span> <span class="op">=</span> <span class="var">pca</span>.<span class="prp">components_</span>  <span class="cm"># loadings</span>
+
+<span class="cm"># ── Shortcut ─────────────────────────</span>
+<span class="var">X_pca</span> <span class="op">=</span> <span class="var">pca</span>.<span class="fn">fit_transform</span>(<span class="var">X_scaled</span>)</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─────────────────── LDA ─────────────────── -->
+  <div id="lda" class="card mt-6 p-6">
+    <div class="flex items-start justify-between mb-3">
+      <div>
+        <div class="label mb-1">Linear · Supervised · Algorithm 02</div>
+        <div class="display bright" style="font-size:1.5rem;">LDA</div>
+        <div class="mono" style="font-size:0.62rem; color:var(--dim); margin-top:2px;">Linear Discriminant Analysis</div>
+      </div>
+      <span class="pill" style="color:var(--c-red); border-color:var(--c-red);">supervised</span>
+    </div>
+
+    <div class="callout callout-purple mb-5">
+      <span style="color:var(--c-purple); font-weight:600;">Core Intuition:</span> LDA finds axes that maximise the separation between classes while minimising the spread within each class. Unlike PCA which ignores labels, LDA <em>uses</em> class labels to find the most discriminative direction.
+    </div>
+
+    <!-- PCA vs LDA contrast -->
+    <div class="grid-2 gap-3 mb-5">
+      <div class="card-inner p-4">
+        <div class="mono mb-2" style="font-size:0.68rem; color:var(--dim-accent);">PCA asks → "Where is the variance?"</div>
+        <div style="font-size:0.78rem; color:var(--dim);">Projects onto axes of maximum <strong style="color:var(--text);">total variance</strong>. Label-blind. Goal: preserve as much data spread as possible.</div>
+        <div class="mono mt-2" style="font-size:0.68rem; color:var(--muted);">↑ explained variance</div>
+      </div>
+      <div class="card-inner p-4">
+        <div class="mono mb-2" style="font-size:0.68rem; color:var(--c-red);">LDA asks → "Where is the separation?"</div>
+        <div style="font-size:0.78rem; color:var(--dim);">Projects onto axes of maximum <strong style="color:var(--text);">between-class separation</strong>. Uses labels. Goal: make classes as distinct as possible.</div>
+        <div class="mono mt-2" style="font-size:0.68rem; color:var(--muted);">↑ SB / ↓ SW</div>
+      </div>
+    </div>
+
+    <div class="grid-2 gap-6">
+      <div>
+        <div class="label mb-3">Step-by-Step — LDA Internals</div>
+        <div class="space-y-3">
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#130a0c; color:var(--c-red);">01</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Compute class means</div>
+              <div style="font-size:0.77rem; color:var(--dim);">Calculate a mean vector (centroid) for each class label separately.</div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#130a0c; color:var(--c-red);">02</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Compute Within-Class Scatter (SW)</div>
+              <div style="font-size:0.77rem; color:var(--dim);">Sum of covariance matrices per class. Measures how tightly grouped points are inside each class. We want SW small.</div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#130a0c; color:var(--c-red);">03</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Compute Between-Class Scatter (SB)</div>
+              <div style="font-size:0.77rem; color:var(--dim);">Measures how spread class centroids are from the overall mean. We want SB large.</div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#130a0c; color:var(--c-red);">04</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Solve SW⁻¹ · SB (Generalised Eigenvalue problem)</div>
+              <div style="font-size:0.77rem; color:var(--dim);">Find eigenvectors that maximise the ratio SB/SW — these are the linear discriminants.</div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#130a0c; color:var(--c-red);">05</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Select top K discriminants</div>
+              <div style="font-size:0.77rem; color:var(--dim);">Maximum K = (number of classes − 1). With 3 classes, you get at most 2 LDA components.</div>
+            </div>
+          </div>
+          <div class="flex gap-3">
+            <div class="step-num" style="background:#130a0c; color:var(--c-red);">06</div>
+            <div>
+              <div class="bright" style="font-size:0.83rem; font-weight:500;">Project data onto discriminant axes</div>
+              <div style="font-size:0.77rem; color:var(--dim);">New dataset has K columns. Classes should now be visually and geometrically separated.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="label mb-3">Key Terms</div>
+        <div class="space-y-2 mb-4">
+          <div class="callout callout-purple">
+            <span style="color:var(--c-purple); font-weight:600;">Linear Discriminant (LD)</span><br>
+            A new axis that maximally separates class means while keeping within-class spread compact.
+          </div>
+          <div class="callout callout-purple">
+            <span style="color:var(--c-purple); font-weight:600;">Max components = C − 1</span><br>
+            LDA is fundamentally limited by number of classes. Binary (2-class) problem → only 1 LD axis possible.
+          </div>
+          <div class="callout callout-key">
+            <span style="color:var(--c-yellow); font-weight:600;">SW & SB matrices</span><br>
+            SW = within-class scatter (want small). SB = between-class scatter (want large). LDA maximises SB/SW.
+          </div>
+          <div class="callout callout-warn">
+            <span style="color:var(--c-orange); font-weight:600;">Assumptions</span><br>
+            Assumes normally distributed classes with equal covariance per class. Violations reduce effectiveness.
+          </div>
+        </div>
+
+        <div class="label mb-3">Code Syntax</div>
+        <div class="code-wrap">
+          <div class="code-header">
+            <div class="code-dots">
+              <div class="dot" style="background:#ff5f57;"></div>
+              <div class="dot" style="background:#febc2e;"></div>
+              <div class="dot" style="background:#28c840;"></div>
+            </div>
+            <span class="mono" style="font-size:0.6rem; color:var(--dim);">lda.py</span>
+          </div>
+          <pre><span class="cm"># ── 1. Import ────────────────────────</span>
+<span class="kw">from</span> <span class="var">sklearn.discriminant_analysis</span> <span class="kw">import</span> \
+    <span class="cls">LinearDiscriminantAnalysis</span>
+
+<span class="cm"># ── 2. Initialise ────────────────────</span>
+<span class="var">lda</span> <span class="op">=</span> <span class="cls">LinearDiscriminantAnalysis</span>(n_components<span class="op">=</span><span class="num">2</span>)
+<span class="cm"># Max: n_components = n_classes - 1</span>
+
+<span class="cm"># ── 3. Train (y required!) ───────────</span>
+<span class="var">lda</span>.<span class="fn">fit</span>(<span class="var">X</span>, <span class="var">y</span>)   <span class="cm"># ← y is REQUIRED, unlike PCA</span>
+
+<span class="cm"># ── 4. Get values ────────────────────</span>
+<span class="var">X_lda</span>     <span class="op">=</span> <span class="var">lda</span>.<span class="fn">transform</span>(<span class="var">X</span>)
+<span class="var">var_ratio</span> <span class="op">=</span> <span class="var">lda</span>.<span class="prp">explained_variance_ratio_</span>
+<span class="var">scalings</span>  <span class="op">=</span> <span class="var">lda</span>.<span class="prp">scalings_</span>  <span class="cm"># discriminant vectors</span>
+
+<span class="cm"># ── Shortcut ─────────────────────────</span>
+<span class="var">X_lda</span> <span class="op">=</span> <span class="var">lda</span>.<span class="fn">fit_transform</span>(<span class="var">X</span>, <span class="var">y</span>)
+
+<span class="cm"># ── LDA can also classify directly ───</span>
+<span class="var">y_pred</span> <span class="op">=</span> <span class="var">lda</span>.<span class="fn">predict</span>(<span class="var">X_test</span>)</pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PCA vs LDA Full Compare -->
+  <div id="compare" class="card mt-6 overflow-hidden">
+    <div class="p-4 border-b" style="border-color:var(--border);">
+      <div class="label">PCA vs LDA — Full Comparison</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th style="color:var(--dim-accent);">PCA</th>
+          <th style="color:var(--c-red);">LDA</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Type</td><td>Unsupervised</td><td>Supervised</td></tr>
+        <tr><td>Uses labels y?</td><td><span style="color:var(--c-red);">✕ No</span></td><td><span style="color:var(--c-green);">✓ Yes (required)</span></td></tr>
+        <tr><td>Objective</td><td>Maximise total variance</td><td>Maximise class separation (SB/SW)</td></tr>
+        <tr><td>Max components</td><td>min(n_samples, n_features)</td><td>n_classes − 1</td></tr>
+        <tr><td>Needs scaling?</td><td><span style="color:var(--c-orange);">Always StandardScaler</span></td><td>Recommended</td></tr>
+        <tr><td>Can classify?</td><td><span style="color:var(--c-red);">✕ No</span></td><td><span style="color:var(--c-green);">✓ Yes (built-in)</span></td></tr>
+        <tr><td>Assumptions</td><td>Linear relationships</td><td>Normal dist., equal class covariance</td></tr>
+        <tr><td>sklearn module</td><td><span class="mono" style="font-size:0.72rem; color:var(--dim-accent);">sklearn.decomposition.PCA</span></td><td><span class="mono" style="font-size:0.72rem; color:var(--c-red);">sklearn.discriminant_analysis.LDA</span></td></tr>
+        <tr><td>Best for</td><td>Compression, visualisation, no labels available</td><td>Pre-classification compression, when labels exist</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Decision rule -->
+  <div class="card mt-6 p-6" style="background:linear-gradient(135deg,#0b0f18,#0d1020);">
+    <div class="label mb-4">Decision Guide — Which to use?</div>
+    <div class="grid" style="grid-template-columns:1fr 1fr 1fr; gap:12px;">
+      <div class="card-inner p-4">
+        <div class="mono mb-2" style="font-size:0.68rem; color:var(--dim-accent);">Have labels + classifying?</div>
+        <div style="font-size:0.82rem; color:var(--text);">Use <strong style="color:var(--c-red);">LDA</strong> to reduce first, then pass to your classifier.</div>
+      </div>
+      <div class="card-inner p-4">
+        <div class="mono mb-2" style="font-size:0.68rem; color:var(--dim-accent);">No labels or just exploring?</div>
+        <div style="font-size:0.82rem; color:var(--text);">Use <strong style="color:var(--dim-accent);">PCA</strong> for compression, noise removal, or 2D visualisation.</div>
+      </div>
+      <div class="card-inner p-4">
+        <div class="mono mb-2" style="font-size:0.68rem; color:var(--cluster-accent);">Finding groups in data?</div>
+        <div style="font-size:0.82rem; color:var(--text);">Irregular shapes → <strong style="color:var(--c-green);">DBSCAN</strong>. Need K? → <strong style="color:var(--cluster-accent);">K-Means</strong>.</div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- Footer -->
+<footer class="mt-16 pt-6 border-t" style="border-color:var(--border);">
+  <div class="flex justify-between items-center">
+    <div class="label">ML Recall Notes · sklearn · Python</div>
+    <div class="label">Clustering · Dimensionality Reduction</div>
+  </div>
+</footer>
+
+</div>
+</body>
+</html>

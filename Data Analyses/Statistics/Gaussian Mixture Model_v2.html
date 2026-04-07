@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Gaussian Mixture Models</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&family=Lora:ital,wght@0,400;0,500;1,400&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#07080d;--bg1:#0b0d16;--bg2:#0f1220;--bg3:#141828;--bg4:#1a1f30;
+  --bdr:#1c2236;--bdr2:#242c42;--bdr3:#2c3554;
+  --t1:#eceff8;--t2:#9aa4bc;--t3:#505a72;--t4:#2b3050;
+  --teal:#2dd4bf;--teal2:#99f6e4;
+  --gold:#f0b429;--gold2:#fde68a;
+  --rose:#fb7185;--rose2:#fda4af;
+  --sky:#38bdf8;--sky2:#bae6fd;
+  --violet:#a78bfa;--violet2:#c4b5fd;
+  --lime:#86efac;
+  --amber:#fbbf24;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);color:var(--t1);
+  font-family:'Lora',Georgia,serif;
+  font-size:16px;line-height:1.88;min-height:100vh;
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 75% 55% at 6%  0%,  rgba(45,212,191,.04) 0%,transparent 55%),
+    radial-gradient(ellipse 50% 38% at 94% 100%,rgba(240,180,41,.03)  0%,transparent 55%),
+    repeating-linear-gradient(0deg,  transparent,transparent 59px,rgba(255,255,255,.005) 60px),
+    repeating-linear-gradient(90deg, transparent,transparent 59px,rgba(255,255,255,.005) 60px);
+}
+.wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:56px 32px 120px;}
+
+/* ─── HEADER ───────────────────────────────────── */
+.page-hdr{margin-bottom:72px;}
+.hdr-tag{
+  font-family:'Montserrat',sans-serif;font-size:10.5px;font-weight:700;
+  letter-spacing:.3em;text-transform:uppercase;color:var(--teal);
+  margin-bottom:16px;display:flex;align-items:center;gap:10px;
+}
+.hdr-tag::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--teal),transparent);}
+h1{
+  font-family:'Montserrat',sans-serif;
+  font-size:clamp(40px,6vw,72px);font-weight:900;letter-spacing:-.035em;line-height:.98;
+  color:var(--t1);
+}
+h1 .acc{color:var(--teal);}
+.hdr-full{font-family:'Montserrat',sans-serif;font-size:clamp(14px,1.8vw,18px);font-weight:600;color:var(--t3);letter-spacing:.06em;margin-top:14px;}
+.hdr-sub{font-size:17px;color:var(--t2);font-style:italic;line-height:1.7;margin-top:12px;max-width:680px;}
+.hdr-pills{margin-top:26px;display:flex;gap:10px;flex-wrap:wrap;}
+.hdr-pill{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:5px 13px;border-radius:4px;border:1px solid var(--bdr2);color:var(--t3);background:var(--bg2);}
+
+/* ─── TOC ──────────────────────────────────────── */
+.toc{background:var(--bg1);border:1px solid var(--bdr);border-left:3px solid var(--teal);border-radius:0 10px 10px 0;padding:22px 26px;margin-bottom:60px;}
+.toc-title{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:800;letter-spacing:.28em;text-transform:uppercase;color:var(--teal);margin-bottom:14px;}
+.toc-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 28px;}
+.toc-item{font-size:15px;color:var(--t3);padding:3px 0;display:flex;gap:10px;align-items:baseline;}
+.toc-item a{color:var(--t2);text-decoration:none;transition:color .15s;}.toc-item a:hover{color:var(--teal);}
+.toc-num{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;color:var(--teal);flex-shrink:0;min-width:24px;}
+
+/* ─── SECTION ──────────────────────────────────── */
+.sec{margin-bottom:64px;scroll-margin-top:30px;}
+.sec-tag{
+  font-family:'Montserrat',sans-serif;font-size:10px;font-weight:800;
+  letter-spacing:.28em;text-transform:uppercase;
+  display:flex;align-items:center;gap:10px;margin-bottom:16px;
+}
+.sec-tag::before{content:'';width:22px;height:2.5px;border-radius:2px;flex-shrink:0;}
+.st-teal  {color:var(--teal);}   .st-teal::before  {background:var(--teal);}
+.st-gold  {color:var(--gold);}   .st-gold::before  {background:var(--gold);}
+.st-sky   {color:var(--sky);}    .st-sky::before   {background:var(--sky);}
+.st-violet{color:var(--violet);} .st-violet::before{background:var(--violet);}
+.st-rose  {color:var(--rose);}   .st-rose::before  {background:var(--rose);}
+.st-lime  {color:var(--lime);}   .st-lime::before  {background:var(--lime);}
+.st-amber {color:var(--amber);}  .st-amber::before {background:var(--amber);}
+.sec-title{
+  font-family:'Montserrat',sans-serif;
+  font-size:clamp(20px,2.6vw,27px);font-weight:800;letter-spacing:-.01em;
+  margin-bottom:22px;color:var(--t1);
+}
+
+/* ─── PROSE ────────────────────────────────────── */
+.prose{font-size:16px;color:var(--t2);line-height:1.92;margin-bottom:18px;}
+.prose strong{color:var(--t1);font-weight:600;}
+.prose em{color:var(--teal);font-style:italic;}
+.prose code{font-family:'Source Code Pro',monospace;font-size:14px;color:var(--teal2);background:var(--bg3);padding:2px 7px;border-radius:3px;}
+
+/* ─── ANALOGY ──────────────────────────────────── */
+.analogy{
+  background:linear-gradient(135deg,rgba(45,212,191,.055),rgba(240,180,41,.035));
+  border:1px solid var(--bdr2);border-left:3px solid var(--teal);
+  border-radius:0 10px 10px 0;padding:22px 28px;margin-bottom:22px;
+}
+.analogy-lbl{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:800;letter-spacing:.26em;text-transform:uppercase;color:var(--teal);margin-bottom:8px;}
+.analogy-txt{font-size:16px;color:var(--t2);line-height:1.9;}
+.analogy-txt strong{color:var(--teal);font-weight:600;}
+
+/* ─── CALLOUT ──────────────────────────────────── */
+.callout{border-radius:10px;padding:20px 24px;margin-bottom:22px;display:flex;gap:16px;align-items:flex-start;}
+.callout-icon{font-size:20px;flex-shrink:0;margin-top:2px;}
+.callout-title{font-family:'Montserrat',sans-serif;font-size:12px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;margin-bottom:7px;}
+.callout-txt{font-size:15px;line-height:1.87;color:var(--t2);}
+.callout-txt strong{color:var(--t1);font-weight:600;}
+.callout-txt code{font-family:'Source Code Pro',monospace;font-size:13px;color:var(--teal2);background:var(--bg3);padding:2px 6px;border-radius:3px;}
+.cl-teal  {background:rgba(45,212,191,.07); border:1px solid rgba(45,212,191,.22);}  .cl-teal   .callout-title{color:var(--teal);}
+.cl-gold  {background:rgba(240,180,41,.07); border:1px solid rgba(240,180,41,.22);}  .cl-gold   .callout-title{color:var(--gold);}
+.cl-sky   {background:rgba(56,189,248,.07); border:1px solid rgba(56,189,248,.22);}  .cl-sky    .callout-title{color:var(--sky);}
+.cl-violet{background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.22);} .cl-violet .callout-title{color:var(--violet);}
+.cl-rose  {background:rgba(251,113,133,.07);border:1px solid rgba(251,113,133,.22);} .cl-rose   .callout-title{color:var(--rose);}
+.cl-amber {background:rgba(251,191,36,.07); border:1px solid rgba(251,191,36,.22);}  .cl-amber  .callout-title{color:var(--amber);}
+
+/* ─── CARD ─────────────────────────────────────── */
+.card{background:var(--bg1);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:22px;}
+.card-hdr{padding:13px 22px;background:var(--bg2);border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:9px;}
+.cdot{width:8px;height:8px;border-radius:50%;}
+.cd-t{background:var(--teal);}.cd-g{background:var(--gold);}.cd-s{background:var(--sky);}
+.cd-v{background:var(--violet);}.cd-r{background:var(--rose);}.cd-l{background:var(--lime);}
+.card-hdr-title{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--t2);}
+.card-body{padding:24px 26px;}
+
+/* ─── VIZ ──────────────────────────────────────── */
+.viz{background:var(--bg1);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:22px;}
+.viz-hdr{padding:12px 20px;background:var(--bg2);border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;}
+.viz-title{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--t2);}
+.viz-badge{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;border-radius:3px;}
+.vb-t{background:rgba(45,212,191,.12); color:var(--teal);}
+.vb-g{background:rgba(240,180,41,.12); color:var(--gold);}
+.vb-s{background:rgba(56,189,248,.12); color:var(--sky);}
+.vb-v{background:rgba(167,139,250,.12);color:var(--violet);}
+.vb-r{background:rgba(251,113,133,.12);color:var(--rose);}
+.viz-body{padding:18px 20px;}
+.viz-cap{font-size:14px;color:var(--t3);text-align:center;margin-top:12px;font-style:italic;line-height:1.7;}
+.viz-legend{display:flex;gap:18px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
+.vleg-item{display:flex;align-items:center;gap:7px;font-size:14px;color:var(--t3);}
+.vleg-dot{width:11px;height:11px;border-radius:50%;}
+.viz-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:22px;}
+
+/* ─── FORMULA ──────────────────────────────────── */
+.fml{background:var(--bg2);border:1px solid var(--bdr2);border-radius:10px;padding:22px 26px;margin-bottom:18px;}
+.fml-title{font-family:'Montserrat',sans-serif;font-size:10px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--t3);margin-bottom:12px;}
+.fml-eq{font-family:'Source Code Pro',monospace;font-size:15px;color:var(--teal2);margin-bottom:8px;line-height:1.65;}
+.fml-note{font-size:14px;color:var(--t3);line-height:1.85;}
+.fml-note span{color:var(--t2);}
+
+/* ─── STEP BLOCKS ──────────────────────────────── */
+.step-row{display:flex;gap:18px;margin-bottom:28px;align-items:flex-start;}
+.step-col{display:flex;flex-direction:column;align-items:center;flex-shrink:0;}
+.step-num{font-family:'Montserrat',sans-serif;font-size:13px;font-weight:900;width:42px;height:42px;border-radius:9px;display:flex;align-items:center;justify-content:center;}
+.step-ln{width:1px;flex:1;min-height:20px;margin-top:6px;}
+.sn-t{background:rgba(45,212,191,.12); color:var(--teal);  border:1.5px solid rgba(45,212,191,.3);}
+.sn-g{background:rgba(240,180,41,.12); color:var(--gold);  border:1.5px solid rgba(240,180,41,.3);}
+.sn-s{background:rgba(56,189,248,.12); color:var(--sky);   border:1.5px solid rgba(56,189,248,.3);}
+.sn-v{background:rgba(167,139,250,.12);color:var(--violet);border:1.5px solid rgba(167,139,250,.3);}
+.sn-r{background:rgba(251,113,133,.12);color:var(--rose);  border:1.5px solid rgba(251,113,133,.3);}
+.sl-t{background:rgba(45,212,191,.14);} .sl-g{background:rgba(240,180,41,.14);}
+.sl-s{background:rgba(56,189,248,.14);} .sl-v{background:rgba(167,139,250,.14);}
+.sl-r{background:rgba(251,113,133,.14);}
+.step-content{flex:1;padding-top:6px;}
+.step-title{font-family:'Montserrat',sans-serif;font-size:17px;font-weight:800;margin-bottom:10px;color:var(--t1);}
+.step-prose{font-size:15px;color:var(--t2);line-height:1.9;margin-bottom:10px;}
+.step-prose strong{color:var(--t1);font-weight:600;}
+.step-prose code{font-family:'Source Code Pro',monospace;font-size:13px;color:var(--teal2);background:var(--bg3);padding:2px 6px;border-radius:3px;}
+.fline{font-family:'Source Code Pro',monospace;font-size:14px;background:var(--bg3);border:1px solid var(--bdr2);border-radius:5px;padding:8px 14px;display:inline-block;margin-top:5px;color:var(--teal2);line-height:1.6;}
+
+/* ─── GLOSSARY ─────────────────────────────────── */
+.gitem{display:grid;grid-template-columns:210px 1fr;gap:20px;padding:16px 0;border-bottom:1px solid var(--bdr);align-items:start;}
+.gitem:last-child{border-bottom:none;}
+.gterm-wrap{display:flex;flex-direction:column;gap:6px;}
+.gcode{font-family:'Source Code Pro',monospace;font-size:14px;font-weight:500;padding:4px 10px;border-radius:4px;display:inline-block;}
+.gc-t{background:rgba(45,212,191,.1);color:#5eead4;} .gc-g{background:rgba(240,180,41,.1);color:#fcd34d;}
+.gc-s{background:rgba(56,189,248,.1);color:#7dd3fc;}  .gc-v{background:rgba(167,139,250,.1);color:#c4b5fd;}
+.gc-r{background:rgba(251,113,133,.1);color:#fda4af;} .gc-l{background:rgba(134,239,172,.1);color:#86efac;}
+.gc-a{background:rgba(251,191,36,.1);color:#fde68a;}
+.gsimple{font-size:13px;color:var(--t3);font-family:'Montserrat',sans-serif;font-weight:700;letter-spacing:.04em;}
+.gdef{font-size:15px;color:var(--t2);line-height:1.87;}
+.gdef strong{color:var(--t1);font-weight:600;}
+.gdef code{font-family:'Source Code Pro',monospace;font-size:13px;color:#5eead4;}
+.gsub{font-size:14px;color:var(--t3);margin-top:6px;font-style:italic;line-height:1.72;}
+
+/* ─── COMPARISON TABLE ─────────────────────────── */
+.cmp{width:100%;border-collapse:collapse;}
+.cmp th{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:800;letter-spacing:.15em;text-transform:uppercase;color:var(--t3);padding:13px 18px;text-align:left;border-bottom:1px solid var(--bdr);background:var(--bg2);}
+.cmp td{padding:14px 18px;border-bottom:1px solid var(--bdr);color:var(--t2);vertical-align:top;font-size:15px;line-height:1.8;}
+.cmp td:first-child{color:var(--t1);font-weight:600;font-family:'Montserrat',sans-serif;font-size:14px;}
+.cmp tr:last-child td{border-bottom:none;}
+.cmp tr:hover td{background:rgba(45,212,191,.02);}
+.tag{font-family:'Source Code Pro',monospace;font-size:13px;padding:2px 9px;border-radius:3px;display:inline-block;}
+.tg-t{background:rgba(45,212,191,.1);color:#5eead4;}
+.tg-r{background:rgba(251,113,133,.1);color:#fda4af;}
+.tg-s{background:rgba(56,189,248,.1);color:#7dd3fc;}
+
+/* ─── CODE ─────────────────────────────────────── */
+.code-card{background:#08090d;border:1px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:22px;}
+.code-tabs{display:flex;border-bottom:1px solid var(--bdr);overflow-x:auto;background:var(--bg2);}
+.ctab{padding:10px 18px;font-family:'Montserrat',sans-serif;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;background:none;border-left:none;border-right:none;border-top:none;transition:color .15s,border-color .15s;user-select:none;}
+.ctab:hover{color:var(--t2);}
+.ctab.at{color:var(--teal);border-bottom-color:var(--teal);}
+pre{margin:0!important;border-radius:0!important;}
+pre code.hljs{background:#08090d!important;font-family:'Source Code Pro',monospace!important;font-size:14px!important;padding:20px 22px!important;line-height:1.75!important;}
+.cbw{display:none;}.cbw.vis{display:block;}
+
+/* ─── EM STEPPER ───────────────────────────────── */
+.em-card{background:var(--bg1);border:1px solid var(--bdr);border-radius:12px;overflow:hidden;margin-bottom:22px;}
+.em-hdr{padding:14px 20px;background:var(--bg2);border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.em-controls{display:flex;gap:10px;}
+.em-btn{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:9px 22px;border-radius:6px;cursor:pointer;border:none;transition:all .2s;}
+.em-btn-primary{background:var(--teal);color:#07080d;}.em-btn-primary:hover{background:var(--teal2);}
+.em-btn-ghost{background:var(--bg3);color:var(--t2);border:1px solid var(--bdr2);}.em-btn-ghost:hover{border-color:var(--teal);color:var(--teal);}
+.em-info-bar{display:flex;border-bottom:1px solid var(--bdr);background:var(--bg);flex-wrap:wrap;}
+.em-cell{padding:13px 20px;border-right:1px solid var(--bdr);flex:1;min-width:110px;}
+.em-cell:last-child{border-right:none;flex:3;min-width:260px;}
+.em-cell-lbl{font-family:'Montserrat',sans-serif;font-size:9px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--t3);margin-bottom:5px;}
+.em-cell-val{font-family:'Montserrat',sans-serif;font-size:17px;font-weight:800;}
+.em-cell-desc{font-size:14px;color:var(--t2);margin-top:4px;line-height:1.7;}
+.em-body{padding:18px 20px;}
+
+/* ─── INTERACTIVE PLAYGROUND ───────────────────── */
+.ctrl-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+.ctrl-lbl{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--t3);}
+.ctrl-sel{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;padding:8px 14px;border-radius:6px;background:var(--bg3);border:1px solid var(--bdr2);color:var(--t2);cursor:pointer;letter-spacing:.08em;text-transform:uppercase;}
+.ctrl-sel:hover{border-color:var(--teal);}
+.ctrl-btn{font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:8px 18px;border-radius:6px;cursor:pointer;border:none;transition:all .2s;}
+.btn-teal{background:var(--teal);color:#07080d;}.btn-teal:hover{background:var(--teal2);}
+.btn-ghost{background:var(--bg3);color:var(--t2);border:1px solid var(--bdr2);}.btn-ghost:hover{border-color:var(--teal);color:var(--teal);}
+.play-info-bar{display:flex;gap:0;border:1px solid var(--bdr);border-radius:8px;overflow:hidden;margin-bottom:14px;}
+.pib-cell{padding:11px 17px;flex:1;border-right:1px solid var(--bdr);background:var(--bg2);}
+.pib-cell:last-child{border-right:none;}
+.pib-lbl{font-family:'Montserrat',sans-serif;font-size:9px;font-weight:800;letter-spacing:.2em;text-transform:uppercase;color:var(--t3);margin-bottom:4px;}
+.pib-val{font-family:'Montserrat',sans-serif;font-size:16px;font-weight:800;}
+
+/* ─── BIC CHART ────────────────────────────────── */
+.bic-ctrl{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px;}
+
+/* ─── DIVIDER ──────────────────────────────────── */
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--bdr2) 30%,var(--bdr2) 70%,transparent);margin:52px 0;}
+
+/* ─── RESPONSIVE ───────────────────────────────── */
+@media(max-width:820px){
+  .viz-grid{grid-template-columns:1fr;}
+  .toc-grid{grid-template-columns:1fr;}
+  .gitem{grid-template-columns:1fr;}
+}
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ═══════════════════════════════════════════════
+     HEADER
+═══════════════════════════════════════════════ -->
+<header class="page-hdr">
+  <div class="hdr-tag">Machine Learning · Unsupervised Learning</div>
+  <h1>G<span class="acc">M</span>M</h1>
+  <div class="hdr-full">Gaussian Mixture Models</div>
+  <p class="hdr-sub">A complete, ground-up study of GMM — what it is, why it exists, how it learns, and how to use it. No prior knowledge assumed.</p>
+  <div class="hdr-pills">
+    <span class="hdr-pill">Probabilistic Clustering</span>
+    <span class="hdr-pill">The Gaussian Distribution</span>
+    <span class="hdr-pill">Soft Assignments</span>
+    <span class="hdr-pill">The EM Algorithm</span>
+    <span class="hdr-pill">Covariance Types</span>
+    <span class="hdr-pill">Choosing K · BIC / AIC</span>
+    <span class="hdr-pill">Complete Code</span>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════
+     TABLE OF CONTENTS
+═══════════════════════════════════════════════ -->
+<div class="toc">
+  <div class="toc-title">What You Will Learn</div>
+  <div class="toc-grid">
+    <div class="toc-item"><span class="toc-num">01</span><a href="#s1">The problem GMM solves — and why simpler tools fail</a></div>
+    <div class="toc-item"><span class="toc-num">06</span><a href="#s6">The EM Algorithm — how GMM learns</a></div>
+    <div class="toc-item"><span class="toc-num">02</span><a href="#s2">The Gaussian (bell curve) — the building block</a></div>
+    <div class="toc-item"><span class="toc-num">07</span><a href="#s7">Choosing K — BIC, AIC, Silhouette</a></div>
+    <div class="toc-item"><span class="toc-num">03</span><a href="#s3">What a "mixture" is — combining bell curves</a></div>
+    <div class="toc-item"><span class="toc-num">08</span><a href="#s8">Complete glossary of all terms</a></div>
+    <div class="toc-item"><span class="toc-num">04</span><a href="#s4">Covariance — controlling the shape of each cluster</a></div>
+    <div class="toc-item"><span class="toc-num">09</span><a href="#s9">Complete code — annotated line by line</a></div>
+    <div class="toc-item"><span class="toc-num">05</span><a href="#s5">Soft vs hard assignment — what GMM actually outputs</a></div>
+    <div class="toc-item"><span class="toc-num">10</span><a href="#s10">GMM vs K-Means — when to use which</a></div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 1 — THE PROBLEM
+═══════════════════════════════════════════════ -->
+<div class="sec" id="s1">
+  <div class="sec-tag st-teal">Section 01</div>
+  <h2 class="sec-title">The Problem — Grouping Data Without Labels</h2>
+
+  <p class="prose">In machine learning, we often have datasets where we know the input data but do not know which group or category each data point belongs to. There are no labels, no teacher, no pre-defined categories. Our job is to look at the data itself and figure out whether it naturally groups into clusters — and if so, how many, and which points belong to which group. This is called <strong>unsupervised clustering</strong>.</p>
+
+  <div class="analogy">
+    <div class="analogy-lbl">Starting Analogy — A Box of Unmarked Photographs</div>
+    <p class="analogy-txt">You find a box containing 1,000 photographs of people, none of them labelled. You are asked to sort them into groups of people who "seem to belong together." You might naturally sort by apparent age, by clothing style, or by location in the background — you are discovering the natural structure in the data without anyone telling you the categories in advance. <strong>This is exactly the clustering problem.</strong></p>
+  </div>
+
+  <p class="prose">The simplest and most popular clustering method is called <strong>K-Means</strong>. It works by placing K cluster centres in the data, assigning every point to its nearest centre, then moving centres to the average of their assigned points, and repeating. It is fast, simple, and widely used.</p>
+
+  <p class="prose">But K-Means has two rigid assumptions that break down in many real datasets:</p>
+
+  <div class="card">
+    <div class="card-hdr"><span class="cdot cd-r"></span><span class="card-hdr-title">The Two Problems with K-Means</span></div>
+    <div class="card-body">
+      <div class="step-row">
+        <div class="step-col"><span class="step-num sn-r">1</span><div class="step-ln sl-r"></div></div>
+        <div class="step-content">
+          <div class="step-title">Problem 1 — Hard Boundaries</div>
+          <p class="step-prose">K-Means gives every single data point a <strong>definitive, hard assignment</strong> to exactly one cluster — 100% certainty, zero ambiguity. But real data is rarely this clean. A customer who sits precisely between two market segments, or a patient whose biomarkers straddle two disease subtypes, is <em>genuinely ambiguous</em>. Forcing them into one group loses that information entirely. What we really want to say is: <strong>"This point is 65% likely to belong to Cluster A and 35% likely to belong to Cluster B."</strong> K-Means cannot say this.</p>
+        </div>
+      </div>
+      <div class="step-row" style="margin-bottom:0;">
+        <div class="step-col"><span class="step-num sn-r">2</span></div>
+        <div class="step-content">
+          <div class="step-title">Problem 2 — Assumed Spherical Shape</div>
+          <p class="step-prose">K-Means measures distance using straight-line (Euclidean) distance, which treats all directions equally. This implicitly assumes every cluster is a <strong>circle in 2D, a sphere in 3D</strong> — perfectly round, same size, same density in all directions. But real clusters are almost never perfectly spherical. Customer data might have an elongated diagonal cluster (high income and high age are correlated). Medical data might have tilted ellipses. K-Means will split these incorrectly because it cannot model non-circular shapes.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout cl-teal">
+    <div class="callout-icon">💡</div>
+    <div>
+      <div class="callout-title">What GMM Does Instead</div>
+      <p class="callout-txt">Gaussian Mixture Models solve both problems simultaneously. Instead of assigning each point to one cluster with full certainty, GMM asks: <strong>"What is the probability that this point was generated by each of the K clusters?"</strong> And instead of assuming spherical clusters, each GMM cluster can be any shape — a narrow ellipse, a wide circle, a tilted diagonal — because each cluster is described by a full statistical distribution (the Gaussian) with its own shape parameters.</p>
+    </div>
+  </div>
+
+  <div class="viz-grid">
+    <div class="viz">
+      <div class="viz-hdr"><span class="viz-title">K-Means — Hard Boundaries</span><span class="viz-badge vb-r">Forced Assignment</span></div>
+      <div class="viz-body">
+        <canvas id="hardChart" height="220"></canvas>
+        <p class="viz-cap">Every point belongs to exactly one cluster. The dashed line is a hard wall. A point one pixel on either side gets completely different treatment, even if it is equidistant from both centres.</p>
+      </div>
+    </div>
+    <div class="viz">
+      <div class="viz-hdr"><span class="viz-title">GMM — Soft, Probabilistic Boundaries</span><span class="viz-badge vb-t">Honest Uncertainty</span></div>
+      <div class="viz-body">
+        <canvas id="softChart" height="220"></canvas>
+        <p class="viz-cap">Points near the boundary smoothly blend between cluster colours — because the model honestly says "this point is partially in both clusters." Deep inside a cluster, the point is saturated in that colour — high confidence. At the border, colours mix.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 2 — THE GAUSSIAN
+═══════════════════════════════════════════════ -->
+<div class="sec" id="s2">
+  <div class="sec-tag st-gold">Section 02</div>
+  <h2 class="sec-title">The Building Block — The Gaussian Distribution</h2>
+
+  <p class="prose">Before we can understand a <em>mixture</em> of Gaussians, we must fully understand what a single Gaussian is. The word "Gaussian" is just the formal name for the <strong>Normal Distribution</strong> — the famous bell-shaped curve. It appears everywhere in nature, statistics, and machine learning, and it is the mathematical foundation of GMM.</p>
+
+  <div class="analogy">
+    <div class="analogy-lbl">Real-World Analogy — Heights in a Room</div>
+    <p class="analogy-txt">
+      Measure the heights of 1,000 adults in a room and plot a bar chart of how many people have each height. You will get a bell-shaped curve: most people cluster around a central average height, and very few are extremely short or extremely tall. The <strong>peak of the bell tells you the average</strong> (this is μ, pronounced "mew"). The <strong>width of the bell tells you how much variety there is</strong> — a narrow bell means everyone is very similar in height, a wide bell means heights vary a lot (this is σ, pronounced "sigma").
+    </p>
+  </div>
+
+  <p class="prose">Two numbers completely describe a Gaussian in one dimension: <strong>μ (mu)</strong>, the mean — the centre of the bell — and <strong>σ² (sigma squared)</strong>, the variance — the square of how wide the bell is. The formula that gives the height of the bell curve at any value x is called the probability density function:</p>
+
+  <div class="fml">
+    <div class="fml-title">Gaussian Probability Density Function</div>
+    <div class="fml-eq">N(x | μ, σ²) = (1 / √(2π σ²)) · exp( −(x − μ)² / (2σ²) )</div>
+    <div class="fml-note">
+      <span>x</span> = any data value &nbsp;·&nbsp; <span>μ</span> = mean (peak of the bell) &nbsp;·&nbsp; <span>σ²</span> = variance (width of the bell)<br/>
+      Output: a "plausibility score" for how likely point x is under this distribution. Higher = the data point is closer to the centre of the bell.
+    </div>
+  </div>
+
+  <div class="callout cl-teal">
+    <div class="callout-icon">📌</div>
+    <div>
+      <div class="callout-title">Density vs. Probability — an Important Distinction</div>
+      <p class="callout-txt">This formula gives a <strong>probability density</strong>, not a raw probability. In continuous distributions, the probability of any exact point is technically zero. Think of the density as a <strong>plausibility score</strong>: a higher value means the model considers this point more likely to have been drawn from this Gaussian. A point at the peak (x = μ) gets the highest score. A point far from the peak gets a score near zero.</p>
+    </div>
+  </div>
+
+  <div class="viz-grid">
+    <div class="viz">
+      <div class="viz-hdr"><span class="viz-title">Effect of μ — Sliding the Bell Left and Right</span><span class="viz-badge vb-g">σ = 1, fixed</span></div>
+      <div class="viz-body">
+        <canvas id="muChart" height="200"></canvas>
+        <p class="viz-cap">Changing μ moves the entire bell curve horizontally without changing its shape or width. μ is simply the location of the peak — the most common value under this distribution.</p>
+      </div>
+    </div>
+    <div class="viz">
+      <div class="viz-hdr"><span class="viz-title">Effect of σ — Stretching or Compressing the Bell</span><span class="viz-badge vb-t">μ = 0, fixed</span></div>
+      <div class="viz-body">
+        <canvas id="sigmaChart" height="200"></canvas>
+        <p class="viz-cap">Larger σ = wider, flatter bell = more spread out data = more uncertainty about where a new point will land. Smaller σ = narrow, tall bell = data tightly packed near the mean = high certainty.</p>
+      </div>
+    </div>
+  </div>
+
+  <p class="prose">When we work with data that has <strong>multiple features</strong> (e.g., a customer described by both age and income simultaneously), a single Gaussian becomes a <strong>2D hill shape</strong> — a mountain. Its centre is a vector μ = [μ₁, μ₂] (one value per feature), and its shape is controlled by a <strong>covariance matrix Σ</strong> (capital Sigma). The covariance matrix can make the hill a perfect circle, or a wide ellipse, or a tilted ellipse — and this is exactly what gives GMM its power to model clusters of different shapes. We will study covariance matrices closely in Section 04.</p>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 3 — THE MIXTURE
+═══════════════════════════════════════════════ -->
+<div class="sec" id="s3">
+  <div class="sec-tag st-sky">Section 03</div>
+  <h2 class="sec-title">The Mixture — Stacking Multiple Gaussians</h2>
+
+  <p class="prose">Now that we understand one Gaussian, we can understand what a <em>mixture</em> means. A <strong>Gaussian Mixture Model</strong> assumes that your data was not generated by one single Gaussian — it was generated by <strong>K separate Gaussian distributions</strong>, one for each natural cluster in the data. The full dataset is a blend — a mixture — of these K Gaussians.</p>
+
+  <div class="analogy">
+    <div class="analogy-lbl">Analogy — A Room with Three Age Groups</div>
+    <p class="analogy-txt">
+      Now imagine that same room of 1,000 people, but it contains children, working adults, and elderly people all together. When you plot all their heights, you do not get one clean bell — you get <strong>three overlapping bells</strong>: one centred around children's heights, one around adults', one around the elderly's. Each bell has a different centre (μ), a different width (σ), and a different height (because there may be more adults than children). A GMM looks at this combined, messy histogram and <strong>automatically figures out that there are three underlying groups</strong> — without you telling it how many groups there are or what they look like.
+    </p>
+  </div>
+
+  <p class="prose">Mathematically, GMM models your data's overall probability distribution as a <strong>weighted sum of K Gaussian densities</strong>. Each Gaussian component gets a weight πₖ that represents how common that cluster is:</p>
+
+  <div class="fml">
+    <div class="fml-title">The GMM Mixture Density — The Core Formula</div>
+    <div class="fml-eq">p(x) = π₁·N(x|μ₁,Σ₁)  +  π₂·N(x|μ₂,Σ₂)  +  ...  +  πₖ·N(x|μₖ,Σₖ)</div>
+    <div class="fml-eq" style="margin-top:6px;">     = Σₖ  πₖ · N(x | μₖ, Σₖ)</div>
+    <div class="fml-note" style="margin-top:10px;">
+      <span>πₖ</span> = mixing weight of component k — what fraction of the data comes from this cluster? All weights must sum to 1.<br/>
+      <span>μₖ</span> = mean of component k — the centre of cluster k in feature space.<br/>
+      <span>Σₖ</span> = covariance matrix of component k — the shape and orientation of cluster k.<br/>
+      Plain English: to find how "plausible" a data point x is under the full GMM, compute its plausibility under each Gaussian, multiply by that Gaussian's weight, and add everything up.
+    </div>
+  </div>
+
+  <div class="viz">
+    <div class="viz-hdr"><span class="viz-title">Three Gaussians Combining into One Mixture Density</span><span class="viz-badge vb-s">K = 3 Components</span></div>
+    <div class="viz-body">
+      <canvas id="mixtureChart" height="230"></canvas>
+      <div class="viz-legend">
+        <div class="vleg-item"><div style="width:28px;height:2px;background:#2dd4bf;"></div>Component 1 · π=0.40 · μ=−1.8</div>
+        <div class="vleg-item"><div style="width:28px;height:2px;background:#f0b429;"></div>Component 2 · π=0.35 · μ=2.2</div>
+        <div class="vleg-item"><div style="width:28px;height:2px;background:#fb7185;"></div>Component 3 · π=0.25 · μ=5.8</div>
+        <div class="vleg-item"><div style="width:28px;height:3px;background:rgba(255,255,255,.65);"></div>Total mixture p(x)</div>
+      </div>
+      <p class="viz-cap">The dashed coloured curves are the three individual Gaussian components, each scaled by its weight π. Their weighted sum produces the solid white mixture density. Notice: Component 1's peak is tallest because π=0.40 — it is the most common cluster. Where two components overlap (near x=0), the mixture density is the sum of both.</p>
+    </div>
+  </div>
+
+  <div class="callout cl-sky">
+    <div class="callout-icon">🔑</div>
+    <div>
+      <div class="callout-title">The Generative Story — How GMM "Imagines" Your Data Was Created</div>
+      <p class="callout-txt">GMM has a beautiful story for how every data point came to exist. Imagine generating one new data point: <strong>Step 1</strong> — flip a weighted K-sided coin (weighted by π₁, π₂, ..., πₖ). This randomly picks one component k. <strong>Step 2</strong> — draw a random number from that component's Gaussian N(μₖ, Σₖ). That drawn number is your data point. Repeat for all N data points. Because GMM describes the process that <em>generated</em> the data, it is called a <strong>generative model</strong> — and this means you can also run the process in reverse to <em>create brand new, synthetic data</em>.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 4 — COVARIANCE TYPES
+═══════════════════════════════════════════════ -->
+<div class="sec" id="s4">
+  <div class="sec-tag st-violet">Section 04</div>
+  <h2 class="sec-title">Covariance — The Shape, Size, and Tilt of Each Cluster</h2>
+
+  <p class="prose">The covariance matrix Σₖ is what makes GMM so much more powerful than K-Means when it comes to cluster shape. It is a matrix — a grid of numbers — that describes two things about a cluster: <strong>how spread out it is</strong> in each direction, and <strong>how correlated its features are</strong> with each other. Understanding what covariance means visually is essential.</p>
+
+  <div class="analogy">
+    <div class="analogy-lbl">Intuition — Weight and Height</div>
+    <p class="analogy-txt">
+      In a group of adults, height and weight are <strong>positively correlated</strong> — taller people tend to weigh more. If you plot this as a scatter of points (x=height, y=weight), the cloud of points forms a <strong>tilted ellipse</strong>, angled upward from left to right. The covariance matrix captures this tilt. If height and weight were uncorrelated, the cloud would be an axis-aligned ellipse (no tilt). If both had equal variance in both directions, it would be a circle. <strong>The covariance matrix encodes all of this geometry.</strong>
+    </p>
+  </div>
+
+  <p class="prose">Scikit-learn offers four <code>covariance_type</code> options, each making a different assumption about how clusters can be shaped. Choosing the right one is a modelling decision that trades off flexibility against the number of parameters to estimate:</p>
+
+  <div class="card">
+    <div class="card-hdr"><span class="cdot cd-v"></span><span class="card-hdr-title">The Four Covariance Types</span></div>
+    <div class="card-body">
+      <div class="step-row">
+        <div class="step-col"><span class="step-num sn-t" style="font-size:10px;">SPHER</span><div class="step-ln sl-t"></div></div>
+        <div class="step-content">
+          <div class="step-title" style="color:var(--teal);">Spherical — <code style="font-size:14px;">covariance_type='spherical'</code></div>
+          <p class="step-prose">One single variance value applies equally in all directions. Every cluster is forced to be a <strong>perfect circle</strong> in 2D (a sphere in higher dimensions). Features are assumed to be completely uncorrelated. This is the simplest assumption — fewest parameters, fastest to train — but also the most restrictive. It behaves very similarly to K-Means. <strong>Use when</strong> you know clusters are roughly circular and features are on the same scale.</p>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-col"><span class="step-num sn-g" style="font-size:10px;">DIAG</span><div class="step-ln sl-g"></div></div>
+        <div class="step-content">
+          <div class="step-title" style="color:var(--gold);">Diagonal — <code style="font-size:14px;">covariance_type='diag'</code></div>
+          <p class="step-prose">Each feature can have its <strong>own different variance</strong>, but features are still assumed to be uncorrelated with each other. Clusters can be wide in one direction and narrow in another, but the ellipse always sits aligned with the horizontal and vertical axes — <strong>never tilted at an angle</strong>. More flexible than spherical, still efficient. <strong>Use when</strong> features are independent but have different natural scales.</p>
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-col"><span class="step-num sn-s" style="font-size:10px;">TIED</span><div class="step-ln sl-s"></div></div>
+        <div class="step-content">
+          <div class="step-title" style="color:var(--sky);">Tied — <code style="font-size:14px;">covariance_type='tied'</code></div>
+          <p class="step-prose">All K clusters <strong>share one single covariance matrix</strong> — so every cluster has the exact same shape and orientation, just at a different position. Imagine K identical ellipses stamped at K different locations. This assumption reduces the total number of parameters. <strong>Use when</strong> you believe all clusters have the same internal structure, or when you have limited data and need to avoid overfitting.</p>
+        </div>
+      </div>
+      <div class="step-row" style="margin-bottom:0;">
+        <div class="step-col"><span class="step-num sn-r" style="font-size:10px;">FULL</span></div>
+        <div class="step-content">
+          <div class="step-title" style="color:var(--rose);">Full — <code style="font-size:14px;">covariance_type='full'</code> ← Recommended Default</div>
+          <p class="step-prose">Each cluster has its <strong>own completely independent covariance matrix</strong>. Clusters can be any shape, any size, and tilted at any angle. This is the most expressive option — it places zero restriction on cluster geometry and models real-world data most accurately. Higher computational cost because more parameters must be estimated, but the results are generally the most accurate. <strong>Use this as your default</strong> unless you have a specific reason not to.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="viz">
+    <div class="viz-hdr"><span class="viz-title">What Each Covariance Type Looks Like — Same Data, Different Shape Constraints</span><span class="viz-badge vb-v">Visual Comparison</span></div>
+    <div class="viz-body">
+      <canvas id="covChart" height="240"></canvas>
+      <div class="viz-legend">
+        <div class="vleg-item"><div class="vleg-dot" style="background:#2dd4bf;"></div>Cluster A (tilted ellipse)</div>
+        <div class="vleg-item"><div class="vleg-dot" style="background:#f0b429;"></div>Cluster B (wide horizontal ellipse)</div>
+        <div class="vleg-item"><div class="vleg-dot" style="background:#fb7185;"></div>Cluster C (compact circle)</div>
+      </div>
+      <p class="viz-cap">Cluster A has a genuine upward tilt (positive covariance between features). Cluster B is wide horizontally. Cluster C is compact and circular. Only <code>covariance_type='full'</code> can correctly represent all three simultaneously. 'spherical' would force all three into circles of the same shape; 'diag' would remove the tilt from A; 'tied' would make all three the same shape.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 5 — SOFT vs HARD ASSIGNMENT
+═══════════════════════════════════════════════ -->
+<div class="sec" id="s5">
+  <div class="sec-tag st-teal">Section 05</div>
+  <h2 class="sec-title">Soft vs Hard Assignment — What GMM Actually Outputs</h2>
+
+  <p class="prose">This is one of the most important concepts in GMM. When GMM finishes training, it can produce two types of cluster assignment for any data point. Understanding the difference — and knowing when to use each — is critical.</p>
+
+  <div class="analogy">
+    <div class="analogy-lbl">Analogy — A Doctor's Diagnosis</div>
+    <p class="analogy-txt">
+      Imagine a doctor examining a patient's blood test results and trying to determine which of three conditions the patient has. A hard-assignment approach says: <strong>"The patient has Condition B."</strong> Full stop. A soft-assignment approach says: <strong>"The patient shows 68% of the markers consistent with Condition B, 25% consistent with Condition A, and 7% consistent with Condition C."</strong> The second answer is far more informative — especially for borderline cases — and it is exactly what GMM provides.
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><span class="cdot cd-t"></span><span class="card-hdr-title">The Two Types of Assignment</span></div>
+    <div class="card-body">
+      <div class="step-row">
+        <div class="step-col"><span class="step-num sn-t">H</span><div class="step-ln sl-t"></div></div>
+        <div class="step-content">
+          <div class="step-title">Hard Assignment — gmm.predict(X)</div>
+          <p class="step-prose">Returns one integer per data point — the index of the single most probable cluster. For example, if a point has a 70% chance of belonging to Cluster 0 and 30% to Cluster 1, hard assignment returns <strong>0</strong>. It is the <em>argmax</em> of the soft assignment. Use this when you need a clean, single label per point — for plotting, reporting, or feeding into downstream tasks. The trade-off: all uncertainty information is discarded.</p>
+          <span class="fline">labels = gmm.predict(X_scaled)   # → [0, 2, 1, 0, 1, ...]</span>
+        </div>
+      </div>
+      <div class="step-row" style="margin-bottom:0;">
+        <div class="step-col"><span class="step-num sn-t">S</span></div>
+        <div class="step-content">
+          <div class="step-title">Soft Assignment — gmm.predict_proba(X)</div>
+          <p class="step-prose">Returns a full probability matrix of shape <code>(n_samples, K)</code>. For every data point, you get K probabilities — one for each cluster — that sum to exactly 1.0. This is called the <strong>responsibility</strong> of each cluster for each point (a term from the EM algorithm). A point with soft assignment [0.97, 0.02, 0.01] is almost certainly in Cluster 0. A point with [0.48, 0.45, 0.07] is genuinely uncertain between Clusters 0 and 1 — and GMM gives you that information instead of hiding it.</p>
+          <span class="fline">probs = gmm.predict_proba(X_scaled)   # shape: (n_samples, K)</span>
+          <p class="step-prose" style="margin-top:10px;font-size:14px;color:var(--t3);">Example output row: <code>[0.48, 0.45, 0.07]</code> — this point is 48% likely in Cluster 0, 45% in Cluster 1, 7% in Cluster 2. Row sums to 1.0.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout cl-gold">
+    <div class="callout-icon">⚠️</div>
+    <div>
+      <div class="callout-title">The Borderline Point Problem — Why Soft Assignment Matters</div>
+      <p class="callout-txt">Points with a maximum probability below ~0.65 are <strong>borderline points</strong> — the model is genuinely uncertain which cluster they belong to. K-Means hides this: it forces a decision and presents it with false confidence. GMM surfaces it: you can detect these points and treat them differently — flag them for human review, exclude them from cluster-specific rules, or use their blended probabilities for weighted analysis. In business and medicine, these borderline decisions are often the most consequential ones.</p>
+    </div>
+  </div>
+
+  <!-- Interactive responsibility viz -->
+  <div class="viz">
+    <div class="viz-hdr"><span class="viz-title">Interactive — Soft Assignment Explorer</span><span class="viz-badge vb-t">Click any point on the scatter</span></div>
+    <div class="viz-body">
+      <canvas id="respCanvas" height="270" style="cursor:crosshair;"></canvas>
+      <div id="respDetail" style="margin-top:14px;padding:14px 18px;background:var(--bg2);border:1px solid var(--bdr2);border-radius:8px;font-size:15px;color:var(--t2);line-height:1.8;">
+        Click any point on the scatter plot above to see its soft assignment — the probability distribution over the three clusters.
+      </div>
+      <div class="viz-legend" style="margin-top:10px;">
+        <div class="vleg-item"><div class="vleg-dot" style="background:#2dd4bf;"></div>Cluster 0</div>
+        <div class="vleg-item"><div class="vleg-dot" style="background:#f0b429;"></div>Cluster 1</div>
+        <div class="vleg-item"><div class="vleg-dot" style="background:#fb7185;"></div>Cluster 2</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 6 — THE EM ALGORITHM
+═══════════════════════════════════════════════ -->
+<div class="sec" id="s6">
+  <div class="sec-tag st-teal">Section 06</div>
+  <h2 class="sec-title">How GMM Learns — The EM Algorithm</h2>
+
+  <p class="prose">GMM cannot be trained with a simple one-step formula. The reason is circular: to estimate the cluster centres (μₖ), you need to know which points belong to each cluster — but to know which points belong to each cluster, you need the cluster centres. You cannot solve one without the other.</p>
+
+  <div class="analogy">
+    <div class="analogy-lbl">The Chicken-and-Egg Problem</div>
+    <p class="analogy-txt">
+      You are sorting a bag of mixed coins — some 1-rupee, some 2-rupee, some 5-rupee — but they are all the same colour. To figure out the average weight of 1-rupee coins, you need to know which ones are 1-rupee coins. But to know which ones are 1-rupee coins, you need the average weight of 1-rupee coins. <strong>The solution:</strong> make a best guess about which coin is which, compute averages, use those averages to improve your guess, compute new averages, and keep repeating. Each round, your guesses get better. Eventually they stabilise. This is exactly the EM algorithm.
+    </p>
+  </div>
+
+  <p class="prose">The solution is the <strong>Expectation-Maximization (EM) Algorithm</strong>. It is a general-purpose iterative method for fitting models when some information is hidden — in GMM, the hidden information is "which specific component generated each data point." EM alternates between two steps until the answer stops changing.</p>
+
+  <div class="card">
+    <div class="card-hdr"><span class="cdot cd-t"></span><span class="card-hdr-title">EM Algorithm — Complete Step-by-Step</span></div>
+    <div class="card-body">
+
+      <div class="step-row">
+        <div class="step-col"><span class="step-num sn-v">0</span><div class="step-ln sl-v"></div></div>
+        <div class="step-content">
+          <div class="step-title">Step 0 — Initialization</div>
+          <p class="step-prose">Before any learning can happen, we need starting values. You choose K — the number of components you want. Then, initial values for all parameters are set: means μₖ are usually set to randomly chosen data points, covariance matrices Σₖ are set to identity matrices (a sphere), and mixing weights πₖ are set equally to 1/K. These are rough starting guesses — they will be refined by EM. Because the starting point affects the result, the parameter <strong>n_init</strong> runs the whole process multiple times with different random starts and keeps the best result.</p>
+          <span class="fline">μₖ = random · Σₖ = I · πₖ = 1/K</span>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-col"><span class="step-num sn-t">E</span><div class="step-ln sl-t"></div></div>
+        <div class="step-content">
+          <div class="step-title">E-Step — Expectation (Compute Responsibilities)</div>
+          <p class="step-prose">Using the <em>current</em> parameter estimates (even if they are just rough initial guesses), compute for every data point xᵢ and every component k: <strong>how responsible is component k for this data point?</strong> This number r(i, k) is the soft assignment — the probability that data point i was generated by component k.</p>
+          <p class="step-prose">The calculation uses Bayes' theorem. For each point xᵢ: compute how likely xᵢ is under each component (πₖ · N(xᵢ | μₖ, Σₖ)). A component scores high if it is both common (high πₖ) and close to the point (high N value). Then divide by the total across all components to normalise, so all K responsibilities for a given point sum to exactly 1. Points near a component's centre get high responsibility for that component; points far away get near zero.</p>
+          <span class="fline">r(i, k) = πₖ · N(xᵢ|μₖ,Σₖ)  /  [ Σⱼ  πⱼ · N(xᵢ|μⱼ,Σⱼ) ]</span>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-col"><span class="step-num sn-g">M</span><div class="step-ln sl-g"></div></div>
+        <div class="step-content">
+          <div class="step-title">M-Step — Maximization (Update Parameters)</div>
+          <p class="step-prose">Using the responsibilities from the E-Step, update all model parameters. The key insight: <strong>responsibilities act as soft weights</strong>. Every data point contributes to updating every component's parameters — but only in proportion to how responsible that component is for it.</p>
+          <p class="step-prose"><strong>New mean μₖ:</strong> a weighted average of all data points, using r(i,k) as the weight for each point. Points with high responsibility for component k pull its mean strongly toward them. Points with near-zero responsibility barely affect it. <strong>New covariance Σₖ:</strong> the weighted spread of points around the new mean. <strong>New weight πₖ:</strong> the average responsibility for component k across all points — representing what fraction of data belongs to this cluster.</p>
+          <span class="fline">Nₖ = Σᵢ r(i,k) · μₖ = (1/Nₖ)Σᵢ r(i,k)·xᵢ · πₖ = Nₖ/N</span>
+        </div>
+      </div>
+
+      <div class="step-row">
+        <div class="step-col"><span class="step-num sn-s">↺</span><div class="step-ln sl-s"></div></div>
+        <div class="step-content">
+          <div class="step-title">Repeat — Alternate E and M Until Convergence</div>
+          <p class="step-prose">Go back to the E-Step with the newly updated parameters. Compute new responsibilities. Then M-Step again. Alternate between them. With each iteration, the model gets slightly better at explaining the data. The <strong>log-likelihood</strong> — a measure of how well the model fits the data — increases with every full E+M cycle. This is mathematically guaranteed: EM can never make the model worse. It always improves or stays the same.</p>
+          <span class="fline">log L = Σᵢ log( Σₖ πₖ · N(xᵢ|μₖ,Σₖ) )  →  this always increases each iteration</span>
+        </div>
+      </div>
+
+      <div class="step-row" style="margin-bottom:0;">
+        <div class="step-col"><span class="step-num sn-r">✓</span></div>
+        <div class="step-content">
+          <div class="step-title">Convergence — When EM Stops</div>
+          <p class="step-prose">EM stops when the improvement in log-likelihood between two consecutive iterations drops below a tiny threshold (the <code>tol</code> parameter, default 0.0001). This means the parameters have essentially stabilised — further iterations would not meaningfully change the result. At this point, you have learned all K means, K covariance matrices, and K mixing weights. One important caveat: EM guarantees convergence to a <em>local</em> maximum, not necessarily the global best solution. This is why <code>n_init=10</code> is standard practice — run EM 10 times from different starting points and keep the best.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EM Interactive Stepper -->
+  <div class="em-card">
+    <div class="em-hdr">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--violet);display:inline-block;"></span>
+        <span style="font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--t2);">Interactive EM Stepper — Watch the Algorithm Learn Step by Step</span>
+      </div>
+      <div class="em-controls">
+        <button class="em-btn em-btn-ghost" onclick="emReset()">Reset</button>
+        <button class="em-btn em-btn-primary" id="emBtn" onclick="emStep()">Start EM</button>
+      </div>
+    </div>
+    <div class="em-info-bar">
+      <div class="em-cell"><div class="em-cell-lbl">Phase</div><div class="em-cell-val" id="emPhase" style="color:var(--violet)">Ready</div></div>
+      <div class="em-cell"><div class="em-cell-lbl">Iteration</div><div class="em-cell-val" id="emIter" style="color:var(--teal)">0</div></div>
+      <div class="em-cell"><div class="em-cell-lbl">Log-Likelihood</div><div class="em-cell-val" id="emLL" style="color:var(--gold)">—</div></div>
+      <div class="em-cell"><div class="em-cell-lbl">What Is Happening</div><div class="em-cell-desc" id="emDesc">Click "Start EM" to place random initial Gaussian centres and begin. Step through the E and M phases one at a time and watch how the cluster assignments and means evolve.</div></div>
+    </div>
+    <div class="em-body">
+      <canvas id="emCanvas" height="310"></canvas>
+      <div class="viz-legend" style="margin-top:12px;">
+        <div class="vleg-item"><div class="vleg-dot" style="background:#2dd4bf;"></div>Cluster 1</div>
+        <div class="vleg-item"><div class="vleg-dot" style="background:#f0b429;"></div>Cluster 2</div>
+        <div class="vleg-item"><div class="vleg-dot" style="background:#fb7185;"></div>Cluster 3</div>
+        <div class="vleg-item"><div class="vleg-dot" style="background:#38bdf8;border:2px solid white;width:13px;height:13px;"></div>Current Means μₖ</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Convergence chart -->
+  <div class="viz">
+    <div class="viz-hdr"><span class="viz-title">Log-Likelihood Convergence — Updates After Each M-Step</span><span class="viz-badge vb-g">Guaranteed to Never Decrease</span></div>
+    <div class="viz-body" style="padding:16px 20px;">
+      <canvas id="convChart" height="180"></canvas>
+      <p class="viz-cap">Each M-Step adds a point to this curve. The log-likelihood is mathematically guaranteed to increase (or stay flat) with every iteration — never to decrease. When the curve levels off, EM has converged. The parameters have stabilised, and further iterations would change nothing meaningful.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 7 — CHOOSING K
+═══════════════════════════════════════════════ -->
+<div class="sec" id="s7">
+  <div class="sec-tag st-gold">Section 07</div>
+  <h2 class="sec-title">Choosing K — How Many Components?</h2>
+
+  <p class="prose">Before training a GMM, you must decide K — the number of Gaussian components. This is the hardest modelling decision. There is no single correct answer; it depends on your data and your goal. GMM provides two statistical tools — BIC and AIC — to guide this choice, which is a significant advantage over methods that rely on visual elbow-plots alone.</p>
+
+  <div class="analogy">
+    <div class="analogy-lbl">The Library Analogy — How Many Sections?</div>
+    <p class="analogy-txt">
+      A librarian receives 10,000 books and must sort them into sections. K=2 ("fiction" and "non-fiction") is too broad — very different books end up together. K=200 is too granular — sections have only 50 books each and serve no practical purpose. <strong>The right K is the smallest number of sections that genuinely reduces confusion</strong>. Adding a new section should make books meaningfully easier to find. BIC and AIC ask exactly this: "Does adding one more component make the model meaningfully better, or is it just overfitting noise?"
+    </p>
+  </div>
+
+  <div class="card">
+    <div class="card-hdr"><span class="cdot cd-g"></span><span class="card-hdr-title">BIC and AIC — The Statistical K-Selection Tools</span></div>
+    <div class="card-body">
+      <div class="step-row">
+        <div class="step-col"><span class="step-num sn-t" style="font-size:11px;">BIC</span><div class="step-ln sl-t"></div></div>
+        <div class="step-content">
+          <div class="step-title">Bayesian Information Criterion</div>
+          <p class="step-prose">BIC measures model fit, but penalises models that are unnecessarily complex. The formula is: <code>BIC = −2 · log-likelihood + num_params · log(n_samples)</code>. A larger K means more parameters (more Gaussians, each needing its own mean, covariance, and weight), so the penalty grows with K. <strong>Lower BIC is better.</strong> The penalty term also grows with dataset size — meaning for large datasets, BIC is stricter about adding components. It is the recommended tool for K selection in GMM.</p>
+          <span class="fline">gmm.bic(X_scaled)  →  lower is better</span>
+        </div>
+      </div>
+      <div class="step-row" style="margin-bottom:0;">
+        <div class="step-col"><span class="step-num sn-g" style="font-size:11px;">AIC</span></div>
+        <div class="step-content">
+          <div class="step-title">Akaike Information Criterion</div>
+          <p class="step-prose">AIC is similar to BIC but with a lighter, fixed penalty: <code>AIC = −2 · log-likelihood + 2 · num_params</code>. Because the penalty does not grow with dataset size, AIC is more lenient than BIC — it tends to select a slightly larger K. When BIC and AIC suggest different values, the truth usually lies in between. Use BIC for conservative, robust K selection. Use AIC when maximising model fit matters more than simplicity.</p>
+          <span class="fline">gmm.aic(X_scaled)  →  lower is better</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive BIC chart -->
+  <div class="viz">
+    <div class="viz-hdr"><span class="viz-title">Interactive — BIC and AIC vs K</span><span class="viz-badge vb-g">Try Different Data Shapes</span></div>
+    <div class="viz-body">
+      <div class="bic-ctrl">
+        <span class="ctrl-lbl">Dataset:</span>
+        <button class="ctrl-btn btn-ghost" onclick="setBic('clear')">3 Clear Clusters</button>
+        <button class="ctrl-btn btn-ghost" onclick="setBic('overlap')">Overlapping Clusters</button>
+        <button class="ctrl-btn btn-ghost" onclick="setBic('one')">Single Blob</button>
+      </div>
+      <canvas id="bicChart" height="200"></canvas>
+      <div id="bicNote" style="font-size:14px;color:var(--t3);text-align:center;margin-top:10px;font-style:italic;line-height:1.7;">Select a dataset above. The optimal K is where BIC (solid line) is lowest.</div>
+    </div>
+  </div>
+
+  <div class="callout cl-amber">
+    <div class="callout-icon">📋</div>
+    <div>
+      <div class="callout-title">Practical K-Selection Workflow</div>
+      <p class="callout-txt">
+        <strong>Step 1:</strong> Fit GMMs for K = 1 to 10 (or 15 for large datasets). <strong>Step 2:</strong> Plot BIC vs K — find the K where BIC is lowest or the curve shows its sharpest elbow (stops dropping steeply). <strong>Step 3:</strong> Compute Silhouette Score for each K to get a geometry-based validation alongside BIC's likelihood-based one. <strong>Step 4:</strong> Apply domain knowledge — if BIC says K=4 but you know your business has 3 customer types, try both K=3 and K=4 and evaluate which clusters are more actionable. Statistics guides the choice; domain knowledge makes the final call.
+      </p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 8 — GLOSSARY
+═══════════════════════════════════════════════ -->
+<div class="sec" id="s8">
+  <div class="sec-tag st-amber">Section 08</div>
+  <h2 class="sec-title">Complete Glossary of All Terms</h2>
+  <p class="prose">Every important term in GMM — with plain-English meaning, technical context, and code attribute.</p>
+
+  <div class="card">
+    <div class="card-hdr"><span class="cdot cd-g"></span><span class="card-hdr-title">GMM Term Reference</span></div>
+    <div class="card-body">
+
+      <div class="gitem">
+        <div class="gterm-wrap"><span class="gcode gc-t">Gaussian</span><span class="gsimple">Bell curve / normal distribution</span></div>
+        <div><div class="gdef">A bell-shaped probability distribution described by two parameters: <strong>mean μ</strong> (where the peak is) and <strong>variance σ²</strong> (how wide the bell is). In GMM, each cluster is modelled as one Gaussian. In multiple dimensions, the Gaussian becomes a multi-dimensional hill, controlled by a mean vector and a covariance matrix. Also called the Normal Distribution.</div><div class="gsub">You see Gaussians everywhere: heights, test scores, measurement errors — they are the natural shape of data that arises from many independent random factors summing together.</div></div>
+      </div>
+
+      <div class="gitem">
+        <div class="gterm-wrap"><span class="gcode gc-t">Component k</span><span class="gsimple">One Gaussian = one cluster</span></div>
+        <div><div class="gdef">A single Gaussian distribution within the mixture. K is the total number of components you choose before training. <strong>Each component represents one cluster.</strong> In code: <code>n_components=K</code>. The model learns a separate μₖ, Σₖ, and πₖ for each component.</div><div class="gsub">Choosing K is the hardest part of using GMM — use BIC/AIC (Section 07) to guide the decision.</div></div>
+      </div>
+
+      <div class="gitem">
+        <div class="gterm-wrap"><span class="gcode gc-g">πₖ — Mixing Weight</span><span class="gsimple">How big / common is this cluster?</span></div>
+        <div><div class="gdef">The prior probability of component k. <strong>Before looking at any specific data point</strong>, πₖ is the probability it comes from component k. All weights must sum to 1.0. πₖ=0.40 means 40% of data comes from cluster k. In code: <code>gmm.weights_</code> — shape (K,).</div><div class="gsub">The M-Step learns πₖ from data: it equals the average responsibility of component k across all data points.</div></div>
+      </div>
+
+      <div class="gitem">
+        <div class="gterm-wrap"><span class="gcode gc-s">μₖ — Mean</span><span class="gsimple">Centre of the cluster</span></div>
+        <div><div class="gdef">The centre of the k-th component. In 2D, a point [x, y]. In d dimensions, a vector of length d. <strong>It is the most likely location for data points that belong to this cluster.</strong> In code: <code>gmm.means_</code> — shape (K, n_features). These are in scaled space — use <code>scaler.inverse_transform(gmm.means_)</code> to get original units.</div><div class="gsub">The M-Step updates μₖ as the weighted average of all data points, weighted by their responsibility r(i,k).</div></div>
+      </div>
+
+      <div class="gitem">
+        <div class="gterm-wrap"><span class="gcode gc-v">Σₖ — Covariance</span><span class="gsimple">Shape and tilt of cluster</span></div>
+        <div><div class="gdef">A matrix describing the spread and orientation of component k. Diagonal entries = variance of each feature within the cluster. Off-diagonal entries = correlation between features. <strong>A positive off-diagonal means the two features tend to increase together, creating a tilted ellipse.</strong> In code: <code>gmm.covariances_</code>.</div><div class="gsub">The four covariance_type options (spherical, diag, tied, full) constrain what shapes Σₖ can take — see Section 04.</div></div>
+      </div>
+
+      <div class="gitem">
+        <div class="gterm-wrap"><span class="gcode gc-r">r(i,k) — Responsibility</span><span class="gsimple">Soft assignment score</span></div>
+        <div><div class="gdef">The posterior probability that data point i was generated by component k. <strong>This is the soft assignment.</strong> For a given point i, all K responsibilities sum to 1.0. Computed in the E-Step. In code: <code>gmm.predict_proba(X)</code> returns the (n_samples, K) matrix of all responsibilities.</div><div class="gsub">A point with r(i,0)=0.95, r(i,1)=0.04, r(i,2)=0.01 is 95% assigned to Cluster 0. A point with r(i,0)=0.51, r(i,1)=0.49 is genuinely borderline between 0 and 1.</div></div>
+      </div>
+
+      <div class="gitem">
+        <div class="gterm-wrap"><span class="gcode gc-l">Log-Likelihood</span><span class="gsimple">How well the model fits</span></div>
+        <div><div class="gdef">A single number measuring how well the current GMM parameters explain the observed data. <strong>Higher (less negative) = better fit.</strong> EM maximises this. Guaranteed to increase with every E+M cycle. We take the logarithm because multiplying many small probabilities together causes numerical underflow — log converts multiplications into sums, which are stable. In code: <code>gmm.lower_bound_</code>, <code>gmm.score(X)</code>.</div><div class="gsub">Formula: log L = Σᵢ log(Σₖ πₖ · N(xᵢ | μₖ, Σₖ)). Use to compare two GMMs trained on the same data — the one with higher log-likelihood is the better fit.</div></div>
+      </div>
+
+      <div class="gitem">
+        <div class="gterm-wrap"><span class="gcode gc-a">BIC / AIC</span><span class="gsimple">How to choose K</span></div>
+        <div><div class="gdef">Bayesian Information Criterion and Akaike Information Criterion — scores for comparing GMMs with different K values. Both reward high log-likelihood and penalise complexity. <strong>Lower = better model.</strong> BIC has a stronger penalty (depends on dataset size); AIC has a lighter fixed penalty. In code: <code>gmm.bic(X)</code>, <code>gmm.aic(X)</code>.</div><div class="gsub">Usage: fit GMMs for K=1,2,...,N. Plot BIC vs K. Pick K at the minimum — the point where adding more components stops significantly improving the model.</div></div>
+      </div>
+
+      <div class="gitem">
+        <div class="gterm-wrap"><span class="gcode gc-t">n_init</span><span class="gsimple">Run EM multiple times</span></div>
+        <div><div class="gdef">EM can converge to a local optimum depending on where it starts. <strong>n_init runs the full EM algorithm n_init times</strong> from different random starting points. The run with the highest final log-likelihood is kept. Setting n_init=10 is standard practice. It costs proportionally more time but produces much more reliable results.</div><div class="gsub">Intuition: like doing a puzzle 10 times from 10 different random starting arrangements — you keep the most complete result.</div></div>
+      </div>
+
+      <div class="gitem" style="border-bottom:none;">
+        <div class="gterm-wrap"><span class="gcode gc-r">reg_covar</span><span class="gsimple">Prevent component collapse</span></div>
+        <div><div class="gdef">A small regularisation value added to the diagonal of every covariance matrix. Prevents a failure mode called <strong>degeneracy</strong>, where a component collapses to fit just one or two points (its covariance shrinks to near-zero, causing numerical errors). Default is 1e-6. If you see ConvergenceWarning or components with near-zero weights, increase to 1e-4 or 1e-3.</div><div class="gsub">In code: <code>GaussianMixture(reg_covar=1e-3)</code>. You almost never need to change this unless you encounter degeneracy warnings.</div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 9 — COMPLETE CODE
+═══════════════════════════════════════════════ -->
+<div class="sec" id="s9">
+  <div class="sec-tag st-rose">Section 09</div>
+  <h2 class="sec-title">Complete Code — Every Line Explained</h2>
+  <p class="prose">A full GMM workflow, from raw data to interpreted results. Each tab is a complete, runnable stage. Every line has a comment explaining not just what it does, but why.</p>
+
+  <div class="code-card">
+    <div class="code-tabs" id="c-tabs">
+      <button class="ctab at" onclick="cTab('data')">01 · Data</button>
+      <button class="ctab" onclick="cTab('scale')">02 · Scaling</button>
+      <button class="ctab" onclick="cTab('selectk')">03 · Choose K</button>
+      <button class="ctab" onclick="cTab('train')">04 · Train</button>
+      <button class="ctab" onclick="cTab('predict')">05 · Predict</button>
+      <button class="ctab" onclick="cTab('profile')">06 · Profile</button>
+      <button class="ctab" onclick="cTab('tips')">07 · Tips &amp; Pitfalls</button>
+    </div>
+
+    <div class="cbw vis" id="c-data">
+<pre><code class="language-python"># ════════════════════════════════════════════════════════════════════
+# GAUSSIAN MIXTURE MODELS — Complete Workflow
+# Install: pip install scikit-learn numpy matplotlib pandas
+# ════════════════════════════════════════════════════════════════════
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.mixture import GaussianMixture
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import silhouette_score
+
+# ── CREATE SAMPLE DATA ───────────────────────────────────────────────
+# In real work, this is: df = pd.read_csv("your_data.csv")
+# Each row is one entity (customer, patient, document...).
+# We simulate 3 clusters in 2D for clarity.
+
+np.random.seed(42)
+
+# multivariate_normal(mean, cov, size) generates points from a
+# 2D Gaussian. 'mean' = [x_centre, y_centre].
+# 'cov' = 2x2 covariance matrix:
+#   [[var_feat1, covariance], [covariance, var_feat2]]
+# Positive off-diagonal (covariance) = features are positively
+# correlated → the cluster will be a tilted ellipse.
+
+cluster1 = np.random.multivariate_normal(
+    mean=[2, 2],
+    cov=[[0.8, 0.5],    # tilted ellipse (positive correlation)
+         [0.5, 0.4]],
+    size=200
+)
+cluster2 = np.random.multivariate_normal(
+    mean=[7, 4],
+    cov=[[1.2, -0.3],   # wide, slight negative tilt
+         [-0.3, 0.3]],
+    size=150
+)
+cluster3 = np.random.multivariate_normal(
+    mean=[4, 8],
+    cov=[[0.4, 0.1],    # compact, nearly circular
+         [0.1, 0.5]],
+    size=100
+)
+
+# Stack into one dataset — NO LABELS given to the model
+# The model discovers clusters purely from the data distribution.
+X = np.vstack([cluster1, cluster2, cluster3])
+df = pd.DataFrame(X, columns=['feature_1', 'feature_2'])
+
+print(f"Total data points: {X.shape[0]}")   # 450
+print(f"Number of features: {X.shape[1]}")  # 2
+print(f"\nFirst 5 rows:\n{df.head().round(2)}")
+</code></pre>
+    </div>
+
+    <div class="cbw" id="c-scale">
+<pre><code class="language-python"># ════════════════════════════════════════════════════════════════════
+# STEP 2: FEATURE SCALING — MANDATORY FOR GMM
+# ════════════════════════════════════════════════════════════════════
+
+# WHY SCALING IS MANDATORY:
+# GMM estimates covariance matrices from your data. Covariance is
+# sensitive to the scale (units) of each feature.
+# If Feature 1 = age (range 0–80) and Feature 2 = salary (0–2,000,000),
+# salary's large numeric variance will dominate the covariance matrix.
+# The model will think "being similar in salary matters 25,000x more
+# than being similar in age" — which is an artifact of units, not reality.
+# StandardScaler fixes this by making every feature have mean=0, std=1.
+
+scaler = StandardScaler()
+
+# fit_transform: (1) computes mean and std for each feature from X,
+#                (2) transforms X → (X - mean) / std
+# IMPORTANT: save the fitted scaler object.
+# You will need it again later to:
+#   - inverse_transform gmm.means_ back to original units
+#   - transform new, unseen data before predicting its cluster
+X_scaled = scaler.fit_transform(X)
+
+# Verify scaling worked
+print("Before scaling:")
+print(f"  Feature 1 — mean: {X[:,0].mean():.2f},  std: {X[:,0].std():.2f}")
+print(f"  Feature 2 — mean: {X[:,1].mean():.2f},  std: {X[:,1].std():.2f}")
+print("\nAfter scaling:")
+print(f"  Feature 1 — mean: {X_scaled[:,0].mean():.4f},  std: {X_scaled[:,0].std():.4f}")
+print(f"  Feature 2 — mean: {X_scaled[:,1].mean():.4f},  std: {X_scaled[:,1].std():.4f}")
+# After scaling: mean ≈ 0.0, std ≈ 1.0 for every feature.
+
+# ── OPTIONAL: HANDLING OUTLIERS ───────────────────────────────────────
+# Outliers distort covariance estimation. Before clustering,
+# consider removing points more than 3 std deviations from the mean.
+from scipy.stats import zscore
+z_scores = np.abs(zscore(X))
+mask_no_outliers = (z_scores < 3).all(axis=1)
+X_clean   = X[mask_no_outliers]
+X_scaled_clean = scaler.fit_transform(X_clean)
+print(f"\nPoints removed as outliers: {(~mask_no_outliers).sum()}")
+</code></pre>
+    </div>
+
+    <div class="cbw" id="c-selectk">
+<pre><code class="language-python"># ════════════════════════════════════════════════════════════════════
+# STEP 3: CHOOSING K — BIC, AIC, AND SILHOUETTE
+# ════════════════════════════════════════════════════════════════════
+
+bic_scores  = []
+aic_scores  = []
+sil_scores  = []
+K_range     = range(1, 10)   # test K = 1 to 9
+
+print(f"{'K':>3}  {'BIC':>12}  {'AIC':>12}  {'Silhouette':>12}")
+print("─" * 45)
+
+for k in K_range:
+    gm = GaussianMixture(
+        n_components    = k,
+        covariance_type = 'full',
+        n_init          = 5,      # fewer restarts for speed during search
+        random_state    = 42
+    )
+    gm.fit(X_scaled)
+
+    bic_scores.append(gm.bic(X_scaled))
+    aic_scores.append(gm.aic(X_scaled))
+
+    # Silhouette needs at least 2 clusters and hard labels
+    if k >= 2:
+        sil = silhouette_score(X_scaled, gm.predict(X_scaled))
+        sil_scores.append(sil)
+        print(f"{k:>3}  {bic_scores[-1]:>12.2f}  {aic_scores[-1]:>12.2f}  {sil:>12.4f}")
+    else:
+        sil_scores.append(None)
+        print(f"{k:>3}  {bic_scores[-1]:>12.2f}  {aic_scores[-1]:>12.2f}  {'N/A':>12}")
+
+# PICK BEST K
+best_k = list(K_range)[np.argmin(bic_scores)]
+print(f"\n→ Best K by BIC: {best_k}")   # should be 3 for our data
+
+# PLOT BIC vs K
+fig, ax = plt.subplots(figsize=(8, 4))
+ax.plot(list(K_range), bic_scores, 'o-', lw=2, color='#2dd4bf', label='BIC')
+ax.plot(list(K_range), aic_scores, 's--', lw=1.5, color='#f0b429', label='AIC')
+ax.axvline(best_k, color='#2dd4bf', linestyle=':', alpha=0.5, label=f'Best K = {best_k}')
+ax.set(xlabel='K', ylabel='Score (lower = better)', title='GMM K Selection — BIC and AIC')
+ax.legend()
+plt.tight_layout(); plt.show()
+</code></pre>
+    </div>
+
+    <div class="cbw" id="c-train">
+<pre><code class="language-python"># ════════════════════════════════════════════════════════════════════
+# STEP 4: TRAINING THE FINAL GMM
+# ════════════════════════════════════════════════════════════════════
+
+gmm = GaussianMixture(
+
+    n_components = 3,
+    # Number of Gaussian components (clusters). From BIC analysis above.
+
+    covariance_type = 'full',
+    # Each cluster gets its own covariance matrix — any shape, any tilt.
+    # Use 'diag' if you know features are independent and you have limited data.
+    # Use 'spherical' only if you want behaviour close to K-Means.
+
+    n_init = 10,
+    # Run the full EM algorithm 10 times with different random starting points.
+    # Keep the run with the highest final log-likelihood.
+    # Essential for avoiding local optima. Always set to at least 5–10.
+
+    max_iter = 200,
+    # Maximum number of E-Step + M-Step cycles per initialization attempt.
+    # Most well-behaved datasets converge in 20–80 iterations.
+    # If gmm.converged_ is False after training, increase this value.
+
+    tol = 1e-4,
+    # Convergence threshold. EM stops early when the improvement in
+    # log-likelihood between two consecutive iterations is less than tol.
+    # The default of 1e-3 is often fine; use 1e-4 for a stricter fit.
+
+    reg_covar = 1e-6,
+    # Adds a tiny value to each covariance matrix's diagonal.
+    # Prevents degeneracy (a component collapsing to near-zero covariance).
+    # Increase to 1e-3 if you get ConvergenceWarning about singularity.
+
+    random_state = 42,
+    # Seeds the random initialisation for reproducibility.
+    # Change this seed to test result stability.
+)
+
+# fit() runs the full EM algorithm internally.
+# Modifies gmm in-place — stores all learned parameters.
+gmm.fit(X_scaled)
+
+# ── VERIFY ──────────────────────────────────────────────────────────
+print(f"Converged:            {gmm.converged_}")
+# Should be True. If False: increase max_iter.
+
+print(f"EM iterations taken:  {gmm.n_iter_}")
+# Fewer iterations = faster convergence = well-conditioned problem.
+
+print(f"Final log-likelihood: {gmm.lower_bound_:.4f}")
+# Compare multiple GMMs: higher (less negative) = better fit.
+</code></pre>
+    </div>
+
+    <div class="cbw" id="c-predict">
+<pre><code class="language-python"># ════════════════════════════════════════════════════════════════════
+# STEP 5: EXTRACTING PREDICTIONS AND LEARNED PARAMETERS
+# ════════════════════════════════════════════════════════════════════
+
+# ── HARD ASSIGNMENT ───────────────────────────────────────────────────
+# Returns integer cluster index per data point (argmax of predict_proba).
+# Use for: plotting, reporting, downstream classification.
+labels = gmm.predict(X_scaled)
+print(f"Hard labels (first 10): {labels[:10]}")
+# e.g. [0, 0, 0, 2, 1, 0, 1, ...]
+
+# ── SOFT ASSIGNMENT ───────────────────────────────────────────────────
+# Returns (n_samples, K) matrix — full probability distribution per point.
+# Use for: uncertainty analysis, borderline detection, confidence scoring.
+probs = gmm.predict_proba(X_scaled)
+print(f"\nSoft probabilities for first 5 points:")
+print(probs[:5].round(4))
+# Example rows:
+# [0.9921, 0.0001, 0.0078]  → 99% confident in Cluster 0
+# [0.0012, 0.9986, 0.0002]  → 99% confident in Cluster 1
+# [0.4735, 0.0198, 0.5067]  → uncertain between Cluster 0 and 2
+
+# ── DENSITY (ANOMALY DETECTION) ───────────────────────────────────────
+# log p(x) for each point — how "normal" is this point?
+# Very negative = point is in a sparse region = possible outlier.
+log_dens = gmm.score_samples(X_scaled)
+threshold = np.percentile(log_dens, 2)   # flag bottom 2% as anomalies
+print(f"\nAnomaly threshold: {threshold:.4f}")
+print(f"Anomalies detected: {(log_dens < threshold).sum()}")
+
+# ── LEARNED PARAMETERS ────────────────────────────────────────────────
+# Mixing weights — proportion of data in each cluster
+print(f"\nMixing weights (πₖ):  {gmm.weights_.round(4)}")
+# → e.g. [0.444  0.333  0.223]  (sums to 1.0)
+
+# Cluster centres — in SCALED space
+print(f"Means in scaled space:\n{gmm.means_.round(4)}")
+
+# Cluster centres — convert back to ORIGINAL units for interpretation
+means_original = scaler.inverse_transform(gmm.means_)
+print(f"\nMeans in original units:\n{means_original.round(2)}")
+# Now these are interpretable: e.g. Cluster 0 is centred at [2.1, 2.0]
+
+# ── GENERATE NEW SYNTHETIC DATA ───────────────────────────────────────
+# GMM is a generative model — sample brand new, realistic data points.
+X_new, new_labels = gmm.sample(n_samples=50)
+# X_new is in scaled space. Use scaler.inverse_transform(X_new) for original.
+print(f"\nGenerated {len(X_new)} synthetic points")
+</code></pre>
+    </div>
+
+    <div class="cbw" id="c-profile">
+<pre><code class="language-python"># ════════════════════════════════════════════════════════════════════
+# STEP 6: PROFILING CLUSTERS — WHAT DO THEY MEAN?
+# ════════════════════════════════════════════════════════════════════
+
+# The cluster labels (0, 1, 2...) are meaningless integers.
+# Your job: figure out what REAL-WORLD distinction each cluster represents.
+# This is called cluster profiling — computing per-cluster statistics
+# on the ORIGINAL, interpretable feature values.
+
+df['cluster']      = labels
+df['confidence']   = probs.max(axis=1)   # max probability = certainty
+df['is_borderline'] = df['confidence'] < 0.70  # low max prob = uncertain
+
+# ── PER-CLUSTER FEATURE MEANS ─────────────────────────────────────────
+print("Cluster Profiles — Mean Feature Values:")
+profile = df.groupby('cluster')[['feature_1', 'feature_2']].mean().round(2)
+print(profile)
+# Compare values ACROSS clusters — large differences tell you what
+# makes each cluster distinctive. Small differences = feature doesn't
+# help distinguish the clusters (might be removable).
+
+# ── CLUSTER SIZES ─────────────────────────────────────────────────────
+print("\nCluster Sizes:")
+print(df.groupby('cluster').agg(
+    count=('cluster','count'),
+    avg_confidence=('confidence','mean'),
+    borderline_count=('is_borderline','sum')
+))
+
+# ── NAME YOUR CLUSTERS (human step) ──────────────────────────────────
+# After examining the profiles above, assign meaningful names.
+# Example (adjust based on YOUR data's actual patterns):
+cluster_names = {0: "Group A — High Feature 1",
+                 1: "Group B — High Feature 2",
+                 2: "Group C — Compact Mid-Range"}
+df['segment'] = df['cluster'].map(cluster_names)
+print(f"\nFinal segment distribution:\n{df['segment'].value_counts()}")
+
+# ── PREDICT CLUSTER FOR NEW DATA ─────────────────────────────────────
+# Use the SAME fitted scaler — never refit on new data alone.
+new_data   = pd.DataFrame([[5, 5], [1, 1]], columns=['feature_1','feature_2'])
+new_scaled = scaler.transform(new_data)          # transform, not fit_transform
+new_labels = gmm.predict(new_scaled)
+new_probs  = gmm.predict_proba(new_scaled)
+for i, (lb, pr) in enumerate(zip(new_labels, new_probs)):
+    print(f"New Point {i+1}: Cluster {lb} ({cluster_names[lb]}) — confidence {pr.max():.1%}")
+</code></pre>
+    </div>
+
+    <div class="cbw" id="c-tips">
+<pre><code class="language-python"># ════════════════════════════════════════════════════════════════════
+# COMMON PITFALLS AND HOW TO FIX THEM
+# ════════════════════════════════════════════════════════════════════
+
+# ── PITFALL 1: gmm.converged_ is False ────────────────────────────────
+# Problem: EM hit max_iter before converging.
+# Fix 1: Increase max_iter.  GaussianMixture(max_iter=500)
+# Fix 2: Verify features are scaled with StandardScaler.
+# Fix 3: Reduce covariance_type complexity. Try 'diag' instead of 'full'.
+
+# ── PITFALL 2: ConvergenceWarning about singular covariance ───────────
+# Problem: A component's covariance matrix became singular (non-invertible),
+# usually because a component collapsed onto too few points.
+# Fix: Increase reg_covar.  GaussianMixture(reg_covar=1e-3)
+# This adds a small regularisation term to prevent collapse.
+
+# ── PITFALL 3: Results change every run ───────────────────────────────
+# Problem: EM is sensitive to initialisation and you are getting
+# different cluster configurations each run.
+# Fix 1: Increase n_init.  GaussianMixture(n_init=20)
+# Fix 2: Set random_state for reproducibility.
+# Fix 3: If instability persists, the true K may be wrong — try K-1.
+
+# ── PITFALL 4: One cluster gets nearly all the data ───────────────────
+# Problem: gmm.weights_ shows one weight close to 1.0 and others near 0.
+# This means K is too high (no real sub-structure to fill those clusters).
+# Fix: Reduce K. Re-run BIC analysis.
+
+# ── PITFALL 5: Applied GMM to non-Gaussian shaped clusters ───────────
+# Problem: Your clusters have crescent, ring, or other exotic shapes.
+# GMM assumes each cluster is a Gaussian ellipse — it cannot model these.
+# Fix: Use DBSCAN (density-based, arbitrary shapes) or
+#      Spectral Clustering (graph-based, handles non-convex shapes).
+
+# ── PITFALL 6: Applied GMM to very high-dimensional data ──────────────
+# Problem: With 100+ features, GMM needs enormous data to estimate
+# full covariance matrices (each has d×(d+1)/2 parameters).
+# Fix: First reduce dimensionality.
+from sklearn.decomposition import PCA
+pca = PCA(n_components=0.95)   # keep 95% of variance
+X_pca = pca.fit_transform(X_scaled)
+print(f"Reduced from {X_scaled.shape[1]}  to {X_pca.shape[1]} dimensions")
+# Then: gmm.fit(X_pca) instead of gmm.fit(X_scaled)
+
+# ── WHEN TO USE GMM vs K-MEANS ────────────────────────────────────────
+# Use GMM when:
+#   - Clusters overlap or have irregular (non-spherical) shapes
+#   - You need probability / uncertainty per data point
+#   - You need to generate synthetic data (gmm.sample())
+#   - You want density estimation (gmm.score_samples())
+#   - You have continuous, roughly Gaussian features
+#
+# Use K-Means when:
+#   - Speed is critical (large dataset, many features)
+#   - Clusters are well-separated and roughly spherical
+#   - You only need hard labels for downstream tasks
+#   - You are doing initial exploratory analysis
+</code></pre>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════
+     SECTION 10 — GMM vs K-MEANS
+═══════════════════════════════════════════════ -->
+<div class="sec" id="s10">
+  <div class="sec-tag st-lime">Section 10</div>
+  <h2 class="sec-title">GMM vs K-Means — The Complete Comparison</h2>
+  <p class="prose">Both algorithms group data into K clusters without labels. The right choice depends on your data's geometry and what information you need from the output.</p>
+
+  <div class="card">
+    <div class="card-hdr"><span class="cdot cd-l"></span><span class="card-hdr-title">Algorithm Comparison Table</span></div>
+    <table class="cmp">
+      <thead><tr><th>Property</th><th>GMM</th><th>K-Means</th></tr></thead>
+      <tbody>
+        <tr><td>Core question</td><td>What is the probability this point belongs to each cluster?</td><td>Which cluster centre is this point closest to?</td></tr>
+        <tr><td>Assignment type</td><td><span class="tag tg-t">Soft — probability distribution over clusters</span></td><td><span class="tag tg-r">Hard — one definitive cluster label</span></td></tr>
+        <tr><td>Cluster shapes</td><td>Any shape, any size, any tilt (with 'full' covariance)</td><td>Implicitly spherical and equal-sized (uses Euclidean distance)</td></tr>
+        <tr><td>Training method</td><td><span class="tag tg-t">EM — Expectation-Maximization algorithm</span></td><td><span class="tag tg-s">Lloyd's algorithm — iterative centroid update</span></td></tr>
+        <tr><td>What it optimises</td><td>Maximises log-likelihood of data under the model</td><td>Minimises within-cluster sum of squared Euclidean distances</td></tr>
+        <tr><td>K selection</td><td>BIC / AIC — penalised likelihood scores</td><td>Elbow method, Silhouette score</td></tr>
+        <tr><td>Overlapping clusters?</td><td>Handled naturally — points get split probabilities</td><td>Forces a hard boundary even when clusters genuinely overlap</td></tr>
+        <tr><td>Generative model?</td><td><span class="tag tg-t">Yes — sample new synthetic data with gmm.sample()</span></td><td><span class="tag tg-r">No</span></td></tr>
+        <tr><td>Density estimation?</td><td>Yes — compute p(x) for any point via score_samples()</td><td>No</td></tr>
+        <tr><td>Anomaly detection?</td><td>Yes — low score_samples() value = anomaly</td><td>Only indirectly — large distance from centroid</td></tr>
+        <tr><td>Computational cost</td><td>Higher — estimates K full covariance matrices</td><td>Lower — only updates K centroid positions</td></tr>
+        <tr><td>Use GMM when</td><td colspan="2" style="color:var(--teal);">Clusters overlap · non-spherical shapes · need soft probabilities · density estimation · synthetic data generation · anomaly detection</td></tr>
+        <tr><td>Use K-Means when</td><td colspan="2" style="color:var(--sky);">Clusters are well-separated · speed is critical · large dataset · simple exploratory analysis · hard labels are sufficient</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<div class="divider"></div>
+<footer style="text-align:center;padding-top:8px;padding-bottom:16px;">
+  <p style="font-family:'Montserrat',sans-serif;font-size:11px;font-weight:700;letter-spacing:.25em;text-transform:uppercase;color:var(--t4);">
+    GMM · Gaussian Mixture Models · Complete Study Document
+  </p>
+</footer>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════ -->
+<script>
+hljs.highlightAll();
+
+// ── TABS ──────────────────────────────────────────
+const CTABS=['data','scale','selectk','train','predict','profile','tips'];
+function cTab(n){
+  document.getElementById('c-tabs').querySelectorAll('.ctab').forEach((t,i)=>t.classList.toggle('at',CTABS[i]===n));
+  CTABS.forEach(id=>{ const el=document.getElementById('c-'+id); if(el) el.classList.toggle('vis',id===n); });
+}
+
+// ── MATH HELPERS ──────────────────────────────────
+function mkRng(s){ return ()=>{ s=(s*16807)%2147483647; return (s-1)/2147483646; }; }
+function mkNorm(seed){ const r=mkRng(seed); return ()=>{ const u=r()+1e-10,v=r(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }; }
+function gauss(x,mu,sigma){ return (1/(sigma*Math.sqrt(2*Math.PI)))*Math.exp(-.5*((x-mu)/sigma)**2); }
+function linspace(a,b,n){ const r=[],s=(b-a)/(n-1); for(let i=0;i<n;i++) r.push(a+i*s); return r; }
+
+const baseScales=(xl,yl)=>({
+  x:{ticks:{color:'#505a72',font:{size:12}},grid:{color:'rgba(255,255,255,0.03)'},border:{color:'#1c2236'},title:{display:!!xl,text:xl,color:'#505a72',font:{size:13}}},
+  y:{ticks:{color:'#505a72',font:{size:12}},grid:{color:'rgba(255,255,255,0.03)'},border:{color:'#1c2236'},title:{display:!!yl,text:yl,color:'#505a72',font:{size:13}}}
+});
+
+// ── SECTION 1: HARD vs SOFT ───────────────────────
+(function(){
+  const rng=mkNorm(42);
+  const cens=[{x:3,y:3},{x:7,y:5},{x:4.5,y:8}];
+  const pts=[];
+  for(let c=0;c<3;c++) for(let i=0;i<90;i++) pts.push({x:cens[c].x+rng()*1.0, y:cens[c].y+rng()*0.85, c});
+
+  function nearest(p){ let bd=Infinity,bk=0; cens.forEach((c,k)=>{ const d=(p.x-c.x)**2+(p.y-c.y)**2; if(d<bd){bd=d;bk=k;} }); return bk; }
+  const COLS_HARD=['rgba(45,212,191,0.75)','rgba(240,180,41,0.75)','rgba(251,113,133,0.75)'];
+  const hardBuckets=[[],[],[]];
+  pts.forEach(p=>hardBuckets[nearest(p)].push({x:p.x,y:p.y}));
+
+  new Chart(document.getElementById('hardChart'),{
+    type:'scatter',
+    data:{ datasets: hardBuckets.map((d,i)=>({label:'C'+i,data:d,backgroundColor:COLS_HARD[i],pointRadius:4}))
+      .concat([{data:cens,backgroundColor:'rgba(255,255,255,.9)',pointRadius:11,pointStyle:'crossRot',borderColor:'#fff',borderWidth:2,type:'scatter'}]) },
+    options:{responsive:true,animation:{duration:0},plugins:{legend:{display:false},tooltip:{enabled:false}},scales:baseScales('Feature 1','Feature 2')}
+  });
+
+  function softCol(p){
+    const d=cens.map(c=>1/Math.max((p.x-c.x)**2+(p.y-c.y)**2,.01));
+    const s=d.reduce((a,b)=>a+b,0); const w=d.map(v=>v/s);
+    const C=[[45,212,191],[240,180,41],[251,113,133]];
+    return `rgba(${Math.round(C.reduce((a,c,i)=>a+c[0]*w[i],0))},${Math.round(C.reduce((a,c,i)=>a+c[1]*w[i],0))},${Math.round(C.reduce((a,c,i)=>a+c[2]*w[i],0))},0.8)`;
+  }
+  new Chart(document.getElementById('softChart'),{
+    type:'scatter',
+    data:{ datasets:[
+      {data:pts.map(p=>({x:p.x,y:p.y})),backgroundColor:pts.map(p=>softCol(p)),pointRadius:4},
+      {data:cens,backgroundColor:'rgba(255,255,255,.9)',pointRadius:11,pointStyle:'crossRot',borderColor:'#fff',borderWidth:2,type:'scatter'}
+    ]},
+    options:{responsive:true,animation:{duration:0},plugins:{legend:{display:false},tooltip:{enabled:false}},scales:baseScales('Feature 1','Feature 2')}
+  });
+})();
+
+// ── SECTION 2: MU + SIGMA CHARTS ─────────────────
+(function(){
+  const xs=linspace(-7,7,220),lbl=xs.map(x=>x.toFixed(1));
+  new Chart(document.getElementById('muChart'),{type:'line',data:{labels:lbl,datasets:[
+    {data:xs.map(x=>gauss(x,-3,1)),borderColor:'#fb7185',borderWidth:2,fill:true,backgroundColor:'rgba(251,113,133,.07)',pointRadius:0,tension:.4,label:'μ = −3'},
+    {data:xs.map(x=>gauss(x, 0,1)),borderColor:'#2dd4bf',borderWidth:2,fill:true,backgroundColor:'rgba(45,212,191,.07)', pointRadius:0,tension:.4,label:'μ = 0'},
+    {data:xs.map(x=>gauss(x, 3,1)),borderColor:'#f0b429',borderWidth:2,fill:true,backgroundColor:'rgba(240,180,41,.07)', pointRadius:0,tension:.4,label:'μ = +3'},
+  ]},options:{responsive:true,animation:{duration:600},plugins:{legend:{display:true,labels:{color:'#9aa4bc',font:{size:13},boxWidth:20}},tooltip:{enabled:false}},scales:baseScales('x','N(x)')}});
+
+  new Chart(document.getElementById('sigmaChart'),{type:'line',data:{labels:lbl,datasets:[
+    {data:xs.map(x=>gauss(x,0,.6)),borderColor:'#fb7185',borderWidth:2,fill:true,backgroundColor:'rgba(251,113,133,.07)',pointRadius:0,tension:.4,label:'σ = 0.6 (narrow)'},
+    {data:xs.map(x=>gauss(x,0,1.0)),borderColor:'#2dd4bf',borderWidth:2,fill:true,backgroundColor:'rgba(45,212,191,.07)',pointRadius:0,tension:.4,label:'σ = 1.0 (standard)'},
+    {data:xs.map(x=>gauss(x,0,2.0)),borderColor:'#f0b429',borderWidth:2,fill:true,backgroundColor:'rgba(240,180,41,.07)',pointRadius:0,tension:.4,label:'σ = 2.0 (wide)'},
+  ]},options:{responsive:true,animation:{duration:600},plugins:{legend:{display:true,labels:{color:'#9aa4bc',font:{size:13},boxWidth:20}},tooltip:{enabled:false}},scales:baseScales('x','N(x)')}});
+})();
+
+// ── SECTION 3: MIXTURE CHART ─────────────────────
+(function(){
+  const xs=linspace(-5,10,320),lbl=xs.map(x=>x.toFixed(1));
+  const pi=[.40,.35,.25],mu=[-1.8,2.2,5.8],sg=[.9,.7,1.2];
+  const comps=pi.map((p,k)=>xs.map(x=>p*gauss(x,mu[k],sg[k])));
+  const mix=xs.map((_,i)=>comps.reduce((s,c)=>s+c[i],0));
+  new Chart(document.getElementById('mixtureChart'),{type:'line',data:{labels:lbl,datasets:[
+    {data:comps[0],borderColor:'#2dd4bf',borderWidth:2,fill:true,backgroundColor:'rgba(45,212,191,.07)',pointRadius:0,tension:.4,borderDash:[5,4]},
+    {data:comps[1],borderColor:'#f0b429',borderWidth:2,fill:true,backgroundColor:'rgba(240,180,41,.07)',pointRadius:0,tension:.4,borderDash:[5,4]},
+    {data:comps[2],borderColor:'#fb7185',borderWidth:2,fill:true,backgroundColor:'rgba(251,113,133,.07)',pointRadius:0,tension:.4,borderDash:[5,4]},
+    {data:mix,borderColor:'rgba(255,255,255,.7)',borderWidth:3,fill:false,pointRadius:0,tension:.4},
+  ]},options:{responsive:true,animation:{duration:600},plugins:{legend:{display:false},tooltip:{enabled:false}},scales:baseScales('x (data value)','p(x)')}});
+})();
+
+// ── SECTION 4: COVARIANCE TYPE SCATTER ───────────
+(function(){
+  const rng=mkNorm(77); const cA=[],cB=[],cC=[];
+  for(let i=0;i<80;i++){const z1=rng(),z2=rng();cA.push({x:2+.9*z1+.5*z2,y:2+.3*z1+.85*z2});}
+  for(let i=0;i<70;i++){const z1=rng(),z2=rng();cB.push({x:7+1.5*z1-.2*z2,y:4+.2*z1+.45*z2});}
+  for(let i=0;i<60;i++){const z1=rng(),z2=rng();cC.push({x:4+.5*z1,y:8+.5*z2});}
+  new Chart(document.getElementById('covChart'),{type:'scatter',
+    data:{datasets:[
+      {label:'Cluster A (tilted)',data:cA,backgroundColor:'rgba(45,212,191,.55)',pointRadius:3},
+      {label:'Cluster B (wide horiz)',data:cB,backgroundColor:'rgba(240,180,41,.55)',pointRadius:3},
+      {label:'Cluster C (circular)',data:cC,backgroundColor:'rgba(251,113,133,.55)',pointRadius:3},
+    ]},
+    options:{responsive:true,animation:{duration:0},plugins:{legend:{display:true,labels:{color:'#9aa4bc',font:{size:13},boxWidth:12}},tooltip:{enabled:false}},scales:baseScales('Feature 1','Feature 2')}
+  });
+})();
+
+// ── SECTION 5: SOFT ASSIGNMENT EXPLORER ──────────
+(function(){
+  const rng=mkNorm(55);
+  const cens=[{x:3,y:3},{x:8,y:5},{x:5,y:8.5}];
+  const COLS=['rgba(45,212,191,.7)','rgba(240,180,41,.7)','rgba(251,113,133,.7)'];
+  const pts=[];
+  for(let c=0;c<3;c++) for(let i=0;i<100;i++) pts.push({x:cens[c].x+rng()*1.1,y:cens[c].y+rng()*.9,c});
+
+  function getResp(p){
+    const d=cens.map(c=>Math.exp(-((p.x-c.x)**2+(p.y-c.y)**2)/(2*1.6*1.6)));
+    const s=d.reduce((a,b)=>a+b,0)||1e-9; return d.map(v=>v/s);
+  }
+  function blendCol(p){
+    const r=getResp(p); const C=[[45,212,191],[240,180,41],[251,113,133]];
+    return `rgba(${Math.round(C.reduce((a,c,i)=>a+c[0]*r[i],0))},${Math.round(C.reduce((a,c,i)=>a+c[1]*r[i],0))},${Math.round(C.reduce((a,c,i)=>a+c[2]*r[i],0))},0.78)`;
+  }
+
+  const respChart=new Chart(document.getElementById('respCanvas'),{
+    type:'scatter',
+    data:{datasets:[
+      {data:pts.map(p=>({x:p.x,y:p.y})),backgroundColor:pts.map(p=>blendCol(p)),pointRadius:5,pointHoverRadius:8},
+      {data:cens,backgroundColor:'rgba(255,255,255,.95)',pointRadius:12,pointStyle:'crossRot',borderColor:'#fff',borderWidth:2,type:'scatter'}
+    ]},
+    options:{responsive:true,animation:{duration:0},plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>`(${c.parsed.x.toFixed(2)}, ${c.parsed.y.toFixed(2)})`}}},
+      scales:{...baseScales('Feature 1','Feature 2'),x:{...baseScales('Feature 1').x,min:0,max:11},y:{...baseScales('','Feature 2').y,min:0,max:12}}
+    }
+  });
+
+  document.getElementById('respCanvas').addEventListener('click',function(e){
+    const rect=this.getBoundingClientRect();
+    const xPx=(e.clientX-rect.left), yPx=(e.clientY-rect.top);
+    const xScale=respChart.scales.x, yScale=respChart.scales.y;
+    const xVal=xScale.getValueForPixel(xPx), yVal=yScale.getValueForPixel(yPx);
+    if(xVal===undefined||yVal===undefined) return;
+    const r=getResp({x:xVal,y:yVal});
+    const cls=r.indexOf(Math.max(...r));
+    const conf=r[cls];
+    const clrNames=['Cluster 0 (teal)','Cluster 1 (gold)','Cluster 2 (rose)'];
+    const isBorder=conf<0.65;
+    const barW=(v)=>Math.round(v*100);
+    document.getElementById('respDetail').innerHTML=`
+      <div style="margin-bottom:10px;"><strong style="color:var(--t1);">Selected point: (${xVal.toFixed(2)}, ${yVal.toFixed(2)})</strong></div>
+      ${r.map((v,i)=>`
+        <div style="margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+            <span style="color:var(--t2);">${clrNames[i]}</span>
+            <span style="font-family:'Source Code Pro',monospace;font-size:14px;color:${i===0?'#2dd4bf':i===1?'#f0b429':'#fb7185'};">${(v*100).toFixed(1)}%</span>
+          </div>
+          <div style="height:8px;background:var(--bg3);border-radius:4px;overflow:hidden;">
+            <div style="height:100%;width:${barW(v)}%;background:${i===0?'#2dd4bf':i===1?'#f0b429':'#fb7185'};border-radius:4px;transition:width .3s;"></div>
+          </div>
+        </div>
+      `).join('')}
+      <div style="margin-top:10px;font-size:14px;color:${isBorder?'var(--gold)':'var(--t3)'};">
+        ${isBorder?'⚠️ <strong style="color:var(--gold);">Borderline point</strong> — maximum probability below 65%. This point is genuinely ambiguous. GMM surfaces this uncertainty; K-Means would force a decision.':'✓ Confident assignment to '+clrNames[cls]+' ('+( conf*100).toFixed(1)+'%).'}
+      </div>`;
+  });
+})();
+
+// ── SECTION 6: EM STEPPER + CONVERGENCE ──────────
+(function(){
+  const rng=mkNorm(13);
+  const allPts=[];
+  for(let i=0;i<100;i++) allPts.push({x:2.0+1.0*rng(),y:2.0+0.8*rng()});
+  for(let i=0;i<80;i++)  allPts.push({x:7.5+0.9*rng(),y:4.5+0.9*rng()});
+  for(let i=0;i<70;i++)  allPts.push({x:4.5+0.7*rng(),y:8.5+0.8*rng()});
+
+  let ST={phase:'ready',iter:0,means:[{x:4,y:5},{x:5,y:3},{x:6,y:7}],resp:allPts.map(()=>[1/3,1/3,1/3]),llHist:[],done:false};
+  function d2(a,b){return (a.x-b.x)**2+(a.y-b.y)**2;}
+  function eStep(m){return allPts.map(p=>{ const rw=m.map(c=>Math.exp(-d2(p,c)/(2*1.6*1.6))); const s=rw.reduce((a,b)=>a+b,0)||1e-9; return rw.map(v=>v/s); });}
+  function mStep(r){return[0,1,2].map(k=>{let sx=0,sy=0,sw=0;allPts.forEach((p,i)=>{sx+=r[i][k]*p.x;sy+=r[i][k]*p.y;sw+=r[i][k];});return{x:sx/(sw||1),y:sy/(sw||1)};});}
+  function llVal(m,r){return allPts.reduce((s,p,i)=>s+Math.log(Math.max(...r[i])+1e-9),0)/allPts.length;}
+
+  const CLRS=['rgba(45,212,191,.65)','rgba(240,180,41,.65)','rgba(251,113,133,.65)'];
+  const emCtx=document.getElementById('emCanvas').getContext('2d');
+  const emD={datasets:[
+    {label:'C0',data:[],backgroundColor:CLRS[0],pointRadius:4,type:'scatter'},
+    {label:'C1',data:[],backgroundColor:CLRS[1],pointRadius:4,type:'scatter'},
+    {label:'C2',data:[],backgroundColor:CLRS[2],pointRadius:4,type:'scatter'},
+    {label:'M', data:[],backgroundColor:'rgba(56,189,248,1)',pointRadius:13,pointStyle:'crossRot',borderColor:'#fff',borderWidth:2,type:'scatter'},
+  ]};
+  const emCh=new Chart(emCtx,{type:'scatter',data:emD,
+    options:{responsive:true,animation:{duration:350},plugins:{legend:{display:false},tooltip:{enabled:false}},
+      scales:{x:{min:-1,max:11,...baseScales('Feature 1','').x},y:{min:-1,max:12,...baseScales('','Feature 2').y}}}});
+
+  const convCtx=document.getElementById('convChart').getContext('2d');
+  const convCh=new Chart(convCtx,{type:'line',data:{labels:[],datasets:[{label:'Log-Likelihood',data:[],borderColor:'#f0b429',borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#f0b429',fill:true,backgroundColor:'rgba(240,180,41,.06)',tension:.35}]},
+    options:{responsive:true,animation:{duration:300},plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`LL: ${c.parsed.y.toFixed(4)}`}}},
+      scales:{x:{...baseScales('Iteration').x},y:{...baseScales('','Log-Likelihood').y}}}});
+
+  function renderInit(){
+    emD.datasets[0].data=allPts.map(p=>({x:p.x,y:p.y}));
+    emD.datasets[0].backgroundColor='rgba(120,130,155,.38)';
+    emD.datasets[1].data=[];emD.datasets[2].data=[];
+    emD.datasets[3].data=ST.means.map(m=>({x:m.x,y:m.y}));
+    emCh.update();
+  }
+  function renderE(){
+    const b=[[],[],[]];
+    allPts.forEach((p,i)=>{const k=ST.resp[i].indexOf(Math.max(...ST.resp[i]));b[k].push({x:p.x,y:p.y});});
+    emD.datasets[0].data=b[0];emD.datasets[0].backgroundColor=CLRS[0];
+    emD.datasets[1].data=b[1];emD.datasets[2].data=b[2];
+    emD.datasets[3].data=ST.means.map(m=>({x:m.x,y:m.y}));
+    emCh.update();
+  }
+  function renderM(){emD.datasets[3].data=ST.means.map(m=>({x:m.x,y:m.y}));emCh.update();}
+  function setInfo(ph,it,ll,desc){
+    document.getElementById('emPhase').textContent=ph;
+    document.getElementById('emIter').textContent=it;
+    document.getElementById('emLL').textContent=ll==='—'?'—':ll.toFixed(4);
+    document.getElementById('emDesc').textContent=desc;
+  }
+
+  function emReset(){
+    ST={phase:'ready',iter:0,means:[{x:4,y:5},{x:5,y:3},{x:6,y:7}],resp:allPts.map(()=>[1/3,1/3,1/3]),llHist:[],done:false};
+    convCh.data.labels=[];convCh.data.datasets[0].data=[];convCh.update();
+    renderInit();
+    setInfo('Ready',0,'—','Click "Start EM" to place three Gaussian centres at random positions (blue × markers). All data points appear grey — not yet assigned. Then step through the E and M phases to watch the algorithm learn.');
+    document.getElementById('emBtn').textContent='Start EM';
+  }
+
+  function emStep(){
+    if(ST.done){emReset();return;}
+    if(ST.phase==='ready'){
+      renderInit();
+      setInfo('Initialized',0,'—','Three Gaussian means are placed at starting positions (blue × markers). Data points are grey — unassigned. The algorithm has no cluster information yet. Click again to run the first E-Step and compute initial soft assignments.');
+      ST.phase='E';document.getElementById('emBtn').textContent='Next Step →';return;
+    }
+    if(ST.phase==='E'){
+      ST.resp=eStep(ST.means);renderE();
+      const ll=llVal(ST.means,ST.resp);
+      setInfo('E-Step — Responsibilities',ST.iter,ll,
+        `E-Step complete. For every data point, the model computed: "How responsible is each of the 3 components for this point?" Points are now coloured by the component with highest responsibility. Notice: borderline points near cluster edges have blended colours — their responsibilities are split between two clusters. This soft assignment is what separates GMM from K-Means.`);
+      ST.phase='M';return;
+    }
+    if(ST.phase==='M'){
+      ST.means=mStep(ST.resp);renderM();
+      const ll=llVal(ST.means,ST.resp);ST.iter++;ST.llHist.push(ll);
+      convCh.data.labels.push(ST.iter);convCh.data.datasets[0].data.push(ll);convCh.update();
+      const prev=ST.llHist[ST.llHist.length-2];
+      const delta=prev!==undefined?Math.abs(ll-prev):null;
+      const done=(delta!==null&&delta<0.004)||ST.iter>=14;
+      if(done){
+        ST.done=true;
+        setInfo('Converged ✓',ST.iter,ll,
+          `The algorithm has converged — the log-likelihood improved by only ${delta?delta.toFixed(5):'—'}, less than the tolerance threshold. The cluster means (× markers) have stopped moving. Look at the convergence chart: the curve has flattened. The model has stabilised and further iterations would change nothing. Click again to reset and try a fresh start.`);
+        document.getElementById('emBtn').textContent='Reset';
+      } else {
+        setInfo('M-Step — Update Means',ST.iter,ll,
+          `M-Step complete. Each mean (blue × marker) has moved to the weighted centre of its responsible points — pulled by all data points proportionally to their responsibility. Log-likelihood improved by ${delta?delta.toFixed(4):'—'}. The means are now better positioned. Click again to recompute responsibilities with these improved means.`);
+        ST.phase='E';
+      }
+    }
+  }
+  window.emStep=emStep; window.emReset=emReset;
+  emReset();
+})();
+
+// ── SECTION 7: BIC CHART ─────────────────────────
+let bicCh=null;
+const bicData={
+  clear:{bic:[820,640,470,482,505,528,550,572,595],aic:[800,600,415,432,458,484,510,536,562],
+    note:"Well-separated data: BIC drops sharply through K=3, then plateaus. The clear minimum at K=3 matches the true number of clusters perfectly. This is the ideal BIC curve."},
+  overlap:{bic:[780,620,588,582,590,608,626,650,672],aic:[760,578,536,528,539,560,581,607,632],
+    note:"Overlapping clusters: BIC shows a shallow minimum around K=2–4 with no sharp elbow. AIC suggests K=4. The data has structure but clusters blend into each other. Domain knowledge is needed to decide between K=2, 3, and 4."},
+  one:{bic:[400,422,448,472,496,522,548,576,605],aic:[380,392,412,438,464,492,520,550,582],
+    note:"Single blob: BIC increases monotonically from K=2 onward — adding more components never helps. The data has no meaningful sub-structure. K=1 (not shown here as K≥2 is needed for Silhouette) is the statistically correct answer."},
+};
+const kR=[2,3,4,5,6,7,8,9,10];
+function setBic(key){
+  if(bicCh) bicCh.destroy();
+  const d=bicData[key];
+  bicCh=new Chart(document.getElementById('bicChart'),{type:'line',
+    data:{labels:kR,datasets:[
+      {label:'BIC',data:d.bic,borderColor:'#2dd4bf',borderWidth:2.5,pointRadius:5,pointBackgroundColor:'#2dd4bf',fill:false,tension:.3},
+      {label:'AIC',data:d.aic,borderColor:'#f0b429',borderWidth:2,  pointRadius:4,pointBackgroundColor:'#f0b429',fill:false,tension:.3,borderDash:[5,4]},
+    ]},
+    options:{responsive:true,animation:{duration:500},
+      plugins:{legend:{display:true,labels:{color:'#9aa4bc',font:{size:13},boxWidth:20}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.parsed.y}`}}},
+      scales:{x:{...baseScales('K — Number of Components').x,title:{display:true,text:'K — Number of Components',color:'#505a72',font:{size:13}}},
+        y:{...baseScales('','Score (lower = better)').y,title:{display:true,text:'Score (lower = better)',color:'#505a72',font:{size:13}}}}}
+  });
+  document.getElementById('bicNote').textContent=d.note;
+}
+setBic('clear');
+</script>
+</body>
+</html>

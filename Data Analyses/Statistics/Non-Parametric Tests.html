@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Non-Parametric Tests</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Source+Sans+3:ital,wght@0,300;0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg:       '#0d1117',
+            surface:  '#161b22',
+            card:     '#1c2333',
+            border:   '#30363d',
+            accent:   '#58a6ff',
+            gold:     '#e3b341',
+            green:    '#3fb950',
+            red:      '#f85149',
+            purple:   '#bc8cff',
+            cyan:     '#39d353',
+            muted:    '#8b949e',
+            text:     '#e6edf3',
+          },
+          fontFamily: {
+            heading: ['Montserrat', 'sans-serif'],
+            body:    ['Source Sans 3', 'sans-serif'],
+            mono:    ['JetBrains Mono', 'monospace'],
+          },
+        }
+      }
+    }
+  </script>
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background-color: #0d1117;
+      color: #e6edf3;
+      font-family: 'Source Sans 3', sans-serif;
+      font-size: 16px;
+      line-height: 1.75;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0d1117; }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
+    /* ── Headings ── */
+    h1,h2,h3,h4,h5 { font-family: 'Montserrat', sans-serif; letter-spacing: -0.02em; }
+
+    /* ── Accent line on section headings ── */
+    .section-title {
+      position: relative;
+      display: inline-block;
+      padding-bottom: 6px;
+    }
+    .section-title::after {
+      content: '';
+      position: absolute;
+      left: 0; bottom: 0;
+      width: 48px; height: 3px;
+      background: linear-gradient(90deg, #58a6ff, #bc8cff);
+      border-radius: 99px;
+    }
+
+    /* ── Side nav pill ── */
+    .nav-pill {
+      display: block;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #8b949e;
+      transition: all .18s;
+      font-family: 'Montserrat', sans-serif;
+      letter-spacing: .03em;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .nav-pill:hover, .nav-pill.active {
+      background: #1c2333;
+      color: #58a6ff;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: #1c2333;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 28px;
+    }
+    .card-sm {
+      background: #1c2333;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 18px 22px;
+    }
+
+    /* ── Definition box ── */
+    .def-box {
+      background: linear-gradient(135deg, #161b22 0%, #1c2333 100%);
+      border-left: 3px solid #58a6ff;
+      border-radius: 0 10px 10px 0;
+      padding: 20px 24px;
+      margin: 20px 0;
+    }
+
+    /* ── Intuition box ── */
+    .intuition-box {
+      background: rgba(235, 179, 65, 0.07);
+      border: 1px solid rgba(227, 179, 65, 0.3);
+      border-radius: 10px;
+      padding: 18px 22px;
+      margin: 18px 0;
+    }
+
+    /* ── Example box ── */
+    .example-box {
+      background: rgba(63, 185, 80, 0.06);
+      border: 1px solid rgba(63, 185, 80, 0.25);
+      border-radius: 10px;
+      padding: 18px 22px;
+      margin: 18px 0;
+    }
+
+    /* ── Warning box ── */
+    .warn-box {
+      background: rgba(248, 81, 73, 0.07);
+      border: 1px solid rgba(248, 81, 73, 0.3);
+      border-radius: 10px;
+      padding: 18px 22px;
+      margin: 18px 0;
+    }
+
+    /* ── Solution box ── */
+    .solution-box {
+      background: rgba(188, 140, 255, 0.05);
+      border: 1px solid rgba(188, 140, 255, 0.35);
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin: 18px 0;
+    }
+    .solution-step {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 10px 0;
+      font-size: 14.5px;
+    }
+    .verdict-box {
+      background: linear-gradient(135deg, rgba(63,185,80,0.10), rgba(88,166,255,0.07));
+      border: 1px solid rgba(63,185,80,0.4);
+      border-radius: 10px;
+      padding: 16px 22px;
+      margin-top: 14px;
+    }
+
+    /* ── Code inline ── */
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82em;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      padding: 1px 6px;
+      border-radius: 4px;
+      color: #bc8cff;
+    }
+
+    /* ── Formula block ── */
+    .formula {
+      font-family: 'JetBrains Mono', monospace;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 14px 20px;
+      margin: 14px 0;
+      font-size: 15px;
+      color: #58a6ff;
+      overflow-x: auto;
+    }
+
+    /* ── Table ── */
+    .stat-table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+    .stat-table th {
+      background: #0d1117;
+      color: #8b949e;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: 10px 16px;
+      border-bottom: 1px solid #30363d;
+      text-align: left;
+    }
+    .stat-table td {
+      padding: 10px 16px;
+      border-bottom: 1px solid #1c2333;
+      vertical-align: top;
+    }
+    .stat-table tr:hover td { background: rgba(88,166,255,.04); }
+
+    /* ── Rank badge ── */
+    .rank-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #58a6ff22, #bc8cff22);
+      border: 1px solid #58a6ff55;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      color: #58a6ff;
+    }
+
+    /* ── Step box ── */
+    .step {
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+      padding: 14px 0;
+    }
+    .step:not(:last-child) { border-bottom: 1px solid #30363d; }
+    .step-num {
+      flex-shrink: 0;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #58a6ff, #bc8cff);
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800; font-size: 13px;
+      color: #0d1117;
+    }
+
+    /* ── Cheatsheet specific ── */
+    .cs-tag {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: 'Montserrat', sans-serif;
+      letter-spacing: .05em;
+    }
+
+    /* ── Canvas containers ── */
+    .chart-wrap { position: relative; width: 100%; }
+
+    /* ── Fade-in animation ── */
+    @keyframes fadeUp {
+      from { opacity:0; transform:translateY(18px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .fade-up { animation: fadeUp .5s ease both; }
+    .delay-1 { animation-delay: .1s; }
+    .delay-2 { animation-delay: .2s; }
+    .delay-3 { animation-delay: .3s; }
+
+    /* ── Progress bar for cheatsheet ── */
+    .prog-bar {
+      height: 6px;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #58a6ff, #bc8cff);
+    }
+
+    /* ── Sticky nav on desktop ── */
+    @media (min-width: 1024px) {
+      .sidebar { position: sticky; top: 32px; }
+    }
+
+    .hero-grad {
+      background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(88,166,255,0.15) 0%, transparent 70%),
+                  radial-gradient(ellipse 60% 40% at 80% 110%, rgba(188,140,255,0.10) 0%, transparent 60%),
+                  #0d1117;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════ TOP HEADER BAR ═══════════════════ -->
+<header class="border-b border-border bg-surface/80 backdrop-blur sticky top-0 z-50">
+  <div class="max-w-screen-xl mx-auto px-6 py-3 flex items-center gap-3">
+    <span class="font-heading font-700 text-text text-sm tracking-wide">Non-Parametric Tests</span>
+  </div>
+</header>
+
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<section class="hero-grad py-16 px-6 text-center fade-up">
+  <h1 class="font-heading text-4xl md:text-6xl font-black text-text mb-4 leading-tight">
+    Non-Parametric<br/>
+    <span class="bg-gradient-to-r from-accent via-purple to-gold bg-clip-text text-transparent">Statistical Tests</span>
+  </h1>
+</section>
+
+<!-- ═══════════════════ MAIN LAYOUT ═══════════════════ -->
+<main class="max-w-screen-xl mx-auto px-4 md:px-8 pb-24 flex gap-10">
+
+  <!-- ── SIDEBAR ── -->
+  <aside class="hidden lg:block w-52 flex-shrink-0">
+    <div class="sidebar pt-10">
+      <p class="text-xs font-heading font-700 text-muted uppercase tracking-widest mb-3 px-2">Contents</p>
+      <nav class="flex flex-col gap-1">
+        <a href="#s1"  class="nav-pill">01 · Why Non-Param?</a>
+        <a href="#s2"  class="nav-pill">02 · Ranking Logic</a>
+        <a href="#s3"  class="nav-pill">03 · Mann-Whitney U</a>
+        <a href="#s4"  class="nav-pill">04 · Wilcoxon Signed</a>
+        <a href="#s5"  class="nav-pill">05 · Kruskal-Wallis</a>
+        <a href="#s6"  class="nav-pill">06 · Spearman ρ</a>
+        <a href="#s7"  class="nav-pill">07 · Chi-Square</a>
+        <a href="#s8"  class="nav-pill">08 · How to Choose</a>
+        <a href="#s9"  class="nav-pill">09 · Cheatsheet</a>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- ── CONTENT ── -->
+  <div class="flex-1 min-w-0 pt-10 space-y-20">
+
+    <!-- ════════════ SECTION 1: WHY NON-PARAMETRIC ════════════ -->
+    <section id="s1">
+      <p class="text-accent font-mono text-xs tracking-widest uppercase mb-2">Section 01</p>
+      <h2 class="section-title font-heading text-3xl font-800 text-text mb-6">Why Non-Parametric Tests?</h2>
+
+      <p class="text-text mb-4" style="font-size:16px;">
+        Before we learn what non-parametric tests <em>are</em>, we need to understand the problem they <em>solve</em>. To do that, let's talk about their older sibling — <strong>parametric tests</strong>.
+      </p>
+
+      <div class="def-box">
+        <p class="text-accent font-heading font-700 text-sm uppercase tracking-wider mb-1">Definition · Parametric Tests</p>
+        <p class="text-text" style="font-size:15px;">
+          Parametric tests are statistical procedures that make <strong>assumptions about the underlying population distribution</strong> from which the sample was drawn — most commonly that the data follows a <strong>Normal (Gaussian) distribution</strong>, and that the population variance is known or estimated.
+        </p>
+        <p class="text-muted mt-2 text-sm">Examples: t-test, ANOVA, Pearson correlation, z-test.</p>
+      </div>
+
+      <p class="text-text mb-4" style="font-size:16px;">
+        These assumptions are powerful — they let us derive precise mathematical formulas and make strong inferences. The word <em>parametric</em> comes from the fact that the tests estimate <strong>parameters</strong> of a known distribution (like the mean μ and standard deviation σ of a normal curve). But this power comes with a price: if the data doesn't actually follow the assumed distribution, the test's conclusions can be completely wrong.
+      </p>
+
+      <p class="text-text mb-4" style="font-size:16px;">
+        Consider a t-test comparing the average salary of employees at two companies. If one company has a CEO earning ₹50 crore/year alongside employees earning ₹5 lakh/year, the mean salary is dragged far above what any typical employee earns. A t-test on this data would be comparing these heavily-distorted means — not the actual experience of the workforce. This is where non-parametric tests shine.
+      </p>
+
+      <div class="warn-box">
+        <p class="text-red font-heading font-700 text-sm uppercase tracking-wider mb-2">⚠ When Parametric Tests Fail</p>
+        <ul class="text-text space-y-2 text-sm list-none pl-0">
+          <li>🔹 Your data is <strong>severely skewed</strong> (e.g., income data, hospital wait times)</li>
+          <li>🔹 You have <strong>ordinal data</strong> — rankings, Likert scales (Strongly Agree → Strongly Disagree)</li>
+          <li>🔹 <strong>Small sample sizes</strong> that don't allow you to verify normality</li>
+          <li>🔹 Your data contains significant <strong>outliers</strong> that distort the mean</li>
+          <li>🔹 You're measuring something where <strong>the average doesn't make sense</strong> (e.g., ranking a movie 1–5)</li>
+        </ul>
+      </div>
+
+      <div class="def-box mt-6">
+        <p class="text-accent font-heading font-700 text-sm uppercase tracking-wider mb-1">Definition · Non-Parametric Tests</p>
+        <p class="text-text" style="font-size:15px;">
+          Non-parametric tests (also called <strong>distribution-free tests</strong>) are statistical procedures that make <strong>no assumptions about the shape of the population distribution</strong>. They work by analysing the <strong>rank order</strong> of observations rather than their exact numerical values, making them robust to outliers and applicable to ordinal data.
+        </p>
+      </div>
+
+      <div class="intuition-box">
+        <p class="text-gold font-heading font-700 text-sm uppercase tracking-wider mb-2">💡 Intuition — The Street Racing Analogy</p>
+        <p class="text-text" style="font-size:15px;">
+          Imagine you're comparing two racing teams. A parametric test says: <em>"Tell me the exact speeds of every car, and I'll compute averages."</em> But what if a GPS malfunctioned and you only know the <strong>finishing order</strong>?
+          <br/><br/>
+          A non-parametric test says: <em>"Fine — I only need to know who came 1st, 2nd, 3rd..."</em> It works with <strong>ranks</strong>, not raw numbers. Less precise? Slightly. But robust and always valid.
+        </p>
+      </div>
+
+      <!-- Comparison chart -->
+      <div class="card mt-8">
+        <p class="font-heading font-700 text-text mb-1">Parametric vs Non-Parametric — Head to Head</p>
+        <p class="text-muted text-sm mb-5">Key differences at a glance</p>
+        <div class="overflow-x-auto">
+          <table class="stat-table">
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th>Parametric</th>
+                <th>Non-Parametric</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="text-muted font-mono text-sm">Distribution assumption</td>
+                <td class="text-red">Required (usually Normal)</td>
+                <td class="text-green">None required</td>
+              </tr>
+              <tr>
+                <td class="text-muted font-mono text-sm">Data type</td>
+                <td>Interval / Ratio</td>
+                <td>Ordinal, Interval, Ratio</td>
+              </tr>
+              <tr>
+                <td class="text-muted font-mono text-sm">What it analyses</td>
+                <td>Actual values (means)</td>
+                <td>Ranks of values</td>
+              </tr>
+              <tr>
+                <td class="text-muted font-mono text-sm">Sensitivity to outliers</td>
+                <td class="text-red">High — can skew results</td>
+                <td class="text-green">Low — ranks are robust</td>
+              </tr>
+              <tr>
+                <td class="text-muted font-mono text-sm">Statistical power</td>
+                <td class="text-green">Higher (when assumptions met)</td>
+                <td>Slightly lower</td>
+              </tr>
+              <tr>
+                <td class="text-muted font-mono text-sm">Sample size</td>
+                <td>Usually ≥ 30 preferred</td>
+                <td class="text-green">Works with small samples</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Normal vs Non-Normal Chart -->
+      <div class="card mt-6">
+        <p class="font-heading font-700 text-text mb-1">Visualising the Problem: Normal vs Skewed Distributions</p>
+        <p class="text-muted text-sm mb-4">Why parametric tests struggle when data isn't bell-shaped</p>
+        <div class="chart-wrap" style="height:220px;">
+          <canvas id="distChart"></canvas>
+        </div>
+        <p class="text-muted text-xs mt-3 text-center">Left: Symmetric (parametric tests valid). Right: Right-skewed (non-parametric preferred).</p>
+      </div>
+    </section>
+
+    <!-- ════════════ SECTION 2: RANKING LOGIC ════════════ -->
+    <section id="s2">
+      <p class="text-accent font-mono text-xs tracking-widest uppercase mb-2">Section 02</p>
+      <h2 class="section-title font-heading text-3xl font-800 text-text mb-6">The Core Mechanism: Ranking</h2>
+
+      <p class="text-text mb-4" style="font-size:16px;">
+        Almost every non-parametric test operates by <strong>converting raw data into ranks</strong>. Understanding this process is the master key to understanding all the tests that follow. The beauty of ranking is that it strips away the actual magnitude of the numbers and retains only their <em>relative order</em>. A score of 1,000,000 and a score of 51 are just "rank 10" and "rank 9" — the outlier loses its power to distort the analysis.
+      </p>
+
+      <div class="def-box">
+        <p class="text-accent font-heading font-700 text-sm uppercase tracking-wider mb-1">Definition · Ranking</p>
+        <p class="text-text" style="font-size:15px;">
+          Ranking is the process of <strong>replacing each observation with its position in the sorted order</strong> of all observations. The smallest value receives rank 1, the next smallest rank 2, and so on. When two values are identical (called <strong>ties</strong>), they receive the <strong>average of the ranks</strong> they would have occupied.
+        </p>
+      </div>
+
+      <div class="intuition-box">
+        <p class="text-gold font-heading font-700 text-sm uppercase tracking-wider mb-2">💡 Intuition — The Exam Score Analogy</p>
+        <p class="text-text" style="font-size:15px;">
+          Suppose 5 students scored: <code>88, 45, 62, 91, 62</code> on an exam. Instead of working with these raw scores, we ask: <em>"What position does each student hold when everyone lines up from lowest to highest?"</em> The student who scored 45 is at the back of the line — rank 1. The two students who both scored 62 share positions 2 and 3, so they each get rank (2+3)/2 = <strong>2.5</strong>. The student with 88 is rank 4, and 91 is rank 5 at the front.
+          <br/><br/>
+          Notice: even if that top student scored 991 instead of 91, they'd still just be rank 5. The extreme value has no special influence.
+        </p>
+      </div>
+
+      <!-- Full worked ranking example -->
+      <div class="solution-box mt-4">
+        <p class="text-purple font-heading font-700 text-sm uppercase tracking-wider mb-3">✏ Complete Ranking Worked Example</p>
+        <p class="text-text mb-3" style="font-size:15px;">Let's rank the data: <code>88, 45, 62, 91, 62</code> completely from scratch.</p>
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 1 — Sort all values in ascending order</p>
+          <div class="overflow-x-auto">
+            <table class="stat-table">
+              <thead><tr><th>Position</th><th>Score</th><th>Original Student</th><th>Assigned Rank</th><th>Why?</th></tr></thead>
+              <tbody>
+                <tr><td>1st</td><td>45</td><td>Student B</td><td class="text-accent">1</td><td class="text-muted text-sm">Lowest — no ties</td></tr>
+                <tr><td>2nd &amp; 3rd</td><td>62, 62</td><td>Students C &amp; E</td><td class="text-accent">2.5</td><td class="text-muted text-sm">Tie: (2+3)/2 = 2.5 each</td></tr>
+                <tr><td>4th</td><td>88</td><td>Student A</td><td class="text-accent">4</td><td class="text-muted text-sm">No ties</td></tr>
+                <tr><td>5th</td><td>91</td><td>Student D</td><td class="text-accent">5</td><td class="text-muted text-sm">Highest — no ties</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 2 — Re-assign ranks back to original order</p>
+          <p class="text-text text-sm">Student A (88) → Rank <strong class="text-accent">4</strong> &nbsp;|&nbsp; Student B (45) → Rank <strong class="text-accent">1</strong> &nbsp;|&nbsp; Student C (62) → Rank <strong class="text-accent">2.5</strong></p>
+          <p class="text-text text-sm mt-1">Student D (91) → Rank <strong class="text-accent">5</strong> &nbsp;|&nbsp; Student E (62) → Rank <strong class="text-accent">2.5</strong></p>
+          <p class="text-muted text-xs mt-2">✓ Quick check: Sum of all ranks = 1 + 2.5 + 2.5 + 4 + 5 = 15 = n(n+1)/2 = 5×6/2 ✓</p>
+        </div>
+      </div>
+
+      <div class="card mt-6">
+        <p class="font-heading font-700 text-text mb-5">Step-by-Step: How to Rank Data</p>
+        <div>
+          <div class="step">
+            <div class="step-num">1</div>
+            <div>
+              <p class="font-heading font-600 text-text">List all observations from both groups combined</p>
+              <p class="text-muted text-sm mt-1">Mix all values into a single pool, keeping track of which group each came from.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div>
+              <p class="font-heading font-600 text-text">Sort from smallest to largest</p>
+              <p class="text-muted text-sm mt-1">Arrange in ascending order.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div>
+              <p class="font-heading font-600 text-text">Assign ranks 1, 2, 3, …, N</p>
+              <p class="text-muted text-sm mt-1">Position in the sorted list is the rank. N = total number of all observations.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div>
+              <p class="font-heading font-600 text-text">Handle ties with average ranks</p>
+              <p class="text-muted text-sm mt-1">If values at positions 3 and 4 are equal, both get rank (3+4)/2 = 3.5.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div>
+              <p class="font-heading font-600 text-text">Re-assign ranks back to their original groups</p>
+              <p class="text-muted text-sm mt-1">Now compare the rank sums or statistics between groups.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive ranking visual -->
+      <div class="card mt-6">
+        <p class="font-heading font-700 text-text mb-1">Interactive Ranking Demo</p>
+        <p class="text-muted text-sm mb-4">Group A (blue) vs Group B (orange) — see how raw scores become ranks</p>
+        <div class="chart-wrap" style="height:260px;">
+          <canvas id="rankChart"></canvas>
+        </div>
+        <p class="text-muted text-xs mt-3 text-center">Bars show raw values; numbers inside are assigned ranks (pooled across both groups).</p>
+      </div>
+    </section>
+
+    <!-- ════════════ SECTION 3: MANN-WHITNEY U ════════════ -->
+    <section id="s3">
+      <p class="text-accent font-mono text-xs tracking-widest uppercase mb-2">Section 03</p>
+      <h2 class="section-title font-heading text-3xl font-800 text-text mb-6">Mann-Whitney U Test</h2>
+      <p class="text-muted font-mono text-sm mb-4">Non-parametric alternative to the independent samples t-test</p>
+
+      <div class="def-box">
+        <p class="text-accent font-heading font-700 text-sm uppercase tracking-wider mb-1">Definition</p>
+        <p class="text-text" style="font-size:15px;">
+          The Mann-Whitney U test (also known as the <strong>Wilcoxon Rank-Sum test</strong>) determines whether there is a statistically significant difference in the <strong>distribution of two independent groups</strong>. It tests whether one group tends to produce larger values than the other, using only the rank ordering of observations.
+        </p>
+        <p class="text-muted mt-2 text-sm">Use when: two independent groups, ordinal or non-normal continuous data. The groups must be <em>independent</em> — the same subject cannot appear in both groups.</p>
+      </div>
+
+      <p class="text-text mb-2 mt-4" style="font-size:16px;">
+        The word <em>independent</em> here is crucial. Independent means the two groups have no connection — different people, no matching, no pairing. If you measure the same person twice (before and after), you use a different test (Wilcoxon Signed-Rank). Think of Mann-Whitney as answering: <strong>"If I randomly pick one person from each group, who is likely to score higher?"</strong>
+      </p>
+
+      <div class="intuition-box">
+        <p class="text-gold font-heading font-700 text-sm uppercase tracking-wider mb-2">💡 Intuition — The U Statistic Explained</p>
+        <p class="text-text" style="font-size:15px;">
+          Consider every possible pair: one person from Group A and one from Group B. For each pair, note who scores higher. <strong>U₁</strong> counts the number of pairs where Group A beats Group B. <strong>U₂</strong> counts the pairs where Group B beats Group A. If the groups are equal, U₁ ≈ U₂ ≈ n₁·n₂/2.
+          <br/><br/>
+          The test statistic U = min(U₁, U₂). A very small U means one group almost always beats the other — strong evidence of a real difference. The maximum possible U is n₁·n₂ (when one group wins every single pairing). We use the minimum because we're doing a two-tailed test, looking for extreme values in either direction.
+        </p>
+      </div>
+
+      <div class="example-box">
+        <p class="text-green font-heading font-700 text-sm uppercase tracking-wider mb-3">📚 Real Example: Drug Trial</p>
+        <p class="text-text mb-3" style="font-size:15px;">
+          A pharmaceutical researcher tests whether a new painkiller reduces pain scores (scale 1–10) compared to a placebo. Pain scores are skewed (many low scores, few high), so a t-test is unreliable.
+        </p>
+        <div class="grid grid-cols-2 gap-4 text-sm">
+          <div class="bg-surface rounded-lg p-3">
+            <p class="text-accent font-700 mb-2">Drug Group (n=6)</p>
+            <p class="font-mono text-text">Scores: 2, 3, 3, 5, 4, 2</p>
+          </div>
+          <div class="bg-surface rounded-lg p-3">
+            <p class="text-gold font-700 mb-2">Placebo Group (n=6)</p>
+            <p class="font-mono text-text">Scores: 6, 7, 5, 8, 6, 7</p>
+          </div>
+        </div>
+        <p class="text-muted mt-3 text-sm">The Mann-Whitney U test will tell us whether the drug group systematically scores lower (less pain) than the placebo group.</p>
+      </div>
+
+      <!-- WORKED SOLUTION -->
+      <div class="solution-box">
+        <p class="text-purple font-heading font-700 text-sm uppercase tracking-wider mb-3">✏ Worked Solution — Step by Step</p>
+
+        <p class="text-text mb-3" style="font-size:15px;">We have n₁ = 6 (Drug) and n₂ = 6 (Placebo). The first task is to pool all 12 scores and rank them together from lowest to highest.</p>
+
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 1 — Pool &amp; Rank All Scores</p>
+          <div class="overflow-x-auto">
+            <table class="stat-table">
+              <thead><tr><th>Score</th><th>Group</th><th>Rank</th></tr></thead>
+              <tbody>
+                <tr><td>2</td><td class="text-accent">Drug</td><td>1.5 <span class="text-muted text-xs">(tied with another 2 → avg of ranks 1 &amp; 2)</span></td></tr>
+                <tr><td>2</td><td class="text-accent">Drug</td><td>1.5</td></tr>
+                <tr><td>3</td><td class="text-accent">Drug</td><td>3.5 <span class="text-muted text-xs">(tied with another 3 → avg of ranks 3 &amp; 4)</span></td></tr>
+                <tr><td>3</td><td class="text-accent">Drug</td><td>3.5</td></tr>
+                <tr><td>4</td><td class="text-accent">Drug</td><td>5</td></tr>
+                <tr><td>5</td><td class="text-accent">Drug</td><td>6.5 <span class="text-muted text-xs">(tied with Placebo 5 → avg of ranks 6 &amp; 7)</span></td></tr>
+                <tr><td>5</td><td class="text-gold">Placebo</td><td>6.5</td></tr>
+                <tr><td>6</td><td class="text-gold">Placebo</td><td>8.5 <span class="text-muted text-xs">(tied with another 6 → avg of ranks 8 &amp; 9)</span></td></tr>
+                <tr><td>6</td><td class="text-gold">Placebo</td><td>8.5</td></tr>
+                <tr><td>7</td><td class="text-gold">Placebo</td><td>10.5 <span class="text-muted text-xs">(tied with another 7 → avg of ranks 10 &amp; 11)</span></td></tr>
+                <tr><td>7</td><td class="text-gold">Placebo</td><td>10.5</td></tr>
+                <tr><td>8</td><td class="text-gold">Placebo</td><td>12</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 2 — Sum the Ranks for Each Group</p>
+          <p class="text-text">R₁ (Drug ranks) = 1.5 + 1.5 + 3.5 + 3.5 + 5 + 6.5 = <strong class="text-accent">21.5</strong></p>
+          <p class="text-text mt-1">R₂ (Placebo ranks) = 6.5 + 8.5 + 8.5 + 10.5 + 10.5 + 12 = <strong class="text-gold">56.5</strong></p>
+          <p class="text-muted text-sm mt-2">✓ Quick check: R₁ + R₂ should equal N(N+1)/2 = 12×13/2 = 78. &nbsp; 21.5 + 56.5 = 78 ✓</p>
+        </div>
+
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 3 — Calculate U Statistics</p>
+          <p class="text-text font-mono text-sm">U₁ = n₁·n₂ + [n₁(n₁+1)/2] − R₁ = 6×6 + [6×7/2] − 21.5 = 36 + 21 − 21.5 = <strong class="text-accent">35.5</strong></p>
+          <p class="text-text font-mono text-sm mt-2">U₂ = n₁·n₂ − U₁ = 36 − 35.5 = <strong class="text-gold">0.5</strong></p>
+          <p class="text-text mt-2">U = min(U₁, U₂) = min(35.5, 0.5) = <strong class="text-purple">0.5</strong></p>
+          <p class="text-muted text-sm mt-2">A U of 0.5 is extremely small. It means in virtually every possible Drug vs Placebo pairing, the Drug patient scored lower.</p>
+        </div>
+
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 4 — Compare to Critical Value</p>
+          <p class="text-text">For n₁ = n₂ = 6 at α = 0.05 (two-tailed), the critical value from the Mann-Whitney table is <strong>U_crit = 5</strong>.</p>
+          <p class="text-text mt-1">Our U = 0.5 &lt; 5 = U_crit → <strong class="text-green">Reject H₀</strong></p>
+        </div>
+
+        <div class="verdict-box">
+          <p class="text-green font-heading font-700 mb-1">✅ Conclusion</p>
+          <p class="text-text" style="font-size:15px;">There is a statistically significant difference between the Drug and Placebo groups (U = 0.5, p &lt; 0.05). The drug group consistently reported lower pain scores. The painkiller is effective compared to placebo.</p>
+        </div>
+      </div>
+
+      <!-- Hypothesis -->
+      <div class="card mt-4">
+        <p class="font-heading font-700 text-text mb-4">Hypotheses</p>
+        <div class="grid md:grid-cols-2 gap-4">
+          <div class="card-sm">
+            <p class="text-muted text-xs font-mono mb-1">H₀ (Null Hypothesis)</p>
+            <p class="text-text" style="font-size:15px;">The two groups come from the same distribution. Neither group tends to produce larger values.</p>
+          </div>
+          <div class="card-sm">
+            <p class="text-muted text-xs font-mono mb-1">H₁ (Alternative)</p>
+            <p class="text-text" style="font-size:15px;">One group tends to produce systematically larger (or smaller) values than the other.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Formula -->
+      <div class="card mt-4">
+        <p class="font-heading font-700 text-text mb-3">Formula</p>
+        <div class="formula">
+          U₁ = n₁·n₂ + [n₁(n₁+1)/2] − R₁<br/>
+          U₂ = n₁·n₂ − U₁<br/>
+          U  = min(U₁, U₂)
+        </div>
+        <div class="grid md:grid-cols-3 gap-3 mt-3 text-sm">
+          <div class="card-sm">
+            <code>n₁, n₂</code>
+            <p class="text-muted mt-1">Sample sizes of groups 1 and 2</p>
+          </div>
+          <div class="card-sm">
+            <code>R₁</code>
+            <p class="text-muted mt-1">Sum of ranks assigned to Group 1</p>
+          </div>
+          <div class="card-sm">
+            <code>U</code>
+            <p class="text-muted mt-1">The test statistic — compare to critical value table</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart -->
+      <div class="card mt-6">
+        <p class="font-heading font-700 text-text mb-1">Drug vs Placebo — Distribution Comparison</p>
+        <p class="text-muted text-sm mb-4">Notice how the drug group's pain scores cluster lower</p>
+        <div class="chart-wrap" style="height:230px;">
+          <canvas id="mwChart"></canvas>
+        </div>
+      </div>
+
+      <div class="warn-box mt-4">
+        <p class="text-red font-heading font-700 text-sm uppercase tracking-wider mb-2">⚠ Common Misconception</p>
+        <p class="text-text" style="font-size:15px;">
+          The Mann-Whitney U test does <strong>not</strong> compare medians (a widespread myth). It compares the entire <em>distribution</em> of the two groups. It answers: "Does one group tend to produce stochastically larger values?" — not just whether the medians differ.
+        </p>
+      </div>
+    </section>
+
+    <!-- ════════════ SECTION 4: WILCOXON SIGNED RANK ════════════ -->
+    <section id="s4">
+      <p class="text-accent font-mono text-xs tracking-widest uppercase mb-2">Section 04</p>
+      <h2 class="section-title font-heading text-3xl font-800 text-text mb-6">Wilcoxon Signed-Rank Test</h2>
+      <p class="text-muted font-mono text-sm mb-4">Non-parametric alternative to the paired samples t-test</p>
+
+      <div class="def-box">
+        <p class="text-accent font-heading font-700 text-sm uppercase tracking-wider mb-1">Definition</p>
+        <p class="text-text" style="font-size:15px;">
+          The Wilcoxon Signed-Rank test assesses whether the <strong>median difference between paired observations</strong> is zero. Unlike the Mann-Whitney U test (for independent groups), this test is for situations where the same subjects are measured twice — typically <strong>before and after</strong> a treatment — or two matched conditions are compared.
+        </p>
+        <p class="text-muted mt-2 text-sm">Use when: paired/matched data, non-normal differences.</p>
+      </div>
+
+      <div class="intuition-box">
+        <p class="text-gold font-heading font-700 text-sm uppercase tracking-wider mb-2">💡 Intuition — The "Did Things Change?" Test</p>
+        <p class="text-text" style="font-size:15px;">
+          Compute the difference (Before − After) for each person. If the programme has no real effect, some patients should improve slightly and others might get slightly worse — the differences would be mixed, positive and negative, roughly cancelling out. The Wilcoxon test formalises this: it ranks the <em>magnitude</em> of each difference, then checks whether the <strong>positive differences dominate</strong> the negative ones. If the treatment works, most differences will be in one direction, giving a lopsided rank sum.
+        </p>
+      </div>
+
+      <div class="example-box">
+        <p class="text-green font-heading font-700 text-sm uppercase tracking-wider mb-3">📚 Real Example: Blood Pressure Treatment</p>
+        <p class="text-text mb-3" style="font-size:15px;">
+          8 hypertensive patients have their systolic blood pressure measured <strong>before</strong> and <strong>after</strong> a 4-week dietary programme. We want to know: did the programme significantly lower blood pressure? Since differences may not be normally distributed (and n is small), we use the Wilcoxon Signed-Rank test.
+        </p>
+        <div class="overflow-x-auto">
+          <table class="stat-table">
+            <thead>
+              <tr><th>Patient</th><th>Before (mmHg)</th><th>After (mmHg)</th><th>Diff (B−A)</th><th>|Diff|</th><th>Rank of |Diff|</th><th>Signed Rank</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>1</td><td>152</td><td>140</td><td class="text-green">+12</td><td>12</td><td>5</td><td class="text-green">+5</td></tr>
+              <tr><td>2</td><td>148</td><td>135</td><td class="text-green">+13</td><td>13</td><td>6</td><td class="text-green">+6</td></tr>
+              <tr><td>3</td><td>160</td><td>145</td><td class="text-green">+15</td><td>15</td><td>7.5</td><td class="text-green">+7.5</td></tr>
+              <tr><td>4</td><td>145</td><td>142</td><td class="text-green">+3</td><td>3</td><td>1</td><td class="text-green">+1</td></tr>
+              <tr><td>5</td><td>155</td><td>150</td><td class="text-green">+5</td><td>5</td><td>2</td><td class="text-green">+2</td></tr>
+              <tr><td>6</td><td>162</td><td>147</td><td class="text-green">+15</td><td>15</td><td>7.5</td><td class="text-green">+7.5</td></tr>
+              <tr><td>7</td><td>140</td><td>138</td><td class="text-green">+2</td><td>2</td><td class="text-muted">—</td><td class="text-muted">excluded (diff too small — see note)</td></tr>
+              <tr><td>8</td><td>150</td><td>142</td><td class="text-green">+8</td><td>8</td><td>3</td><td class="text-green">+3</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="text-muted text-xs mt-2">Note: Patient 7 has |diff| = 2 — the smallest non-zero |diff|. It would be ranked 1, but there is a separate convention: some textbooks exclude differences smaller than a minimum threshold. Here we treat it as rank 1 in the full solution below, which is the standard modern approach.</p>
+      </div>
+
+      <!-- WORKED SOLUTION -->
+      <div class="solution-box">
+        <p class="text-purple font-heading font-700 text-sm uppercase tracking-wider mb-3">✏ Worked Solution — Step by Step</p>
+
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 1 — Compute the Differences (Before − After)</p>
+          <p class="text-text text-sm">P1: 152−140 = 12 &nbsp;|&nbsp; P2: 148−135 = 13 &nbsp;|&nbsp; P3: 160−145 = 15 &nbsp;|&nbsp; P4: 145−142 = 3</p>
+          <p class="text-text text-sm mt-1">P5: 155−150 = 5 &nbsp;|&nbsp; P6: 162−147 = 15 &nbsp;|&nbsp; P7: 140−138 = 2 &nbsp;|&nbsp; P8: 150−142 = 8</p>
+          <p class="text-muted text-xs mt-2">All differences are positive — blood pressure dropped for every patient. This is already a strong signal.</p>
+        </div>
+
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 2 — Rank the Absolute Differences (smallest = rank 1)</p>
+          <p class="text-text text-sm">Sorted |diffs|: 2 (P7), 3 (P4), 5 (P5), 8 (P8), 12 (P1), 13 (P2), 15 (P3), 15 (P6)</p>
+          <p class="text-text text-sm mt-1">Ranks: P7→1, P4→2, P5→3, P8→4, P1→5, P2→6, P3 &amp; P6 tie at positions 7 &amp; 8 → each gets (7+8)/2 = <strong>7.5</strong></p>
+        </div>
+
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 3 — Apply Signs &amp; Sum</p>
+          <p class="text-text text-sm">All differences are positive (BP decreased for everyone), so all signed ranks are positive:</p>
+          <p class="text-text font-mono text-sm mt-1">W⁺ = 1 + 2 + 3 + 4 + 5 + 6 + 7.5 + 7.5 = <strong class="text-green">36</strong></p>
+          <p class="text-text font-mono text-sm mt-1">W⁻ = <strong class="text-red">0</strong> (no negative differences exist)</p>
+          <p class="text-text mt-2">W = min(W⁺, W⁻) = min(36, 0) = <strong class="text-purple">0</strong></p>
+        </div>
+
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 4 — Compare to Critical Value</p>
+          <p class="text-text">For n = 8 at α = 0.05 (two-tailed), W_crit = <strong>4</strong>.</p>
+          <p class="text-text mt-1">Our W = 0 &lt; 4 = W_crit → <strong class="text-green">Reject H₀</strong></p>
+          <p class="text-muted text-sm mt-1">The smaller the W, the stronger the evidence. W = 0 is the most extreme possible outcome — it means every single difference pointed in the same direction.</p>
+        </div>
+
+        <div class="verdict-box">
+          <p class="text-green font-heading font-700 mb-1">✅ Conclusion</p>
+          <p class="text-text" style="font-size:15px;">The dietary programme produced a statistically significant reduction in systolic blood pressure (W = 0, p &lt; 0.05). Every patient's BP decreased, and the magnitude of those decreases was consistently large. We reject H₀ and conclude the programme is effective.</p>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <p class="font-heading font-700 text-text mb-3">Formula</p>
+        <div class="formula">
+          W = min(W⁺, W⁻)<br/><br/>
+          W⁺ = Σ Rᵢ for all positive differences<br/>
+          W⁻ = Σ Rᵢ for all negative differences<br/><br/>
+          Rᵢ = rank of |dᵢ| among all non-zero |dᵢ|
+        </div>
+        <p class="text-muted text-sm mt-2">A very small W (close to 0) suggests the treatment had a consistent effect in one direction → reject H₀.</p>
+      </div>
+
+      <!-- Before/After chart -->
+      <div class="card mt-6">
+        <p class="font-heading font-700 text-text mb-1">Before vs After Blood Pressure</p>
+        <p class="text-muted text-sm mb-4">Each patient's reading before (blue) and after (green) the programme</p>
+        <div class="chart-wrap" style="height:240px;">
+          <canvas id="wilcoxChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════ SECTION 5: KRUSKAL-WALLIS ════════════ -->
+    <section id="s5">
+      <p class="text-accent font-mono text-xs tracking-widest uppercase mb-2">Section 05</p>
+      <h2 class="section-title font-heading text-3xl font-800 text-text mb-6">Kruskal-Wallis Test</h2>
+      <p class="text-muted font-mono text-sm mb-4">Non-parametric alternative to one-way ANOVA (3+ groups)</p>
+
+      <div class="def-box">
+        <p class="text-accent font-heading font-700 text-sm uppercase tracking-wider mb-1">Definition</p>
+        <p class="text-text" style="font-size:15px;">
+          The Kruskal-Wallis H test is an extension of the Mann-Whitney U test to <strong>three or more independent groups</strong>. It tests whether the samples originate from the same distribution by examining whether the rank sums across groups differ more than would be expected by chance. It is the non-parametric equivalent of a <strong>one-way ANOVA</strong>.
+        </p>
+      </div>
+
+      <div class="intuition-box">
+        <p class="text-gold font-heading font-700 text-sm uppercase tracking-wider mb-2">💡 Intuition — The "Which Group Ranks Highest?" Question</p>
+        <p class="text-text" style="font-size:15px;">
+          Think of it this way: you have 15 students spread across three classrooms. You rank all 15 by their score (rank 1 = lowest scorer overall, rank 15 = highest). Now count up the total ranks earned by each classroom. If all three teaching methods were equally effective, you'd expect each classroom to hold roughly similar rank totals — no classroom would dominate the high or low end. But if one classroom earns most of the top ranks, that's evidence its method produces better results. The H statistic captures exactly this — how unevenly the ranks are distributed across the groups.
+        </p>
+      </div>
+
+      <div class="example-box">
+        <p class="text-green font-heading font-700 text-sm uppercase tracking-wider mb-3">📚 Real Example: Teaching Methods</p>
+        <p class="text-text mb-3" style="font-size:15px;">
+          A school compares exam scores across <strong>three teaching methods</strong>: Traditional, Online, and Hybrid. There are 5 students per group (N = 15 total). The score distributions are non-normal, so ANOVA is inappropriate.
+        </p>
+        <div class="grid md:grid-cols-3 gap-3 text-sm mb-3">
+          <div class="card-sm">
+            <p class="text-accent font-700 mb-1">Traditional (Group 1)</p>
+            <p class="font-mono text-text">55, 58, 60, 65, 72</p>
+          </div>
+          <div class="card-sm">
+            <p class="text-purple font-700 mb-1">Online (Group 2)</p>
+            <p class="font-mono text-text">75, 78, 82, 88, 90</p>
+          </div>
+          <div class="card-sm">
+            <p class="text-gold font-700 mb-1">Hybrid (Group 3)</p>
+            <p class="font-mono text-text">65, 68, 70, 76, 80</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- WORKED SOLUTION -->
+      <div class="solution-box">
+        <p class="text-purple font-heading font-700 text-sm uppercase tracking-wider mb-3">✏ Worked Solution — Step by Step</p>
+
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 1 — Pool All 15 Scores and Rank Them</p>
+          <div class="overflow-x-auto">
+            <table class="stat-table">
+              <thead><tr><th>Score</th><th>Group</th><th>Rank</th></tr></thead>
+              <tbody>
+                <tr><td>55</td><td class="text-accent">Traditional</td><td>1</td></tr>
+                <tr><td>58</td><td class="text-accent">Traditional</td><td>2</td></tr>
+                <tr><td>60</td><td class="text-accent">Traditional</td><td>3</td></tr>
+                <tr><td>65</td><td class="text-accent">Traditional</td><td>4.5 <span class="text-muted text-xs">(65 appears twice → avg of ranks 4 &amp; 5)</span></td></tr>
+                <tr><td>65</td><td class="text-gold">Hybrid</td><td>4.5</td></tr>
+                <tr><td>68</td><td class="text-gold">Hybrid</td><td>6</td></tr>
+                <tr><td>70</td><td class="text-gold">Hybrid</td><td>7</td></tr>
+                <tr><td>72</td><td class="text-accent">Traditional</td><td>8</td></tr>
+                <tr><td>75</td><td class="text-purple">Online</td><td>9</td></tr>
+                <tr><td>76</td><td class="text-gold">Hybrid</td><td>10</td></tr>
+                <tr><td>78</td><td class="text-purple">Online</td><td>11</td></tr>
+                <tr><td>80</td><td class="text-gold">Hybrid</td><td>12</td></tr>
+                <tr><td>82</td><td class="text-purple">Online</td><td>13</td></tr>
+                <tr><td>88</td><td class="text-purple">Online</td><td>14</td></tr>
+                <tr><td>90</td><td class="text-purple">Online</td><td>15</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 2 — Sum the Ranks per Group (Rⱼ)</p>
+          <p class="text-text text-sm">R₁ (Traditional) = 1 + 2 + 3 + 4.5 + 8 = <strong class="text-accent">18.5</strong></p>
+          <p class="text-text text-sm mt-1">R₂ (Online) = 9 + 11 + 13 + 14 + 15 = <strong class="text-purple">62</strong></p>
+          <p class="text-text text-sm mt-1">R₃ (Hybrid) = 4.5 + 6 + 7 + 10 + 12 = <strong class="text-gold">39.5</strong></p>
+          <p class="text-muted text-xs mt-2">✓ Check: 18.5 + 62 + 39.5 = 120 = N(N+1)/2 = 15×16/2 ✓</p>
+        </div>
+
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 3 — Compute the H Statistic</p>
+          <p class="text-text font-mono text-sm">H = [12 / N(N+1)] × Σ[Rⱼ²/nⱼ] − 3(N+1)</p>
+          <p class="text-text font-mono text-sm mt-2">Σ[Rⱼ²/nⱼ] = (18.5²/5) + (62²/5) + (39.5²/5)</p>
+          <p class="text-text font-mono text-sm mt-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= (342.25/5) + (3844/5) + (1560.25/5)</p>
+          <p class="text-text font-mono text-sm mt-1">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= 68.45 + 768.8 + 312.05 = <strong>1149.3</strong></p>
+          <p class="text-text font-mono text-sm mt-2">H = [12 / (15×16)] × 1149.3 − 3×16</p>
+          <p class="text-text font-mono text-sm mt-1">H = [12/240] × 1149.3 − 48</p>
+          <p class="text-text font-mono text-sm mt-1">H = 0.05 × 1149.3 − 48 = 57.465 − 48 = <strong class="text-purple">9.47</strong></p>
+        </div>
+
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 4 — Compare to χ² Critical Value</p>
+          <p class="text-text">Degrees of freedom = k − 1 = 3 − 1 = <strong>2</strong></p>
+          <p class="text-text mt-1">At α = 0.05, χ²_crit (df=2) = <strong>5.991</strong> (from chi-square table)</p>
+          <p class="text-text mt-1">H = 9.47 &gt; 5.991 → <strong class="text-green">Reject H₀</strong></p>
+        </div>
+
+        <div class="verdict-box">
+          <p class="text-green font-heading font-700 mb-1">✅ Conclusion</p>
+          <p class="text-text" style="font-size:15px;">There is a statistically significant difference in exam scores across the three teaching methods (H = 9.47, p &lt; 0.05). The Online method students consistently occupied the highest ranks. A post-hoc Mann-Whitney U test with Bonferroni correction (α' = 0.05/3 ≈ 0.017) would identify which specific pairs differ significantly.</p>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <p class="font-heading font-700 text-text mb-3">Formula</p>
+        <div class="formula">
+          H = [12 / N(N+1)] × Σ [Rⱼ² / nⱼ] − 3(N+1)
+        </div>
+        <div class="grid md:grid-cols-3 gap-3 mt-3 text-sm">
+          <div class="card-sm"><code>N</code><p class="text-muted mt-1">Total number of observations across all groups</p></div>
+          <div class="card-sm"><code>nⱼ</code><p class="text-muted mt-1">Number of obs in group j</p></div>
+          <div class="card-sm"><code>Rⱼ</code><p class="text-muted mt-1">Sum of ranks in group j</p></div>
+        </div>
+        <p class="text-muted text-sm mt-3">H follows a <strong>chi-square distribution</strong> with k−1 degrees of freedom (k = number of groups). Large H → reject H₀.</p>
+      </div>
+
+      <div class="warn-box mt-4">
+        <p class="text-red font-heading font-700 text-sm uppercase tracking-wider mb-2">⚠ Post-Hoc Testing</p>
+        <p class="text-text" style="font-size:15px;">
+          A significant Kruskal-Wallis result only tells you that <em>at least one group differs</em> — it doesn't say which. To find the specific pairs, you run <strong>post-hoc Mann-Whitney U tests</strong> with a Bonferroni correction (divide α by the number of comparisons).
+        </p>
+      </div>
+
+      <!-- Kruskal chart -->
+      <div class="card mt-6">
+        <p class="font-heading font-700 text-text mb-1">Score Distributions by Teaching Method</p>
+        <p class="text-muted text-sm mb-4">Compare spread and central tendency across the three groups</p>
+        <div class="chart-wrap" style="height:240px;">
+          <canvas id="kwChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════ SECTION 6: SPEARMAN ════════════ -->
+    <section id="s6">
+      <p class="text-accent font-mono text-xs tracking-widest uppercase mb-2">Section 06</p>
+      <h2 class="section-title font-heading text-3xl font-800 text-text mb-6">Spearman's Rank Correlation (ρ)</h2>
+      <p class="text-muted font-mono text-sm mb-4">Non-parametric alternative to Pearson's r</p>
+
+      <div class="def-box">
+        <p class="text-accent font-heading font-700 text-sm uppercase tracking-wider mb-1">Definition</p>
+        <p class="text-text" style="font-size:15px;">
+          Spearman's rank-order correlation coefficient (ρ, "rho") measures the <strong>strength and direction of the monotonic relationship</strong> between two variables by computing Pearson's r on the <strong>ranks</strong> of the data, rather than the raw values. A monotonic relationship means as one variable increases, the other consistently increases (or decreases) — but not necessarily at a constant rate.
+        </p>
+      </div>
+
+      <div class="intuition-box">
+        <p class="text-gold font-heading font-700 text-sm uppercase tracking-wider mb-2">💡 Monotonic vs Linear — The Key Distinction</p>
+        <p class="text-text" style="font-size:15px;">
+          Pearson's r (parametric) measures <em>linear</em> relationships: the data must increase at a <em>constant rate</em>. Spearman's ρ only requires that the relationship is <em>monotonic</em> — consistently going up or down, even if the rate changes. This is why Spearman handles <strong>exponential growth, logarithmic curves</strong>, and <strong>ordinal rankings</strong> perfectly well.
+        </p>
+      </div>
+
+      <div class="example-box">
+        <p class="text-green font-heading font-700 text-sm uppercase tracking-wider mb-3">📚 Real Example: Study Hours vs Class Rank</p>
+        <p class="text-text mb-3" style="font-size:15px;">
+          A professor tracks 5 students' weekly study hours and their final class rank (1 = top of class). Does studying more correlate with a better class rank? Note: "class rank" is ordinal — Spearman is the correct choice over Pearson here.
+        </p>
+        <div class="overflow-x-auto">
+          <table class="stat-table">
+            <thead><tr><th>Student</th><th>Hours/Week (X)</th><th>Class Rank (Y)</th><th>Rank(X)</th><th>Rank(Y)*</th><th>dᵢ = Rank(X)−Rank(Y)</th><th>dᵢ²</th></tr></thead>
+            <tbody>
+              <tr><td>A</td><td>15</td><td>2nd</td><td>3</td><td>4</td><td>-1</td><td>1</td></tr>
+              <tr><td>B</td><td>8</td><td>5th</td><td>1</td><td>1</td><td>0</td><td>0</td></tr>
+              <tr><td>C</td><td>20</td><td>1st</td><td>5</td><td>5</td><td>0</td><td>0</td></tr>
+              <tr><td>D</td><td>12</td><td>3rd</td><td>2</td><td>3</td><td>-1</td><td>1</td></tr>
+              <tr><td>E</td><td>18</td><td>4th</td><td>4</td><td>2</td><td>2</td><td>4</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="text-muted text-xs mt-2">*Rank(Y): class rank 5th is the worst → assigned the lowest performance rank (1). 1st place is best → assigned rank 5. We re-rank so that higher rank = better performance, making the direction intuitive.</p>
+      </div>
+
+      <!-- WORKED SOLUTION -->
+      <div class="solution-box">
+        <p class="text-purple font-heading font-700 text-sm uppercase tracking-wider mb-3">✏ Worked Solution — Step by Step</p>
+
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 1 — Rank Both Variables Independently</p>
+          <p class="text-text text-sm">Rank X (study hours) in ascending order: 8→1, 12→2, 15→3, 18→4, 20→5</p>
+          <p class="text-text text-sm mt-1">Rank Y (performance): re-rank class position so better outcome = higher rank. 5th place→1, 4th→2, 3rd→3, 2nd→4, 1st→5</p>
+        </div>
+
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 2 — Compute Differences (dᵢ) and Square Them</p>
+          <p class="text-text text-sm">A: Rank(X)=3, Rank(Y)=4 → d = −1, d² = 1</p>
+          <p class="text-text text-sm">B: Rank(X)=1, Rank(Y)=1 → d = 0, d² = 0</p>
+          <p class="text-text text-sm">C: Rank(X)=5, Rank(Y)=5 → d = 0, d² = 0</p>
+          <p class="text-text text-sm">D: Rank(X)=2, Rank(Y)=3 → d = −1, d² = 1</p>
+          <p class="text-text text-sm">E: Rank(X)=4, Rank(Y)=2 → d = 2, d² = 4</p>
+          <p class="text-text font-mono text-sm mt-2">Σdᵢ² = 1 + 0 + 0 + 1 + 4 = <strong>6</strong></p>
+        </div>
+
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 3 — Apply the Spearman Formula</p>
+          <p class="text-text font-mono text-sm">ρ = 1 − [6·Σdᵢ²] / [n(n²−1)]</p>
+          <p class="text-text font-mono text-sm mt-1">ρ = 1 − [6 × 6] / [5 × (25−1)]</p>
+          <p class="text-text font-mono text-sm mt-1">ρ = 1 − 36 / [5 × 24]</p>
+          <p class="text-text font-mono text-sm mt-1">ρ = 1 − 36/120 = 1 − 0.30 = <strong class="text-purple">+0.70</strong></p>
+        </div>
+
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 4 — Interpret the Result</p>
+          <p class="text-text">ρ = +0.70 indicates a <strong>strong positive monotonic relationship</strong>. Students who study more tend to achieve better class positions. The relationship is not perfect (ρ ≠ 1), but it is consistent and meaningful.</p>
+          <p class="text-muted text-sm mt-2">For n = 5 at α = 0.05, the critical value for Spearman's ρ ≈ 0.900 (very small samples need very high ρ to reach significance). With larger samples this ρ = 0.70 would be highly significant.</p>
+        </div>
+
+        <div class="verdict-box">
+          <p class="text-green font-heading font-700 mb-1">✅ Conclusion</p>
+          <p class="text-text" style="font-size:15px;">There is a strong positive monotonic association between weekly study hours and academic class rank (ρ = 0.70). Students who invest more study time consistently rank higher — though the small sample size (n=5) limits formal significance testing here. With a larger cohort, this effect would almost certainly be statistically significant.</p>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <p class="font-heading font-700 text-text mb-3">Formula</p>
+        <div class="formula">
+          ρ = 1 − [6·Σdᵢ²] / [n(n²−1)]<br/><br/>
+          where dᵢ = rank(xᵢ) − rank(yᵢ)
+        </div>
+        <div class="grid md:grid-cols-2 gap-4 mt-3 text-sm">
+          <div class="card-sm">
+            <p class="text-accent font-700">Interpretation of ρ</p>
+            <ul class="text-muted mt-2 space-y-1">
+              <li>ρ = +1.0 → Perfect positive monotonic</li>
+              <li>ρ = 0.7–1.0 → Strong positive</li>
+              <li>ρ = 0 → No relationship</li>
+              <li>ρ = −0.7 to −1.0 → Strong negative</li>
+              <li>ρ = −1.0 → Perfect negative monotonic</li>
+            </ul>
+          </div>
+          <div class="card-sm">
+            <p class="text-accent font-700">Pearson vs Spearman</p>
+            <ul class="text-muted mt-2 space-y-1">
+              <li>Use Pearson: normally distributed data, linear relationship</li>
+              <li>Use Spearman: ordinal data, outliers present, non-linear monotonic trend</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spearman chart -->
+      <div class="card mt-6">
+        <p class="font-heading font-700 text-text mb-1">Spearman vs Pearson on Skewed Data</p>
+        <p class="text-muted text-sm mb-4">Notice how an outlier destroys Pearson's r but barely affects Spearman's ρ</p>
+        <div class="chart-wrap" style="height:240px;">
+          <canvas id="spearmanChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════ SECTION 7: CHI-SQUARE ════════════ -->
+    <section id="s7">
+      <p class="text-accent font-mono text-xs tracking-widest uppercase mb-2">Section 07</p>
+      <h2 class="section-title font-heading text-3xl font-800 text-text mb-6">Chi-Square Test (χ²)</h2>
+      <p class="text-muted font-mono text-sm mb-4">For categorical data — independence &amp; goodness of fit</p>
+
+      <div class="def-box">
+        <p class="text-accent font-heading font-700 text-sm uppercase tracking-wider mb-1">Definition</p>
+        <p class="text-text" style="font-size:15px;">
+          The Chi-Square (χ²) test is a non-parametric test used for <strong>categorical (nominal) data</strong>. It comes in two flavours: <br/>
+          (1) <strong>Test of Independence</strong> — determines whether two categorical variables are associated.<br/>
+          (2) <strong>Goodness of Fit</strong> — tests whether observed frequencies match expected frequencies from a theoretical distribution.
+        </p>
+        <p class="text-muted mt-2 text-sm">Key distinction from other tests: χ² works with <em>counts</em> (frequencies) in categories, not with continuous measurements or ranks.</p>
+      </div>
+
+      <p class="text-text mb-4 mt-4" style="font-size:16px;">
+        Unlike the rank-based tests we've seen so far, Chi-Square doesn't rank anything. Instead, it compares <strong>how many people fall into each category</strong> against what we'd theoretically <em>expect</em> if there were no relationship. The bigger the gap between what we observe and what we expect, the larger the χ² statistic — and the stronger the evidence of an association.
+      </p>
+
+      <div class="intuition-box">
+        <p class="text-gold font-heading font-700 text-sm uppercase tracking-wider mb-2">💡 Intuition — "Expected vs. Observed"</p>
+        <p class="text-text" style="font-size:15px;">
+          Imagine you shuffle a deck of cards and deal them into two piles. You'd expect roughly equal numbers of red and black cards in each pile — not because you planned it, but because the two variables (which pile, what colour) are <em>independent</em>. If one pile ends up with 45 red cards and only 5 black, that's very surprising — evidence that something non-random happened.
+          <br/><br/>
+          Chi-Square formalises this intuition. Under independence, it calculates exactly how many cases we'd <em>expect</em> in each cell of a table. Then it measures how far the <em>observed</em> counts deviate from those expectations. Each cell contributes (O−E)²/E to the total — the squaring ensures deviations in either direction count positively, and dividing by E standardises for the scale of the expected count.
+        </p>
+      </div>
+
+      <div class="example-box">
+        <p class="text-green font-heading font-700 text-sm uppercase tracking-wider mb-3">📚 Real Example: Vaccine Side-Effect by Age Group</p>
+        <p class="text-text mb-3" style="font-size:15px;">
+          Researchers record whether 200 individuals experienced a mild side-effect after vaccination, categorised by age group. Is the side-effect rate independent of age?
+        </p>
+        <div class="overflow-x-auto">
+          <table class="stat-table">
+            <thead><tr><th></th><th>Side Effect: Yes</th><th>Side Effect: No</th><th>Total</th></tr></thead>
+            <tbody>
+              <tr><td class="text-muted">18–35 yrs</td><td>30</td><td>70</td><td>100</td></tr>
+              <tr><td class="text-muted">36–60 yrs</td><td>45</td><td>55</td><td>100</td></tr>
+              <tr><td class="text-muted font-700">Total</td><td>75</td><td>125</td><td>200</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="formula mt-3">
+          Expected(18-35, Yes) = (100 × 75) / 200 = 37.5<br/>
+          χ² = Σ [(O − E)² / E] = ... ≈ 4.27<br/>
+          df = (rows−1)(cols−1) = 1 × 1 = 1<br/>
+          Critical value (α=0.05, df=1) = 3.84 → Reject H₀ (age and side effect ARE related)
+        </div>
+      </div>
+
+      <!-- WORKED SOLUTION -->
+      <div class="solution-box">
+        <p class="text-purple font-heading font-700 text-sm uppercase tracking-wider mb-3">✏ Worked Solution — Step by Step</p>
+
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 1 — State the Hypotheses</p>
+          <p class="text-text text-sm"><strong>H₀:</strong> Vaccine side effects are independent of age group (no association).</p>
+          <p class="text-text text-sm mt-1"><strong>H₁:</strong> Vaccine side effects are associated with age group.</p>
+        </div>
+
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 2 — Compute Expected Frequencies for Each Cell</p>
+          <p class="text-text text-sm mb-2">Formula: E = (Row Total × Column Total) / Grand Total</p>
+          <div class="overflow-x-auto">
+            <table class="stat-table">
+              <thead><tr><th>Cell</th><th>Observed (O)</th><th>Row Total</th><th>Col Total</th><th>Expected (E)</th></tr></thead>
+              <tbody>
+                <tr><td>18–35, Yes</td><td>30</td><td>100</td><td>75</td><td class="text-accent">(100×75)/200 = 37.5</td></tr>
+                <tr><td>18–35, No</td><td>70</td><td>100</td><td>125</td><td class="text-accent">(100×125)/200 = 62.5</td></tr>
+                <tr><td>36–60, Yes</td><td>45</td><td>100</td><td>75</td><td class="text-accent">(100×75)/200 = 37.5</td></tr>
+                <tr><td>36–60, No</td><td>55</td><td>100</td><td>125</td><td class="text-accent">(100×125)/200 = 62.5</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="text-muted text-xs mt-2">All expected values ≥ 5 ✓ — the chi-square approximation is valid here.</p>
+        </div>
+
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 3 — Compute χ² = Σ [(O − E)² / E]</p>
+          <p class="text-text font-mono text-sm">Cell 1: (30−37.5)² / 37.5 = (−7.5)² / 37.5 = 56.25 / 37.5 = 1.50</p>
+          <p class="text-text font-mono text-sm mt-1">Cell 2: (70−62.5)² / 62.5 = (7.5)² / 62.5 = 56.25 / 62.5 = 0.90</p>
+          <p class="text-text font-mono text-sm mt-1">Cell 3: (45−37.5)² / 37.5 = (7.5)² / 37.5 = 56.25 / 37.5 = 1.50</p>
+          <p class="text-text font-mono text-sm mt-1">Cell 4: (55−62.5)² / 62.5 = (−7.5)² / 62.5 = 56.25 / 62.5 = 0.90</p>
+          <p class="text-text font-mono text-sm mt-2"><strong>χ² = 1.50 + 0.90 + 1.50 + 0.90 = <span class="text-purple">4.80</span></strong></p>
+        </div>
+
+        <div class="solution-step">
+          <p class="text-purple font-heading font-600 mb-2">Step 4 — Degrees of Freedom and Critical Value</p>
+          <p class="text-text text-sm">df = (rows−1)(cols−1) = (2−1)(2−1) = <strong>1</strong></p>
+          <p class="text-text text-sm mt-1">At α = 0.05 with df = 1, the critical χ² value = <strong>3.841</strong> (from chi-square table)</p>
+          <p class="text-text text-sm mt-1">Our χ² = 4.80 &gt; 3.841 → <strong class="text-green">Reject H₀</strong></p>
+          <p class="text-muted text-sm mt-2">The exact p-value ≈ 0.028, which is below 0.05 — confirming statistical significance.</p>
+        </div>
+
+        <div class="verdict-box">
+          <p class="text-green font-heading font-700 mb-1">✅ Conclusion</p>
+          <p class="text-text" style="font-size:15px;">There is a statistically significant association between age group and vaccine side-effect rate (χ² = 4.80, df = 1, p = 0.028). The 36–60 age group experienced side effects at a higher rate (45%) compared to the 18–35 group (30%). Age is not independent of side-effect occurrence, and this difference is unlikely to be due to chance.</p>
+        </div>
+      </div>
+
+      <div class="card mt-4">
+        <p class="font-heading font-700 text-text mb-3">Formula</p>
+        <div class="formula">
+          χ² = Σ [ (Oᵢ − Eᵢ)² / Eᵢ ]<br/><br/>
+          Eᵢ = (Row Total × Column Total) / Grand Total
+        </div>
+        <div class="grid md:grid-cols-2 gap-4 mt-3 text-sm">
+          <div class="card-sm"><code>Oᵢ</code> — Observed count in cell i</div>
+          <div class="card-sm"><code>Eᵢ</code> — Expected count if H₀ were true</div>
+          <div class="card-sm"><code>df</code> — (r−1)(c−1) where r=rows, c=cols</div>
+          <div class="card-sm"><code>χ²</code> — Compare to chi-square table at chosen α</div>
+        </div>
+        <div class="warn-box mt-4">
+          <p class="text-red font-700 text-sm uppercase font-heading tracking-wider mb-1">⚠ Assumption</p>
+          <p class="text-text text-sm">Each expected cell count must be ≥ 5. If not, use <strong>Fisher's Exact Test</strong> instead.</p>
+        </div>
+      </div>
+
+      <!-- Chi-square chart -->
+      <div class="card mt-6">
+        <p class="font-heading font-700 text-text mb-1">Observed vs Expected Counts</p>
+        <p class="text-muted text-sm mb-4">The gap between observed (solid) and expected (hatched) bars drives the χ² statistic</p>
+        <div class="chart-wrap" style="height:230px;">
+          <canvas id="chiChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════ SECTION 8: HOW TO CHOOSE ════════════ -->
+    <section id="s8">
+      <p class="text-accent font-mono text-xs tracking-widest uppercase mb-2">Section 08</p>
+      <h2 class="section-title font-heading text-3xl font-800 text-text mb-6">Choosing the Right Test</h2>
+
+      <p class="text-text mb-6" style="font-size:16px;">
+        With so many options, how do you pick the correct non-parametric test? Walk through these decision points:
+      </p>
+
+      <!-- Decision flowchart visual -->
+      <div class="card mb-6" id="flowchart-card">
+        <p class="font-heading font-700 text-text mb-1">Decision Flowchart</p>
+        <p class="text-muted text-sm mb-4">Follow the branches to find your test</p>
+        <div style="overflow-x:auto;">
+          <svg viewBox="0 0 720 430" xmlns="http://www.w3.org/2000/svg" style="width:100%;min-width:520px;font-family:'Source Sans 3',sans-serif;">
+            <defs>
+              <marker id="ah" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                <polygon points="0 0, 8 3, 0 6" fill="#58a6ff" opacity="0.7"/>
+              </marker>
+            </defs>
+            <!-- Root -->
+            <rect x="240" y="10" width="240" height="46" rx="10" fill="#1c2333" stroke="#58a6ff" stroke-width="1.5"/>
+            <text x="360" y="30" text-anchor="middle" fill="#e6edf3" font-size="13" font-weight="700">What is your data type?</text>
+            <text x="360" y="48" text-anchor="middle" fill="#8b949e" font-size="11">Start here</text>
+
+            <!-- Branch 1: Categorical -->
+            <line x1="300" y1="56" x2="120" y2="110" stroke="#58a6ff" stroke-width="1.2" opacity=".6" marker-end="url(#ah)"/>
+            <text x="190" y="88" fill="#8b949e" font-size="11" text-anchor="middle">Categorical</text>
+            <rect x="30" y="110" width="180" height="40" rx="8" fill="#1c2333" stroke="#bc8cff" stroke-width="1.5"/>
+            <text x="120" y="127" text-anchor="middle" fill="#e6edf3" font-size="12" font-weight="700">Chi-Square Test</text>
+            <text x="120" y="143" text-anchor="middle" fill="#8b949e" font-size="10">or Fisher's Exact</text>
+
+            <!-- Branch 2: Ordinal/Continuous -->
+            <line x1="420" y1="56" x2="600" y2="110" stroke="#58a6ff" stroke-width="1.2" opacity=".6" marker-end="url(#ah)"/>
+            <text x="534" y="88" fill="#8b949e" font-size="11" text-anchor="middle">Ordinal/Continuous</text>
+            <rect x="510" y="110" width="200" height="40" rx="8" fill="#1c2333" stroke="#30363d" stroke-width="1.5"/>
+            <text x="610" y="127" text-anchor="middle" fill="#e6edf3" font-size="12" font-weight="700">How many groups?</text>
+            <text x="610" y="143" text-anchor="middle" fill="#8b949e" font-size="10">or is it a correlation?</text>
+
+            <!-- Subbranch: 2 groups -->
+            <line x1="555" y1="150" x2="420" y2="200" stroke="#58a6ff" stroke-width="1.2" opacity=".6" marker-end="url(#ah)"/>
+            <text x="480" y="183" fill="#8b949e" font-size="10" text-anchor="middle">2 groups</text>
+
+            <!-- Subbranch: paired? -->
+            <rect x="310" y="200" width="220" height="40" rx="8" fill="#1c2333" stroke="#30363d" stroke-width="1.5"/>
+            <text x="420" y="217" text-anchor="middle" fill="#e6edf3" font-size="12" font-weight="700">Are groups paired?</text>
+            <text x="420" y="233" text-anchor="middle" fill="#8b949e" font-size="10">same subjects measured twice?</text>
+
+            <!-- Yes: Wilcoxon -->
+            <line x1="380" y1="240" x2="270" y2="295" stroke="#3fb950" stroke-width="1.2" opacity=".7" marker-end="url(#ah)"/>
+            <text x="310" y="276" fill="#3fb950" font-size="10" text-anchor="middle">Yes</text>
+            <rect x="160" y="295" width="220" height="40" rx="8" fill="#1c2333" stroke="#3fb950" stroke-width="1.5"/>
+            <text x="270" y="312" text-anchor="middle" fill="#e6edf3" font-size="12" font-weight="700">Wilcoxon Signed-Rank</text>
+            <text x="270" y="328" text-anchor="middle" fill="#8b949e" font-size="10">paired/matched data</text>
+
+            <!-- No: Mann-Whitney -->
+            <line x1="460" y1="240" x2="560" y2="295" stroke="#f85149" stroke-width="1.2" opacity=".7" marker-end="url(#ah)"/>
+            <text x="520" y="276" fill="#f85149" font-size="10" text-anchor="middle">No</text>
+            <rect x="460" y="295" width="220" height="40" rx="8" fill="#1c2333" stroke="#f85149" stroke-width="1.5"/>
+            <text x="570" y="312" text-anchor="middle" fill="#e6edf3" font-size="12" font-weight="700">Mann-Whitney U</text>
+            <text x="570" y="328" text-anchor="middle" fill="#8b949e" font-size="10">independent groups</text>
+
+            <!-- 3+ groups -->
+            <line x1="650" y1="150" x2="650" y2="295" stroke="#58a6ff" stroke-width="1.2" opacity=".6" marker-end="url(#ah)"/>
+            <text x="663" y="230" fill="#8b949e" font-size="10">3+ groups</text>
+            <!-- moved down for clarity -->
+
+            <!-- Kruskal-Wallis -->
+            <rect x="550" y="368" width="170" height="40" rx="8" fill="#1c2333" stroke="#e3b341" stroke-width="1.5"/>
+            <text x="635" y="385" text-anchor="middle" fill="#e6edf3" font-size="12" font-weight="700">Kruskal-Wallis</text>
+            <text x="635" y="401" text-anchor="middle" fill="#8b949e" font-size="10">3+ independent groups</text>
+            <line x1="650" y1="295" x2="635" y2="368" stroke="#e3b341" stroke-width="1.2" opacity=".7" marker-end="url(#ah)"/>
+
+            <!-- Correlation -->
+            <line x1="360" y1="56" x2="120" y2="295" stroke="#58a6ff" stroke-width="1.2" stroke-dasharray="4,3" opacity=".4" marker-end="url(#ah)"/>
+            <rect x="15" y="295" width="150" height="40" rx="8" fill="#1c2333" stroke="#39d353" stroke-width="1.5"/>
+            <text x="90" y="312" text-anchor="middle" fill="#e6edf3" font-size="12" font-weight="700">Spearman ρ</text>
+            <text x="90" y="328" text-anchor="middle" fill="#8b949e" font-size="10">two variables</text>
+            <text x="55" y="200" fill="#39d353" font-size="10" text-anchor="middle">Correlation</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Quick-pick table -->
+      <div class="card">
+        <p class="font-heading font-700 text-text mb-4">Quick-Pick Summary Table</p>
+        <div class="overflow-x-auto">
+          <table class="stat-table">
+            <thead>
+              <tr><th>Scenario</th><th>Parametric (if normal)</th><th>Non-Parametric</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Compare 2 independent groups</td>
+                <td class="text-muted">Independent t-test</td>
+                <td class="text-accent font-600">Mann-Whitney U</td>
+              </tr>
+              <tr>
+                <td>Compare before &amp; after (same subjects)</td>
+                <td class="text-muted">Paired t-test</td>
+                <td class="text-accent font-600">Wilcoxon Signed-Rank</td>
+              </tr>
+              <tr>
+                <td>Compare 3+ independent groups</td>
+                <td class="text-muted">One-way ANOVA</td>
+                <td class="text-accent font-600">Kruskal-Wallis</td>
+              </tr>
+              <tr>
+                <td>Correlation between 2 variables</td>
+                <td class="text-muted">Pearson's r</td>
+                <td class="text-accent font-600">Spearman's ρ</td>
+              </tr>
+              <tr>
+                <td>Association between 2 categorical variables</td>
+                <td class="text-muted">N/A</td>
+                <td class="text-accent font-600">Chi-Square / Fisher's Exact</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════ SECTION 9: CHEATSHEET ════════════ -->
+    <section id="s9">
+      <p class="text-accent font-mono text-xs tracking-widest uppercase mb-2">Section 09</p>
+      <h2 class="section-title font-heading text-3xl font-800 text-text mb-6">Master Cheatsheet</h2>
+      <p class="text-text mb-8" style="font-size:16px;">Everything you need to remember — in one place. Print this, pin it, memorise it.</p>
+
+      <!-- Test Cards -->
+      <div class="grid md:grid-cols-2 gap-5">
+
+        <!-- Mann-Whitney -->
+        <div class="card border-l-4" style="border-left-color:#58a6ff;">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <span class="cs-tag bg-accent/20 text-accent border border-accent/30">RANK-SUM</span>
+              <h3 class="font-heading font-800 text-text text-xl mt-2">Mann-Whitney U</h3>
+            </div>
+            <span class="text-4xl opacity-20">U</span>
+          </div>
+          <div class="space-y-2 text-sm">
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">Use when:</span><span class="text-text">2 independent groups, non-normal data</span></div>
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">H₀:</span><span class="text-text">Same distribution in both groups</span></div>
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">Stat:</span><span class="font-mono text-accent">U = n₁n₂ + n₁(n₁+1)/2 − R₁</span></div>
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">Reject H₀:</span><span class="text-text">U ≤ critical value from table</span></div>
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">Assumption:</span><span class="text-text">Independent observations; similar shape</span></div>
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">Parametric ≡:</span><span class="text-purple">Independent t-test</span></div>
+          </div>
+        </div>
+
+        <!-- Wilcoxon -->
+        <div class="card border-l-4" style="border-left-color:#3fb950;">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <span class="cs-tag bg-green/20 text-green border border-green/30">SIGNED-RANK</span>
+              <h3 class="font-heading font-800 text-text text-xl mt-2">Wilcoxon Signed-Rank</h3>
+            </div>
+            <span class="text-4xl opacity-20">W</span>
+          </div>
+          <div class="space-y-2 text-sm">
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">Use when:</span><span class="text-text">Paired data (before/after), non-normal differences</span></div>
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">H₀:</span><span class="text-text">Median difference = 0</span></div>
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">Stat:</span><span class="font-mono text-accent">W = min(W⁺, W⁻)</span></div>
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">Reject H₀:</span><span class="text-text">W ≤ critical value from table</span></div>
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">Assumption:</span><span class="text-text">Pairs are independent of each other</span></div>
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">Parametric ≡:</span><span class="text-purple">Paired t-test</span></div>
+          </div>
+        </div>
+
+        <!-- Kruskal-Wallis -->
+        <div class="card border-l-4" style="border-left-color:#e3b341;">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <span class="cs-tag bg-gold/20 text-gold border border-gold/30">3+ GROUPS</span>
+              <h3 class="font-heading font-800 text-text text-xl mt-2">Kruskal-Wallis H</h3>
+            </div>
+            <span class="text-4xl opacity-20">H</span>
+          </div>
+          <div class="space-y-2 text-sm">
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">Use when:</span><span class="text-text">3+ independent groups, non-normal data</span></div>
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">H₀:</span><span class="text-text">All groups from same distribution</span></div>
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">Stat:</span><span class="font-mono text-accent">H = [12/N(N+1)]Σ[Rⱼ²/nⱼ] − 3(N+1)</span></div>
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">Reject H₀:</span><span class="text-text">H &gt; χ²(α, k−1)</span></div>
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">Post-hoc:</span><span class="text-text">Mann-Whitney U + Bonferroni correction</span></div>
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">Parametric ≡:</span><span class="text-purple">One-way ANOVA</span></div>
+          </div>
+        </div>
+
+        <!-- Spearman -->
+        <div class="card border-l-4" style="border-left-color:#bc8cff;">
+          <div class="flex items-start justify-between mb-3">
+            <div>
+              <span class="cs-tag bg-purple/20 text-purple border border-purple/30">CORRELATION</span>
+              <h3 class="font-heading font-800 text-text text-xl mt-2">Spearman's ρ</h3>
+            </div>
+            <span class="text-4xl opacity-20">ρ</span>
+          </div>
+          <div class="space-y-2 text-sm">
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">Use when:</span><span class="text-text">Ordinal data, outliers, non-linear monotonic trend</span></div>
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">H₀:</span><span class="text-text">ρ = 0 (no monotonic association)</span></div>
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">Stat:</span><span class="font-mono text-accent">ρ = 1 − 6Σdᵢ² / n(n²−1)</span></div>
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">Range:</span><span class="text-text">−1 to +1</span></div>
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">|ρ| &gt; 0.7:</span><span class="text-green">Strong correlation</span></div>
+            <div class="flex gap-2"><span class="text-muted w-24 flex-shrink-0">Parametric ≡:</span><span class="text-purple">Pearson's r</span></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Chi-square wide card -->
+      <div class="card border-l-4 mt-5" style="border-left-color:#f85149;">
+        <div class="flex items-start justify-between mb-3">
+          <div>
+            <span class="cs-tag bg-red/20 text-red border border-red/30">CATEGORICAL</span>
+            <h3 class="font-heading font-800 text-text text-xl mt-2">Chi-Square Test (χ²)</h3>
+          </div>
+          <span class="text-4xl opacity-20">χ²</span>
+        </div>
+        <div class="grid md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+          <div class="flex gap-2"><span class="text-muted w-28 flex-shrink-0">Use when:</span><span class="text-text">Categorical variables; testing association or fit</span></div>
+          <div class="flex gap-2"><span class="text-muted w-28 flex-shrink-0">H₀ (independence):</span><span class="text-text">The two variables are not associated</span></div>
+          <div class="flex gap-2"><span class="text-muted w-28 flex-shrink-0">Stat:</span><span class="font-mono text-accent">χ² = Σ[(O−E)²/E]</span></div>
+          <div class="flex gap-2"><span class="text-muted w-28 flex-shrink-0">Expected:</span><span class="font-mono text-accent">E = (Row Total × Col Total) / Grand Total</span></div>
+          <div class="flex gap-2"><span class="text-muted w-28 flex-shrink-0">df:</span><span class="text-text">(rows−1)(cols−1)</span></div>
+          <div class="flex gap-2"><span class="text-muted w-28 flex-shrink-0">Reject H₀:</span><span class="text-text">χ² &gt; critical value from χ² table</span></div>
+          <div class="flex gap-2"><span class="text-muted w-28 flex-shrink-0">Assumption:</span><span class="text-text">Expected count ≥ 5 in each cell</span></div>
+          <div class="flex gap-2"><span class="text-muted w-28 flex-shrink-0">If fails:</span><span class="text-text">Use Fisher's Exact Test instead</span></div>
+        </div>
+      </div>
+
+      <!-- P-value reminder -->
+      <div class="card mt-5">
+        <p class="font-heading font-700 text-text mb-4">Universal Decision Rule &amp; P-Value Guide</p>
+        <div class="grid md:grid-cols-3 gap-4">
+          <div class="card-sm text-center">
+            <p class="text-3xl font-heading font-900 text-green mb-1">p &lt; 0.05</p>
+            <p class="text-text font-600 text-sm">Reject H₀</p>
+            <p class="text-muted text-xs mt-1">Evidence of a significant effect at 5% significance level</p>
+          </div>
+          <div class="card-sm text-center">
+            <p class="text-3xl font-heading font-900 text-gold mb-1">p = 0.05</p>
+            <p class="text-text font-600 text-sm">Borderline</p>
+            <p class="text-muted text-xs mt-1">Context-dependent — report exact p-value, note limitations</p>
+          </div>
+          <div class="card-sm text-center">
+            <p class="text-3xl font-heading font-900 text-red mb-1">p &gt; 0.05</p>
+            <p class="text-text font-600 text-sm">Fail to Reject H₀</p>
+            <p class="text-muted text-xs mt-1">Insufficient evidence — does NOT prove H₀ is true</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Assumptions mini-table -->
+      <div class="card mt-5">
+        <p class="font-heading font-700 text-text mb-4">Shared Assumptions of Rank-Based Tests</p>
+        <div class="space-y-3 text-sm">
+          <div class="flex gap-3 items-start">
+            <span class="rank-badge mt-0.5">1</span>
+            <div><strong class="text-text">Independence of observations</strong> — Each data point must come from a different, unrelated subject (within groups).</div>
+          </div>
+          <div class="flex gap-3 items-start">
+            <span class="rank-badge mt-0.5">2</span>
+            <div><strong class="text-text">Ordinal or continuous measurement scale</strong> — Data can be ranked; nominal data requires chi-square instead.</div>
+          </div>
+          <div class="flex gap-3 items-start">
+            <span class="rank-badge mt-0.5">3</span>
+            <div><strong class="text-text">No specific distributional form</strong> — The distribution does not need to be normal, but groups should have similar shape (for comparison tests).</div>
+          </div>
+          <div class="flex gap-3 items-start">
+            <span class="rank-badge mt-0.5">4</span>
+            <div><strong class="text-text">Random sampling</strong> — Data should be randomly sampled from the population of interest.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /content -->
+</main>
+
+<script>
+Chart.defaults.color = '#8b949e';
+Chart.defaults.borderColor = '#30363d';
+Chart.defaults.font.family = "'Source Sans 3', sans-serif";
+Chart.defaults.font.size = 13;
+
+const ACCENT  = 'rgba(88,166,255,';
+const PURPLE  = 'rgba(188,140,255,';
+const GOLD    = 'rgba(227,179,65,';
+const GREEN   = 'rgba(63,185,80,';
+const RED     = 'rgba(248,81,73,';
+
+// ── 1. Distribution Chart ──────────────────────────────────
+(function(){
+  const labels = Array.from({length:40}, (_,i) => i);
+  function normal(x,mu,s){ return Math.exp(-0.5*((x-mu)/s)**2)/(s*Math.sqrt(2*Math.PI)); }
+  function skew(x){ if(x<0)return 0; return Math.exp(-x/4)*x/16; }
+  const normData = labels.map(x=>normal(x,20,5)*120);
+  const skewData = labels.map(x=>skew(x)*260);
+  new Chart(document.getElementById('distChart'),{
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {label:'Normal (symmetric)',data:normData,borderColor:ACCENT+'1)',backgroundColor:ACCENT+'0.08)',fill:true,tension:0.4,pointRadius:0,borderWidth:2},
+        {label:'Right-skewed',data:skewData,borderColor:RED+'1)',backgroundColor:RED+'0.08)',fill:true,tension:0.4,pointRadius:0,borderWidth:2}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}},scales:{x:{display:false},y:{display:false}}}
+  });
+})();
+
+// ── 2. Ranking Demo Chart ──────────────────────────────────
+(function(){
+  const aVals = [22,45,31,38,52];
+  const bVals = [18,60,27,41,35];
+  const all = [...aVals.map((v,i)=>({v,g:'A',i})), ...bVals.map((v,i)=>({v,g:'B',i}))];
+  all.sort((a,b)=>a.v-b.v);
+  all.forEach((o,idx)=>{ o.rank=idx+1; });
+  const aRanks = all.filter(o=>o.g==='A').sort((a,b)=>a.i-b.i).map(o=>o.rank);
+  const bRanks = all.filter(o=>o.g==='B').sort((a,b)=>a.i-b.i).map(o=>o.rank);
+  new Chart(document.getElementById('rankChart'),{
+    type:'bar',
+    data:{
+      labels:['Obs 1','Obs 2','Obs 3','Obs 4','Obs 5'],
+      datasets:[
+        {label:'Group A',data:aVals,backgroundColor:ACCENT+'0.7)',borderColor:ACCENT+'1)',borderWidth:1.5},
+        {label:'Group B',data:bVals,backgroundColor:GOLD+'0.7)',borderColor:GOLD+'1)',borderWidth:1.5}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'top'},
+        tooltip:{callbacks:{afterLabel:(ctx)=>{
+          const r = ctx.datasetIndex===0?aRanks:bRanks;
+          return 'Rank: '+r[ctx.dataIndex];
+        }}}
+      },
+      scales:{y:{beginAtZero:true,title:{display:true,text:'Raw Value'}},x:{title:{display:true,text:'Observation (hover for rank)'}}}
+    }
+  });
+})();
+
+// ── 3. Mann-Whitney Chart ──────────────────────────────────
+(function(){
+  new Chart(document.getElementById('mwChart'),{
+    type:'bar',
+    data:{
+      labels:['P1','P2','P3','P4','P5','P6'],
+      datasets:[
+        {label:'Drug Group',data:[2,3,3,5,4,2],backgroundColor:ACCENT+'0.75)',borderColor:ACCENT+'1)',borderWidth:1.5},
+        {label:'Placebo Group',data:[6,7,5,8,6,7],backgroundColor:RED+'0.7)',borderColor:RED+'1)',borderWidth:1.5}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top'}},
+      scales:{y:{beginAtZero:true,max:10,title:{display:true,text:'Pain Score (1-10)'}}}
+    }
+  });
+})();
+
+// ── 4. Wilcoxon Chart ─────────────────────────────────────
+(function(){
+  const before=[152,148,160,145,155,162,140,150];
+  const after= [140,135,145,142,150,147,138,142];
+  new Chart(document.getElementById('wilcoxChart'),{
+    type:'line',
+    data:{
+      labels:['P1','P2','P3','P4','P5','P6','P7','P8'],
+      datasets:[
+        {label:'Before (mmHg)',data:before,borderColor:RED+'1)',backgroundColor:RED+'0.06)',fill:true,tension:0.3,borderWidth:2,pointRadius:5,pointBackgroundColor:RED+'1)'},
+        {label:'After (mmHg)', data:after, borderColor:GREEN+'1)',backgroundColor:GREEN+'0.06)',fill:true,tension:0.3,borderWidth:2,pointRadius:5,pointBackgroundColor:GREEN+'1)'}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top'}},
+      scales:{y:{title:{display:true,text:'Systolic BP (mmHg)'},min:125,max:170}}
+    }
+  });
+})();
+
+// ── 5. Kruskal-Wallis Chart ───────────────────────────────
+(function(){
+  new Chart(document.getElementById('kwChart'),{
+    type:'bar',
+    data:{
+      labels:['S1','S2','S3','S4','S5'],
+      datasets:[
+        {label:'Traditional',data:[55,60,58,72,65],backgroundColor:ACCENT+'0.75)',borderColor:ACCENT+'1)',borderWidth:1.5,borderRadius:4},
+        {label:'Online',     data:[78,82,75,90,88],backgroundColor:PURPLE+'0.75)',borderColor:PURPLE+'1)',borderWidth:1.5,borderRadius:4},
+        {label:'Hybrid',     data:[68,70,65,80,76],backgroundColor:GOLD+'0.75)',borderColor:GOLD+'1)',borderWidth:1.5,borderRadius:4}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top'}},
+      scales:{y:{beginAtZero:false,min:45,max:100,title:{display:true,text:'Exam Score'}}}
+    }
+  });
+})();
+
+// ── 6. Spearman Scatter ───────────────────────────────────
+(function(){
+  const normal=[{x:2,y:4},{x:4,y:7},{x:6,y:10},{x:8,y:13},{x:10,y:16},{x:12,y:19}];
+  const withOut=[{x:2,y:4},{x:4,y:7},{x:6,y:10},{x:8,y:13},{x:10,y:16},{x:35,y:3}];
+  new Chart(document.getElementById('spearmanChart'),{
+    type:'scatter',
+    data:{
+      datasets:[
+        {label:'Data (no outlier)',data:normal,backgroundColor:GREEN+'0.8)',pointRadius:7},
+        {label:'Data + outlier',data:withOut,backgroundColor:RED+'0.7)',pointRadius:7},
+        {label:'Outlier point',data:[{x:35,y:3}],backgroundColor:'rgba(248,81,73,1)',pointRadius:10,pointStyle:'triangle'}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top'},tooltip:{callbacks:{label:ctx=>`(${ctx.parsed.x}, ${ctx.parsed.y})`}}},
+      scales:{
+        x:{title:{display:true,text:'Variable X'}},
+        y:{title:{display:true,text:'Variable Y'}}
+      }
+    }
+  });
+})();
+
+// ── 7. Chi-Square Observed vs Expected ───────────────────
+(function(){
+  new Chart(document.getElementById('chiChart'),{
+    type:'bar',
+    data:{
+      labels:['18-35: Yes','18-35: No','36-60: Yes','36-60: No'],
+      datasets:[
+        {label:'Observed',data:[30,70,45,55],backgroundColor:[ACCENT+'0.8)',ACCENT+'0.4)',RED+'0.8)',RED+'0.4)'],borderRadius:4},
+        {label:'Expected (if independent)',data:[37.5,62.5,37.5,62.5],
+          type:'line',borderColor:GOLD+'1)',backgroundColor:'transparent',borderWidth:2,pointRadius:6,pointBackgroundColor:GOLD+'1)'}
+      ]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'top'}},
+      scales:{y:{beginAtZero:true,title:{display:true,text:'Count'}}}
+    }
+  });
+})();
+
+// ── Active nav highlight ──────────────────────────────────
+const sections=document.querySelectorAll('section[id]');
+const navLinks=document.querySelectorAll('.nav-pill');
+const obs=new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      navLinks.forEach(l=>l.classList.remove('active'));
+      const a=document.querySelector('.nav-pill[href="#'+e.target.id+'"]');
+      if(a)a.classList.add('active');
+    }
+  });
+},{rootMargin:'-40% 0px -55% 0px'});
+sections.forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>

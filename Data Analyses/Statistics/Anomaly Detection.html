@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ML Recall Notes — Anomaly Detection</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #0b0d11;
+    --surface:  #111318;
+    --card:     #161a22;
+    --border:   #1f2430;
+    --border2:  #2a3040;
+    --muted:    #3d4558;
+    --dim:      #6b7794;
+    --text:     #c9d1e0;
+    --bright:   #eef1f8;
+    --c-orange: #e8743a;
+    --c-blue:   #4a9eff;
+    --c-green:  #3ecf8e;
+    --c-purple: #a78bfa;
+    --c-yellow: #f6c344;
+    --c-red:    #f06575;
+    --c-cyan:   #22d3ee;
+    --c-pink:   #f472b6;
+    --ad-accent:#f06575;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{background-color:var(--bg);color:var(--text);font-family:'Open Sans',sans-serif;font-size:14px;line-height:1.7;}
+  .display{font-family:'Open Sans',sans-serif;font-weight:800;letter-spacing:-0.02em;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .label{font-family:'JetBrains Mono',monospace;font-size:0.6rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--dim);}
+  .bright{color:var(--bright);}
+  .page{max-width:1000px;margin:0 auto;padding:0 32px 100px;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:8px;}
+  .card-inner{background:var(--surface);border:1px solid var(--border);border-radius:6px;}
+  .pill{font-family:'JetBrains Mono',monospace;font-size:0.58rem;letter-spacing:0.1em;text-transform:uppercase;padding:3px 9px;border-radius:3px;border:1px solid;white-space:nowrap;}
+  .step-num{font-family:'JetBrains Mono',monospace;font-size:0.65rem;font-weight:700;width:22px;height:22px;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+  .callout{border-radius:6px;padding:12px 14px;font-size:0.82rem;line-height:1.65;}
+  .c-note  {background:#0d1a2b;border-left:3px solid var(--c-blue);}
+  .c-warn  {background:#1e1209;border-left:3px solid var(--c-orange);}
+  .c-good  {background:#0a1e14;border-left:3px solid var(--c-green);}
+  .c-yellow{background:#1a1505;border-left:3px solid var(--c-yellow);}
+  .c-purple{background:#130e1f;border-left:3px solid var(--c-purple);}
+  .c-cyan  {background:#061618;border-left:3px solid var(--c-cyan);}
+  .c-red   {background:#1a0608;border-left:3px solid var(--c-red);}
+  .code-wrap{background:#080a0f;border:1px solid var(--border);border-radius:6px;overflow:hidden;}
+  .code-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--border);background:var(--surface);}
+  .dots{display:flex;gap:5px;}
+  .dot{width:9px;height:9px;border-radius:50%;}
+  pre{font-family:'JetBrains Mono',monospace;font-size:0.75rem;line-height:1.85;padding:18px 20px;overflow-x:auto;color:#abb2bf;}
+  .kw{color:#c678dd;}.fn{color:#61afef;}.cls{color:#e5c07b;}.str{color:#98c379;}
+  .cm{color:#4b5568;font-style:italic;}.num{color:#d19a66;}.op{color:#56b6c2;}.prp{color:#e06c75;}.var{color:#abb2bf;}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+  @media(max-width:700px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}}
+  .section-hdr{border-radius:8px 8px 0 0;padding:28px 28px 20px;border-bottom:1px solid var(--border);position:relative;overflow:hidden;}
+  .section-hdr::after{content:attr(data-bg);position:absolute;right:-8px;top:50%;transform:translateY(-50%);font-family:'Open Sans',sans-serif;font-weight:800;font-size:5.5rem;letter-spacing:-0.04em;opacity:0.04;pointer-events:none;white-space:nowrap;}
+  .formal-sentence{font-size:0.9rem;line-height:1.8;color:var(--text);border-left:2px solid var(--ad-accent);padding-left:14px;max-width:660px;}
+  .toc-link{font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--dim);text-decoration:none;display:flex;align-items:center;gap:6px;padding:4px 0;transition:color 0.15s;}
+  .toc-link:hover{color:var(--bright);}
+  .metric-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:14px 16px;}
+  .metric-formula{font-family:'JetBrains Mono',monospace;font-size:0.78rem;background:#080a0f;border:1px solid var(--border2);border-radius:4px;padding:8px 12px;margin-top:6px;color:var(--c-yellow);}
+  table{border-collapse:collapse;width:100%;font-size:0.8rem;}
+  thead th{font-family:'JetBrains Mono',monospace;font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;padding:10px 14px;text-align:left;background:var(--surface);color:var(--dim);border-bottom:1px solid var(--border2);}
+  td{padding:9px 14px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  td:first-child{color:var(--bright);font-weight:600;}
+  .diagram-wrap{background:#080a0f;border:1px solid var(--border);border-radius:6px;overflow:hidden;position:relative;}
+  .diagram-title{padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:space-between;}
+  svg text{font-family:'JetBrains Mono',monospace;}
+  .tooltip{position:absolute;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:8px 12px;font-family:'JetBrains Mono',monospace;font-size:0.68rem;color:var(--text);pointer-events:none;opacity:0;transition:opacity 0.15s;max-width:220px;line-height:1.6;z-index:10;}
+</style>
+</head>
+<body>
+
+<!-- ══════ HERO ══════ -->
+<header class="page pt-14 pb-4">
+  <div class="label mb-4">Machine Learning · Recall Notes · Unsupervised Learning</div>
+  <h1 class="display mb-2" style="font-size:clamp(2.2rem,5.5vw,3.8rem);line-height:1.05;color:var(--bright);">
+    Anomaly<br><span style="color:var(--ad-accent);">Detection</span>
+  </h1>
+  <p class="mono mt-3 mb-8" style="font-size:0.72rem;color:var(--dim);line-height:1.7;">
+    Statistical · Isolation-Based · Density-Based · Boundary-Based<br>
+    Z-Score · Isolation Forest · LOF · One-Class SVM
+  </p>
+  <div class="card p-5" style="max-width:560px;">
+    <div class="label mb-4">Contents</div>
+    <div class="grid-2">
+      <div>
+        <div class="mono mb-2" style="font-size:0.62rem;color:var(--ad-accent);">FOUNDATIONS</div>
+        <a href="#definition"   class="toc-link"><span style="color:var(--ad-accent);">›</span> Definition</a>
+        <a href="#anomaly-types" class="toc-link"><span style="color:var(--ad-accent);">›</span> Types of Anomalies</a>
+        <a href="#global-terms" class="toc-link"><span style="color:var(--ad-accent);">›</span> Global Metrics & Terms</a>
+        <a href="#ad-types"     class="toc-link"><span style="color:var(--ad-accent);">›</span> Four Method Types</a>
+      </div>
+      <div>
+        <div class="mono mb-2" style="font-size:0.62rem;color:var(--c-blue);">ALGORITHMS</div>
+        <a href="#zscore"       class="toc-link"><span style="color:var(--c-yellow);">›</span> Z-Score (Statistical)</a>
+        <a href="#iforest"      class="toc-link"><span style="color:var(--c-green);">›</span> Isolation Forest</a>
+        <a href="#lof"          class="toc-link"><span style="color:var(--c-blue);">›</span> LOF (Density-Based)</a>
+        <a href="#ocsvm"        class="toc-link"><span style="color:var(--c-purple);">›</span> One-Class SVM</a>
+        <a href="#compare"      class="toc-link"><span style="color:var(--dim);">›</span> Comparison Table</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+
+<!-- ══════ DEFINITION ══════ -->
+<section class="mt-10" id="definition">
+  <div class="card">
+    <div class="section-hdr" data-bg="ANOMALY" style="background:linear-gradient(135deg,#1a0608 0%,var(--card) 65%);">
+      <div class="label mb-2">Chapter — Unsupervised Learning</div>
+      <div class="display mb-3" style="font-size:2rem;color:var(--ad-accent);">Anomaly Detection</div>
+      <div class="flex items-center gap-4 mb-5">
+        <span class="label">One-word definition</span>
+        <span class="mono bright" style="font-size:1rem;color:var(--ad-accent);">Outliers</span>
+      </div>
+      <div class="formal-sentence">
+        Anomaly Detection is an unsupervised machine learning discipline that identifies rare observations deviating significantly from established patterns in data, enabling automated discovery of fraud, faults, intrusions, and other critical irregular events without requiring labelled examples.
+      </div>
+    </div>
+
+    <!-- Real world strip -->
+    <div class="p-6 border-b" style="border-color:var(--border);">
+      <div class="label mb-3">Why It Matters — Real-World Applications</div>
+      <div class="grid-4">
+        <div class="card-inner p-3" style="border-top:2px solid var(--c-red);">
+          <div class="mono mb-1" style="font-size:0.65rem;color:var(--c-red);">Finance</div>
+          <div style="font-size:0.77rem;color:var(--dim);">Credit card fraud detection. Unusual transaction amounts or locations.</div>
+        </div>
+        <div class="card-inner p-3" style="border-top:2px solid var(--c-orange);">
+          <div class="mono mb-1" style="font-size:0.65rem;color:var(--c-orange);">Cybersecurity</div>
+          <div style="font-size:0.77rem;color:var(--dim);">Network intrusion detection. Abnormal login patterns or traffic spikes.</div>
+        </div>
+        <div class="card-inner p-3" style="border-top:2px solid var(--c-blue);">
+          <div class="mono mb-1" style="font-size:0.65rem;color:var(--c-blue);">Manufacturing</div>
+          <div style="font-size:0.77rem;color:var(--dim);">Predictive maintenance. Sensor readings outside normal operating range.</div>
+        </div>
+        <div class="card-inner p-3" style="border-top:2px solid var(--c-green);">
+          <div class="mono mb-1" style="font-size:0.65rem;color:var(--c-green);">Healthcare</div>
+          <div style="font-size:0.77rem;color:var(--dim);">Rare disease detection. Patient vitals deviating from expected baselines.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Three anomaly types -->
+    <div class="p-6 border-b" style="border-color:var(--border);" id="anomaly-types">
+      <div class="label mb-3">Three Types of Anomalies</div>
+      <div class="grid-3 mb-4">
+        <div class="card-inner p-4" style="border-left:3px solid var(--c-red);">
+          <div class="mono mb-1" style="font-size:0.65rem;color:var(--c-red);">Type A — Point Anomaly</div>
+          <div class="bright" style="font-size:0.85rem;font-weight:700;margin-bottom:6px;">Single Outlier</div>
+          <div style="font-size:0.77rem;color:var(--dim);">A single data instance is anomalous relative to the rest. Most common type.</div>
+          <div class="mono mt-3" style="font-size:0.72rem;color:var(--c-red);">Example: One transaction of $50,000 among average $200 purchases.</div>
+        </div>
+        <div class="card-inner p-4" style="border-left:3px solid var(--c-orange);">
+          <div class="mono mb-1" style="font-size:0.65rem;color:var(--c-orange);">Type B — Contextual Anomaly</div>
+          <div class="bright" style="font-size:0.85rem;font-weight:700;margin-bottom:6px;">Context-Dependent</div>
+          <div style="font-size:0.77rem;color:var(--dim);">A point is normal globally but anomalous in a specific context (e.g., time, location).</div>
+          <div class="mono mt-3" style="font-size:0.72rem;color:var(--c-orange);">Example: 25°C is normal in summer but anomalous in December in Moscow.</div>
+        </div>
+        <div class="card-inner p-4" style="border-left:3px solid var(--c-yellow);">
+          <div class="mono mb-1" style="font-size:0.65rem;color:var(--c-yellow);">Type C — Collective Anomaly</div>
+          <div class="bright" style="font-size:0.85rem;font-weight:700;margin-bottom:6px;">Group Outlier</div>
+          <div style="font-size:0.77rem;color:var(--dim);">Individual points are normal, but their collective sequence or pattern is anomalous.</div>
+          <div class="mono mt-3" style="font-size:0.72rem;color:var(--c-yellow);">Example: Normal ECG values in an abnormal temporal pattern indicating arrhythmia.</div>
+        </div>
+      </div>
+
+      <!-- Anomaly types D3 diagram -->
+      <div class="diagram-wrap">
+        <div class="diagram-title">
+          <span class="mono" style="font-size:0.65rem;color:var(--dim);">Visual: Three anomaly types in 2D feature space · Hover points for detail</span>
+          <span class="mono" style="font-size:0.6rem;color:var(--ad-accent);">d3.js</span>
+        </div>
+        <div id="anomaly-types-diagram" style="height:280px;position:relative;"></div>
+        <div class="tooltip" id="atype-tip"></div>
+      </div>
+    </div>
+
+    <!-- Global metrics -->
+    <div class="p-6" id="global-terms">
+      <div class="label mb-4">Core Metrics & Terms — Shared Across All Methods</div>
+      <div class="grid-3 mb-4">
+        <div class="metric-card">
+          <div class="mono mb-1" style="font-size:0.72rem;color:var(--c-red);font-weight:700;">Anomaly Score</div>
+          <div style="font-size:0.78rem;color:var(--dim);margin-bottom:6px;">A numerical measure of how anomalous a point is. Higher score (or further from 0) = more likely to be an outlier. Each algorithm defines its own score.</div>
+          <div class="metric-formula">score(x) → high = anomaly</div>
+        </div>
+        <div class="metric-card">
+          <div class="mono mb-1" style="font-size:0.72rem;color:var(--c-orange);font-weight:700;">Contamination Rate</div>
+          <div style="font-size:0.78rem;color:var(--dim);margin-bottom:6px;">The expected proportion of anomalies in your dataset. A key hyperparameter for most algorithms. Setting it correctly is crucial — too high flags too many normals.</div>
+          <div class="metric-formula">contamination ∈ (0, 0.5)</div>
+        </div>
+        <div class="metric-card">
+          <div class="mono mb-1" style="font-size:0.72rem;color:var(--c-green);font-weight:700;">Precision / Recall</div>
+          <div style="font-size:0.78rem;color:var(--dim);margin-bottom:6px;">Anomaly detection is a detection problem. Precision = of flagged anomalies, how many were real? Recall = of real anomalies, how many did we catch?</div>
+          <div class="metric-formula">F1 = 2·(P·R)/(P+R)</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="callout c-red">
+          <span style="color:var(--c-red);font-weight:700;">Inlier vs Outlier:</span> An <em>inlier</em> is a normal data point that fits the expected pattern. An <em>outlier</em> (anomaly) is a point that deviates significantly. The decision boundary between them is drawn by a threshold on the anomaly score.
+        </div>
+        <div class="callout c-red">
+          <span style="color:var(--c-red);font-weight:700;">Supervised vs Unsupervised:</span> Most real anomaly detection is <em>unsupervised</em> — labels for anomalies are unavailable or expensive. Algorithms must learn "normal" from unlabelled data, then flag deviations.
+        </div>
+      </div>
+    </div>
+
+    <!-- Four method types -->
+    <div class="p-6 border-t" style="border-color:var(--border);" id="ad-types">
+      <div class="label mb-4">Four Types of Anomaly Detection Methods</div>
+      <div class="grid-4">
+        <div class="card-inner p-4" style="border-top:2px solid var(--c-yellow);">
+          <div class="mono mb-1" style="font-size:0.62rem;color:var(--c-yellow);">Type 01</div>
+          <div class="bright" style="font-size:0.82rem;font-weight:700;margin-bottom:4px;">Statistical</div>
+          <div style="font-size:0.75rem;color:var(--dim);">Model data distribution. Anomalies are points with low probability under that model.</div>
+          <div class="mono mt-2" style="font-size:0.62rem;color:var(--c-yellow);">→ Z-Score, IQR, Grubbs</div>
+        </div>
+        <div class="card-inner p-4" style="border-top:2px solid var(--c-green);">
+          <div class="mono mb-1" style="font-size:0.62rem;color:var(--c-green);">Type 02</div>
+          <div class="bright" style="font-size:0.82rem;font-weight:700;margin-bottom:4px;">Isolation-Based</div>
+          <div style="font-size:0.77rem;color:var(--dim);">Anomalies are easier to isolate in feature space than normal points. Exploit this.</div>
+          <div class="mono mt-2" style="font-size:0.62rem;color:var(--c-green);">→ Isolation Forest, Extended IF</div>
+        </div>
+        <div class="card-inner p-4" style="border-top:2px solid var(--c-blue);">
+          <div class="mono mb-1" style="font-size:0.62rem;color:var(--c-blue);">Type 03</div>
+          <div class="bright" style="font-size:0.82rem;font-weight:700;margin-bottom:4px;">Density-Based</div>
+          <div style="font-size:0.77rem;color:var(--dim);">Anomalies lie in low-density regions. Compare a point's local density to its neighbours.</div>
+          <div class="mono mt-2" style="font-size:0.62rem;color:var(--c-blue);">→ LOF, LOCI, DBSCAN</div>
+        </div>
+        <div class="card-inner p-4" style="border-top:2px solid var(--c-purple);">
+          <div class="mono mb-1" style="font-size:0.62rem;color:var(--c-purple);">Type 04</div>
+          <div class="bright" style="font-size:0.82rem;font-weight:700;margin-bottom:4px;">Boundary-Based</div>
+          <div style="font-size:0.77rem;color:var(--dim);">Learn a boundary enclosing normal data. Anything outside is an anomaly.</div>
+          <div class="mono mt-2" style="font-size:0.62rem;color:var(--c-purple);">→ One-Class SVM, SVDD</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ TYPE 1: Z-SCORE ══════ -->
+<section class="mt-12" id="zscore">
+  <div class="card">
+    <div class="section-hdr" data-bg="STATISTICAL" style="background:linear-gradient(135deg,#1a1505 0%,var(--card) 60%);">
+      <div class="label mb-1">Type 01 · Statistical Method</div>
+      <div class="display bright" style="font-size:1.8rem;">Z-Score Detection</div>
+      <div class="mono mt-1" style="font-size:0.65rem;color:var(--dim);">Also covers IQR (Interquartile Range) · Parametric approach</div>
+      <div class="formal-sentence mt-4" style="border-color:var(--c-yellow);">
+        Z-Score detection assumes data follows a Gaussian distribution, measuring how many standard deviations each point lies from the mean — flagging points beyond a defined threshold as statistically improbable and therefore anomalous.
+      </div>
+    </div>
+
+    <div class="p-6 border-b" style="border-color:var(--border);">
+      <div class="callout c-yellow mb-5">
+        <span style="color:var(--c-yellow);font-weight:700;">⚡ Core Assumption:</span> Normal data is Gaussian (bell-curve distributed). Under a true normal distribution, 99.7% of data falls within ±3σ of the mean. Any point outside this range has less than 0.3% probability of being normal — making it a strong anomaly candidate.
+      </div>
+
+      <div class="label mb-3">Key Terms</div>
+      <div class="grid-2 gap-3 mb-5">
+        <div class="callout c-yellow"><span style="color:var(--c-yellow);font-weight:700;">Mean (μ):</span> The average of all data points. The centre of the Gaussian distribution around which "normal" is defined.</div>
+        <div class="callout c-yellow"><span style="color:var(--c-yellow);font-weight:700;">Standard Deviation (σ):</span> Measure of spread. How far data typically varies from the mean. A small σ = tight cluster; large σ = wide spread.</div>
+        <div class="callout c-yellow"><span style="color:var(--c-yellow);font-weight:700;">Z-Score:</span> The standardised distance of a point from the mean, measured in standard deviation units. Z = (x − μ) / σ. Dimensionless — works across different feature scales.</div>
+        <div class="callout c-yellow"><span style="color:var(--c-yellow);font-weight:700;">Threshold (t):</span> The absolute Z-Score cutoff. Typically |Z| > 2.5 (moderate) or |Z| > 3 (strict). Points exceeding this are labelled anomalies.</div>
+        <div class="callout c-yellow"><span style="color:var(--c-yellow);font-weight:700;">IQR (Interquartile Range):</span> A non-parametric alternative. IQR = Q3 − Q1. Anomalies = points below Q1 − 1.5·IQR or above Q3 + 1.5·IQR. Robust to outliers in the training set itself.</div>
+        <div class="callout c-yellow"><span style="color:var(--c-yellow);font-weight:700;">Modified Z-Score:</span> Uses median and MAD (Median Absolute Deviation) instead of mean and std, making it more robust to the very outliers it tries to detect.</div>
+      </div>
+
+      <div class="grid-2 gap-6">
+        <div>
+          <div class="label mb-3">Algorithm Steps — Z-Score</div>
+          <div class="space-y-3">
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#1a1505;color:var(--c-yellow);">01</div>
+              <div><div class="bright" style="font-size:0.83rem;font-weight:600;">Compute the mean (μ)</div>
+              <div style="font-size:0.76rem;color:var(--dim);">Calculate the average of the feature across all training data points.</div></div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#1a1505;color:var(--c-yellow);">02</div>
+              <div><div class="bright" style="font-size:0.83rem;font-weight:600;">Compute standard deviation (σ)</div>
+              <div style="font-size:0.76rem;color:var(--dim);">Measure how spread the data is around the mean. Low σ = tight normal cluster.</div></div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#1a1505;color:var(--c-yellow);">03</div>
+              <div><div class="bright" style="font-size:0.83rem;font-weight:600;">Compute Z-Score for each point</div>
+              <div style="font-size:0.76rem;color:var(--dim);">Z = (x − μ) / σ. Positive = above mean, negative = below. Magnitude = distance in σ units.</div></div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#1a1505;color:var(--c-yellow);">04</div>
+              <div><div class="bright" style="font-size:0.83rem;font-weight:600;">Apply threshold</div>
+              <div style="font-size:0.76rem;color:var(--dim);">Flag any point where |Z| > threshold (e.g., 3). These fall beyond the 3σ boundary.</div></div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#1a1505;color:var(--c-yellow);">05</div>
+              <div><div class="bright" style="font-size:0.83rem;font-weight:600;">For multivariate data: apply per feature or use Mahalanobis Distance</div>
+              <div style="font-size:0.76rem;color:var(--dim);">Mahalanobis extends Z-Score to multiple correlated features simultaneously, accounting for covariance structure.</div></div>
+            </div>
+          </div>
+          <div class="callout c-warn mt-4">
+            <span style="color:var(--c-orange);font-weight:700;">Key Limitation:</span> Z-Score assumes Gaussian distribution. On skewed, multimodal, or heavy-tailed data it will produce high false-positive or false-negative rates. Always check your distribution first.
+          </div>
+          <div class="callout c-good mt-2">
+            <span style="color:var(--c-green);font-weight:700;">Best for:</span> Unimodal, roughly normal features. Time-series monitoring with known baselines. Fast, interpretable, no training needed.
+          </div>
+        </div>
+        <div>
+          <div class="label mb-3">Code Syntax</div>
+          <div class="code-wrap">
+            <div class="code-hdr"><div class="dots"><div class="dot" style="background:#ff5f57;"></div><div class="dot" style="background:#febc2e;"></div><div class="dot" style="background:#28c840;"></div></div><span class="mono" style="font-size:0.6rem;color:var(--dim);">zscore.py</span></div>
+            <pre><span class="cm"># ── 1. Import ─────────────────────────────</span>
+<span class="kw">import</span> <span class="var">numpy</span> <span class="kw">as</span> <span class="var">np</span>
+<span class="kw">from</span> <span class="var">scipy</span> <span class="kw">import</span> <span class="var">stats</span>
+<span class="kw">import</span> <span class="var">pandas</span> <span class="kw">as</span> <span class="var">pd</span>
+
+<span class="cm"># ── Z-Score method ────────────────────────</span>
+<span class="cm"># ── 2. Compute mean & std ─────────────────</span>
+<span class="var">mu</span>    <span class="op">=</span> <span class="var">X</span>.<span class="fn">mean</span>()
+<span class="var">sigma</span> <span class="op">=</span> <span class="var">X</span>.<span class="fn">std</span>()
+
+<span class="cm"># ── 3. Compute Z-Scores ───────────────────</span>
+<span class="var">z_scores</span> <span class="op">=</span> <span class="var">np</span>.<span class="fn">abs</span>((<span class="var">X</span> <span class="op">-</span> <span class="var">mu</span>) <span class="op">/</span> <span class="var">sigma</span>)
+
+<span class="cm"># ── 4. Flag anomalies ─────────────────────</span>
+<span class="var">threshold</span>  <span class="op">=</span> <span class="num">3</span>
+<span class="var">anomalies</span>  <span class="op">=</span> <span class="var">X</span>[<span class="var">z_scores</span> <span class="op">></span> <span class="var">threshold</span>]
+
+<span class="cm"># ── Scipy shortcut ────────────────────────</span>
+<span class="var">z</span>         <span class="op">=</span> <span class="var">np</span>.<span class="fn">abs</span>(<span class="var">stats</span>.<span class="fn">zscore</span>(<span class="var">X</span>))
+<span class="var">anomalies</span> <span class="op">=</span> <span class="var">X</span>[(<span class="var">z</span> <span class="op">></span> <span class="num">3</span>).<span class="fn">any</span>(axis<span class="op">=</span><span class="num">1</span>)]
+
+<span class="cm"># ── IQR Method (non-parametric) ───────────</span>
+<span class="var">Q1</span>  <span class="op">=</span> <span class="var">X</span>.<span class="fn">quantile</span>(<span class="num">0.25</span>)
+<span class="var">Q3</span>  <span class="op">=</span> <span class="var">X</span>.<span class="fn">quantile</span>(<span class="num">0.75</span>)
+<span class="var">IQR</span> <span class="op">=</span> <span class="var">Q3</span> <span class="op">-</span> <span class="var">Q1</span>
+
+<span class="var">lower</span>     <span class="op">=</span> <span class="var">Q1</span> <span class="op">-</span> <span class="num">1.5</span> <span class="op">*</span> <span class="var">IQR</span>
+<span class="var">upper</span>     <span class="op">=</span> <span class="var">Q3</span> <span class="op">+</span> <span class="num">1.5</span> <span class="op">*</span> <span class="var">IQR</span>
+<span class="var">anomalies</span> <span class="op">=</span> <span class="var">X</span>[(<span class="var">X</span> <span class="op">&lt;</span> <span class="var">lower</span>) <span class="op">|</span> (<span class="var">X</span> <span class="op">></span> <span class="var">upper</span>)]</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Z-Score Distribution Diagram -->
+    <div class="p-6">
+      <div class="label mb-3">Gaussian Distribution with σ Anomaly Thresholds</div>
+      <div class="diagram-wrap">
+        <div class="diagram-title">
+          <span class="mono" style="font-size:0.65rem;color:var(--dim);">Normal distribution · Shaded zones show 1σ, 2σ, 3σ · Red points = anomalies (|Z| > 3)</span>
+          <span class="mono" style="font-size:0.6rem;color:var(--c-yellow);">d3.js</span>
+        </div>
+        <div id="zscore-diagram" style="height:280px;position:relative;"></div>
+        <div class="tooltip" id="zscore-tip"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ TYPE 2: ISOLATION FOREST ══════ -->
+<section class="mt-12" id="iforest">
+  <div class="card">
+    <div class="section-hdr" data-bg="ISOLATION" style="background:linear-gradient(135deg,#091a10 0%,var(--card) 60%);">
+      <div class="label mb-1">Type 02 · Isolation-Based Method</div>
+      <div class="display bright" style="font-size:1.8rem;">Isolation Forest</div>
+      <div class="mono mt-1" style="font-size:0.65rem;color:var(--dim);">Liu, Ting & Zhou, 2008 · sklearn.ensemble.IsolationForest</div>
+      <div class="formal-sentence mt-4" style="border-color:var(--c-green);">
+        Isolation Forest exploits the observation that anomalies are few and different — they require far fewer random partitions to isolate than normal points, producing shorter path lengths in randomly constructed trees that directly encode anomaly scores.
+      </div>
+    </div>
+
+    <div class="p-6 border-b" style="border-color:var(--border);">
+      <div class="callout c-good mb-5">
+        <span style="color:var(--c-green);font-weight:700;">⚡ Core Insight:</span> Normal points live in dense, clustered regions — it takes many random splits to isolate them. Anomalies are sparse and distinct — they get isolated with just a few splits. Average path length in a forest of random trees directly measures how hard it is to isolate a point. Short path = anomaly.
+      </div>
+
+      <div class="label mb-3">Key Terms</div>
+      <div class="grid-2 gap-3 mb-5">
+        <div class="callout c-good"><span style="color:var(--c-green);font-weight:700;">Isolation Tree (iTree):</span> A randomly built binary decision tree. At each node, a random feature is selected and a random split point is chosen within that feature's range. No labels, no optimisation criterion.</div>
+        <div class="callout c-good"><span style="color:var(--c-green);font-weight:700;">Path Length h(x):</span> The number of edges traversed from root to the leaf node where point x is isolated. Short path = anomaly. Long path = normal.</div>
+        <div class="callout c-good"><span style="color:var(--c-green);font-weight:700;">Anomaly Score s(x,n):</span> Normalised score between 0 and 1. s → 1 = anomaly. s → 0.5 = normal. s → 0 = very normal. Derived from average path length across all trees.</div>
+        <div class="callout c-good"><span style="color:var(--c-green);font-weight:700;">n_estimators:</span> Number of isolation trees in the forest (default: 100). More trees = more stable scores. Trade-off: computation time.</div>
+        <div class="callout c-good"><span style="color:var(--c-green);font-weight:700;">max_samples:</span> Number of data points sampled to build each tree (default: 256). Surprisingly small sub-samples work well — anomalies still separate quickly.</div>
+        <div class="callout c-good"><span style="color:var(--c-green);font-weight:700;">contamination:</span> Expected fraction of anomalies. Used to set the decision threshold on s(x). If unknown, start with 0.1 (10%) and tune from there.</div>
+      </div>
+
+      <div class="grid-2 gap-6">
+        <div>
+          <div class="label mb-3">Algorithm Steps</div>
+          <div class="space-y-3">
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#091a10;color:var(--c-green);">01</div>
+              <div><div class="bright" style="font-size:0.83rem;font-weight:600;">Build T = n_estimators isolation trees</div>
+              <div style="font-size:0.76rem;color:var(--dim);">For each tree: sample max_samples points. Recursively split by random feature + random threshold until each point is isolated or max_depth is reached.</div></div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#091a10;color:var(--c-green);">02</div>
+              <div><div class="bright" style="font-size:0.83rem;font-weight:600;">Compute path length h(x) for each point</div>
+              <div style="font-size:0.76rem;color:var(--dim);">Pass each point through all T trees. Record the depth at which it reaches a leaf node in each tree.</div></div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#091a10;color:var(--c-green);">03</div>
+              <div><div class="bright" style="font-size:0.83rem;font-weight:600;">Average path length across all trees</div>
+              <div style="font-size:0.76rem;color:var(--dim);">E[h(x)] = average depth across all T trees. This expectation is a stable measure of isolation difficulty.</div></div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#091a10;color:var(--c-green);">04</div>
+              <div><div class="bright" style="font-size:0.83rem;font-weight:600;">Compute anomaly score s(x, n)</div>
+              <div style="font-size:0.76rem;color:var(--dim);">s(x,n) = 2^(−E[h(x)] / c(n)), where c(n) is the expected path length of an unsuccessful BST search — normalises scores across sample sizes.</div></div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#091a10;color:var(--c-green);">05</div>
+              <div><div class="bright" style="font-size:0.83rem;font-weight:600;">Apply contamination threshold → label predictions</div>
+              <div style="font-size:0.76rem;color:var(--dim);">Sort points by score. Top contamination% with highest scores are labelled as anomalies (−1). The rest are normal (+1).</div></div>
+            </div>
+          </div>
+          <div class="callout c-warn mt-4">
+            <span style="color:var(--c-orange);font-weight:700;">Limitation:</span> Struggles with anomalies that are similar to each other (clustered anomalies) and with high-dimensional data where random splits become less discriminative. Extended Isolation Forest (EIF) addresses this.
+          </div>
+        </div>
+        <div>
+          <div class="label mb-3">Code Syntax</div>
+          <div class="code-wrap">
+            <div class="code-hdr"><div class="dots"><div class="dot" style="background:#ff5f57;"></div><div class="dot" style="background:#febc2e;"></div><div class="dot" style="background:#28c840;"></div></div><span class="mono" style="font-size:0.6rem;color:var(--dim);">isolation_forest.py</span></div>
+            <pre><span class="cm"># ── 1. Import ─────────────────────────────</span>
+<span class="kw">from</span> <span class="var">sklearn.ensemble</span> <span class="kw">import</span> <span class="cls">IsolationForest</span>
+
+<span class="cm"># ── 2. Initialise ─────────────────────────</span>
+<span class="var">model</span> <span class="op">=</span> <span class="cls">IsolationForest</span>(
+    n_estimators<span class="op">=</span><span class="num">100</span>,      <span class="cm"># number of trees</span>
+    max_samples<span class="op">=</span><span class="str">'auto'</span>,   <span class="cm"># 256 or min(256,n)</span>
+    contamination<span class="op">=</span><span class="num">0.05</span>,   <span class="cm"># 5% expected anomalies</span>
+    random_state<span class="op">=</span><span class="num">42</span>
+)
+
+<span class="cm"># ── 3. Train ──────────────────────────────</span>
+<span class="var">model</span>.<span class="fn">fit</span>(<span class="var">X_train</span>)
+
+<span class="cm"># ── 4. Get values ─────────────────────────</span>
+<span class="cm"># Labels: +1 = normal, -1 = anomaly</span>
+<span class="var">labels</span>  <span class="op">=</span> <span class="var">model</span>.<span class="fn">predict</span>(<span class="var">X_test</span>)
+
+<span class="cm"># Raw anomaly scores (lower = more anomalous)</span>
+<span class="var">scores</span>  <span class="op">=</span> <span class="var">model</span>.<span class="fn">decision_function</span>(<span class="var">X_test</span>)
+
+<span class="cm"># Normalised score (0 to 1, high = anomaly)</span>
+<span class="var">a_score</span> <span class="op">=</span> <span class="var">model</span>.<span class="fn">score_samples</span>(<span class="var">X_test</span>)
+
+<span class="cm"># ── 5. Filter anomalies ───────────────────</span>
+<span class="var">anomalies</span> <span class="op">=</span> <span class="var">X_test</span>[<span class="var">labels</span> <span class="op">==</span> <span class="op">-</span><span class="num">1</span>]
+<span class="var">normals</span>   <span class="op">=</span> <span class="var">X_test</span>[<span class="var">labels</span> <span class="op">==</span>  <span class="num">1</span>]</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Isolation Forest diagram -->
+    <div class="p-6">
+      <div class="label mb-3">Isolation Forest — Partitioning Visualised</div>
+      <div class="diagram-wrap">
+        <div class="diagram-title">
+          <span class="mono" style="font-size:0.65rem;color:var(--dim);">2D feature space: random split lines per tree · Colour = isolation depth (green=deep=normal, red=shallow=anomaly)</span>
+          <span class="mono" style="font-size:0.6rem;color:var(--c-green);">d3.js · interactive</span>
+        </div>
+        <div id="iforest-diagram" style="height:340px;position:relative;"></div>
+        <div class="tooltip" id="iforest-tip"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ TYPE 3: LOF ══════ -->
+<section class="mt-12" id="lof">
+  <div class="card">
+    <div class="section-hdr" data-bg="DENSITY" style="background:linear-gradient(135deg,#061625 0%,var(--card) 60%);">
+      <div class="label mb-1">Type 03 · Density-Based Method</div>
+      <div class="display bright" style="font-size:1.8rem;">LOF — Local Outlier Factor</div>
+      <div class="mono mt-1" style="font-size:0.65rem;color:var(--dim);">Breunig, Kriegel, Ng & Sander, 2000 · sklearn.neighbors.LocalOutlierFactor</div>
+      <div class="formal-sentence mt-4" style="border-color:var(--c-blue);">
+        LOF compares each point's local density to its neighbours' local densities — a point is anomalous if it exists in a significantly lower-density region than its surrounding neighbourhood, producing a dimensionless outlier factor score.
+      </div>
+    </div>
+
+    <div class="p-6 border-b" style="border-color:var(--border);">
+      <div class="callout c-note mb-5">
+        <span style="color:var(--c-blue);font-weight:700;">⚡ Core Insight:</span> Global statistical methods fail when clusters have different densities — a point that's an outlier in a sparse cluster might look normal globally. LOF is <em>local</em>: it compares each point's density only to its immediate neighbours, making it robust to varying-density clusters.
+      </div>
+
+      <div class="label mb-3">Key Terms</div>
+      <div class="grid-2 gap-3 mb-5">
+        <div class="callout c-note"><span style="color:var(--c-blue);font-weight:700;">k-Nearest Neighbours (k-NN):</span> For each point, identify its k closest neighbours by distance. The parameter k (n_neighbors) controls how local "local" is. Larger k = smoother, less sensitive.</div>
+        <div class="callout c-note"><span style="color:var(--c-blue);font-weight:700;">k-Distance d_k(x):</span> The distance from x to its k-th nearest neighbour. Defines the boundary of x's local neighbourhood. Points within this radius are x's k-NN set N_k(x).</div>
+        <div class="callout c-note"><span style="color:var(--c-blue);font-weight:700;">Reachability Distance rd_k(x, o):</span> max(d_k(o), d(x, o)). The effective distance from x to neighbour o, floored by o's own k-distance. Smooths out local distance fluctuations.</div>
+        <div class="callout c-note"><span style="color:var(--c-blue);font-weight:700;">Local Reachability Density lrd_k(x):</span> Inverse of the average reachability distance of x to its k-NN. High lrd = dense neighbourhood. Low lrd = sparse neighbourhood.</div>
+        <div class="callout c-note"><span style="color:var(--c-blue);font-weight:700;">LOF Score:</span> LOF_k(x) = average ratio of neighbours' lrd to x's own lrd. LOF ≈ 1 → normal. LOF >> 1 → anomaly (x's neighbourhood is much less dense than its neighbours').</div>
+        <div class="callout c-note"><span style="color:var(--c-blue);font-weight:700;">n_neighbors:</span> The k parameter. Typical values: 10–50. Too small → noisy. Too large → misses local structure. Cross-validate or use domain knowledge to set.</div>
+      </div>
+
+      <div class="grid-2 gap-6">
+        <div>
+          <div class="label mb-3">Algorithm Steps</div>
+          <div class="space-y-3">
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#061625;color:var(--c-blue);">01</div>
+              <div><div class="bright" style="font-size:0.83rem;font-weight:600;">For each point x: find k nearest neighbours N_k(x)</div>
+              <div style="font-size:0.76rem;color:var(--dim);">Compute pairwise distances. Identify the k closest points. Record the k-distance d_k(x).</div></div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#061625;color:var(--c-blue);">02</div>
+              <div><div class="bright" style="font-size:0.83rem;font-weight:600;">Compute reachability distance rd_k(x, o) for each neighbour</div>
+              <div style="font-size:0.76rem;color:var(--dim);">rd_k(x, o) = max(d_k(o), d(x, o)). This ensures nearby points don't get artificially tiny distances.</div></div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#061625;color:var(--c-blue);">03</div>
+              <div><div class="bright" style="font-size:0.83rem;font-weight:600;">Compute lrd_k(x) — Local Reachability Density</div>
+              <div style="font-size:0.76rem;color:var(--dim);">lrd_k(x) = k / Σ rd_k(x, o) for all o in N_k(x). This is the reciprocal of the average reachability distance to neighbours.</div></div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#061625;color:var(--c-blue);">04</div>
+              <div><div class="bright" style="font-size:0.83rem;font-weight:600;">Compute LOF_k(x) — Local Outlier Factor</div>
+              <div style="font-size:0.76rem;color:var(--dim);">LOF_k(x) = (Σ lrd_k(o) for o in N_k(x)) / (k · lrd_k(x)). Ratio of neighbours' density to x's density.</div></div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#061625;color:var(--c-blue);">05</div>
+              <div><div class="bright" style="font-size:0.83rem;font-weight:600;">Threshold the LOF score</div>
+              <div style="font-size:0.76rem;color:var(--dim);">LOF ≈ 1 → inlier. LOF significantly > 1 (e.g., > 1.5 or > 2) → outlier. Threshold depends on dataset and domain.</div></div>
+            </div>
+          </div>
+          <div class="callout c-warn mt-4">
+            <span style="color:var(--c-orange);font-weight:700;">Limitation:</span> LOF is slow on large datasets (O(n²) distance computations). Also provides no natural threshold — LOF scores are relative, not absolute. Requires careful n_neighbors tuning.
+          </div>
+          <div class="callout c-good mt-2">
+            <span style="color:var(--c-green);font-weight:700;">Best for:</span> Data with clusters of varying density. When you need to catch outliers that are "locally sparse" but globally ordinary. Spatial data, customer segments.
+          </div>
+        </div>
+        <div>
+          <div class="label mb-3">Code Syntax</div>
+          <div class="code-wrap">
+            <div class="code-hdr"><div class="dots"><div class="dot" style="background:#ff5f57;"></div><div class="dot" style="background:#febc2e;"></div><div class="dot" style="background:#28c840;"></div></div><span class="mono" style="font-size:0.6rem;color:var(--dim);">lof.py</span></div>
+            <pre><span class="cm"># ── 1. Import ─────────────────────────────</span>
+<span class="kw">from</span> <span class="var">sklearn.neighbors</span> <span class="kw">import</span> <span class="cls">LocalOutlierFactor</span>
+
+<span class="cm"># ── 2. Initialise ─────────────────────────</span>
+<span class="var">lof</span> <span class="op">=</span> <span class="cls">LocalOutlierFactor</span>(
+    n_neighbors<span class="op">=</span><span class="num">20</span>,          <span class="cm"># k parameter</span>
+    contamination<span class="op">=</span><span class="num">0.05</span>,      <span class="cm"># expected outlier %</span>
+    metric<span class="op">=</span><span class="str">'euclidean'</span>        <span class="cm"># distance metric</span>
+)
+
+<span class="cm"># ── 3. Train + Predict (transductive) ────</span>
+<span class="cm"># LOF is transductive by default in sklearn:</span>
+<span class="cm"># fit_predict runs on the same data</span>
+<span class="var">labels</span>  <span class="op">=</span> <span class="var">lof</span>.<span class="fn">fit_predict</span>(<span class="var">X</span>)
+<span class="cm"># +1 = normal · -1 = anomaly</span>
+
+<span class="cm"># ── 4. Get LOF scores ─────────────────────</span>
+<span class="cm"># Negative LOF (sklearn convention: lower = more anomalous)</span>
+<span class="var">scores</span>   <span class="op">=</span> <span class="var">lof</span>.negative_outlier_factor_
+<span class="var">lof_vals</span> <span class="op">=</span> <span class="op">-</span><span class="var">scores</span>   <span class="cm"># flip sign → LOF > 1 = outlier</span>
+
+<span class="cm"># ── For new data (inductive mode) ─────────</span>
+<span class="var">lof2</span> <span class="op">=</span> <span class="cls">LocalOutlierFactor</span>(novelty<span class="op">=</span><span class="kw">True</span>, n_neighbors<span class="op">=</span><span class="num">20</span>)
+<span class="var">lof2</span>.<span class="fn">fit</span>(<span class="var">X_train</span>)
+<span class="var">labels_new</span> <span class="op">=</span> <span class="var">lof2</span>.<span class="fn">predict</span>(<span class="var">X_test</span>)</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOF Diagram -->
+    <div class="p-6">
+      <div class="label mb-3">LOF — Local Density Comparison Visualised</div>
+      <div class="diagram-wrap">
+        <div class="diagram-title">
+          <span class="mono" style="font-size:0.65rem;color:var(--dim);">Circles = k-neighbourhood radius · Blue=dense(normal) · Red=sparse(anomaly) · Hover points for LOF score</span>
+          <span class="mono" style="font-size:0.6rem;color:var(--c-blue);">d3.js · interactive</span>
+        </div>
+        <div id="lof-diagram" style="height:360px;position:relative;"></div>
+        <div class="tooltip" id="lof-tip"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ TYPE 4: ONE-CLASS SVM ══════ -->
+<section class="mt-12" id="ocsvm">
+  <div class="card">
+    <div class="section-hdr" data-bg="BOUNDARY" style="background:linear-gradient(135deg,#130e1f 0%,var(--card) 60%);">
+      <div class="label mb-1">Type 04 · Boundary-Based Method</div>
+      <div class="display bright" style="font-size:1.8rem;">One-Class SVM</div>
+      <div class="mono mt-1" style="font-size:0.65rem;color:var(--dim);">Schölkopf et al., 2001 · sklearn.svm.OneClassSVM</div>
+      <div class="formal-sentence mt-4" style="border-color:var(--c-purple);">
+        One-Class SVM maps training data into a high-dimensional kernel space and finds the smallest hypersphere enclosing most of the data, treating points outside this learned boundary as anomalies — requiring only normal data for training.
+      </div>
+    </div>
+
+    <div class="p-6 border-b" style="border-color:var(--border);">
+      <div class="callout c-purple mb-5">
+        <span style="color:var(--c-purple);font-weight:700;">⚡ Core Insight:</span> Traditional SVMs separate two classes. One-Class SVM has only <em>one</em> class — normal data. It learns a tight boundary around the normal region in a kernelised feature space. Anything falling outside this boundary at test time is an anomaly. No anomaly examples are needed during training.
+      </div>
+
+      <div class="label mb-3">Key Terms</div>
+      <div class="grid-2 gap-3 mb-5">
+        <div class="callout c-purple"><span style="color:var(--c-purple);font-weight:700;">Kernel (RBF):</span> A function that maps data into a high-dimensional space where a linear boundary can separate normal data from the origin. RBF (Radial Basis Function) kernel is the default and most common choice.</div>
+        <div class="callout c-purple"><span style="color:var(--c-purple);font-weight:700;">Hyperplane / Decision Boundary:</span> In kernel space, a maximum-margin hyperplane separates the training data from the origin. In original input space, this corresponds to a curved, non-linear boundary around normal data.</div>
+        <div class="callout c-purple"><span style="color:var(--c-purple);font-weight:700;">ν (Nu) parameter:</span> Controls the trade-off between model complexity and outlier tolerance. ν is an upper bound on the fraction of training errors (false positives) and a lower bound on support vectors. ν ∈ (0, 1].</div>
+        <div class="callout c-purple"><span style="color:var(--c-purple);font-weight:700;">Support Vectors:</span> The training points that lie exactly on or near the decision boundary. They define the boundary shape. Points deep inside the boundary are ignored — only boundary points matter.</div>
+        <div class="callout c-purple"><span style="color:var(--c-purple);font-weight:700;">γ (Gamma):</span> RBF kernel parameter controlling neighbourhood influence. High γ = tight, jagged boundary fitting closely to training points (risk: overfitting). Low γ = smooth, wide boundary.</div>
+        <div class="callout c-purple"><span style="color:var(--c-purple);font-weight:700;">Decision Function:</span> Returns a signed distance from the boundary. Positive = inside boundary (normal). Negative = outside (anomaly). Magnitude = confidence of the classification.</div>
+      </div>
+
+      <div class="grid-2 gap-6">
+        <div>
+          <div class="label mb-3">Algorithm Steps</div>
+          <div class="space-y-3">
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#130e1f;color:var(--c-purple);">01</div>
+              <div><div class="bright" style="font-size:0.83rem;font-weight:600;">Map data to high-dimensional feature space via kernel</div>
+              <div style="font-size:0.76rem;color:var(--dim);">Using the RBF kernel φ(x), transform input data so that normal data forms a compact, separable cluster in the new space.</div></div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#130e1f;color:var(--c-purple);">02</div>
+              <div><div class="bright" style="font-size:0.83rem;font-weight:600;">Find the maximum-margin hyperplane from the origin</div>
+              <div style="font-size:0.76rem;color:var(--dim);">Solve a quadratic programming problem to find the hyperplane w·φ(x) = ρ with maximum margin from the origin, enclosing most training points on the positive side.</div></div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#130e1f;color:var(--c-purple);">03</div>
+              <div><div class="bright" style="font-size:0.83rem;font-weight:600;">Allow ν·n training points to be misclassified</div>
+              <div style="font-size:0.76rem;color:var(--dim);">The ν parameter permits a controlled fraction of training points to fall outside the boundary, making the model robust to noise in training data.</div></div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#130e1f;color:var(--c-purple);">04</div>
+              <div><div class="bright" style="font-size:0.83rem;font-weight:600;">Identify support vectors defining the boundary</div>
+              <div style="font-size:0.76rem;color:var(--dim);">Only the points on or near the boundary (support vectors) define the model. Interior points are irrelevant once training is done.</div></div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#130e1f;color:var(--c-purple);">05</div>
+              <div><div class="bright" style="font-size:0.83rem;font-weight:600;">At test time: evaluate sign of decision function</div>
+              <div style="font-size:0.76rem;color:var(--dim);">f(x) > 0 → inside boundary → normal (+1). f(x) < 0 → outside boundary → anomaly (−1).</div></div>
+            </div>
+          </div>
+          <div class="callout c-warn mt-4">
+            <span style="color:var(--c-orange);font-weight:700;">Limitation:</span> Very sensitive to kernel and hyperparameter choice (ν, γ). Slow on large datasets (O(n²) to O(n³) training). Requires clean training data — noisy training degrades the boundary significantly.
+          </div>
+          <div class="callout c-good mt-2">
+            <span style="color:var(--c-green);font-weight:700;">Best for:</span> Medium-sized datasets, high-dimensional data, when only normal examples are available for training (novelty detection). Text, image, or network data where Isolation Forest underperforms.
+          </div>
+        </div>
+        <div>
+          <div class="label mb-3">Code Syntax</div>
+          <div class="code-wrap">
+            <div class="code-hdr"><div class="dots"><div class="dot" style="background:#ff5f57;"></div><div class="dot" style="background:#febc2e;"></div><div class="dot" style="background:#28c840;"></div></div><span class="mono" style="font-size:0.6rem;color:var(--dim);">one_class_svm.py</span></div>
+            <pre><span class="cm"># ── 1. Import ─────────────────────────────</span>
+<span class="kw">from</span> <span class="var">sklearn.svm</span> <span class="kw">import</span> <span class="cls">OneClassSVM</span>
+<span class="kw">from</span> <span class="var">sklearn.preprocessing</span> <span class="kw">import</span> <span class="cls">StandardScaler</span>
+
+<span class="cm"># ── Scale first (SVM is distance-based) ──</span>
+<span class="var">scaler</span>   <span class="op">=</span> <span class="cls">StandardScaler</span>()
+<span class="var">X_scaled</span> <span class="op">=</span> <span class="var">scaler</span>.<span class="fn">fit_transform</span>(<span class="var">X_train</span>)
+
+<span class="cm"># ── 2. Initialise ─────────────────────────</span>
+<span class="var">oc_svm</span> <span class="op">=</span> <span class="cls">OneClassSVM</span>(
+    kernel<span class="op">=</span><span class="str">'rbf'</span>,     <span class="cm"># RBF kernel (default)</span>
+    nu<span class="op">=</span><span class="num">0.05</span>,          <span class="cm"># ~5% training outliers</span>
+    gamma<span class="op">=</span><span class="str">'scale'</span>     <span class="cm"># auto-scales gamma</span>
+)
+
+<span class="cm"># ── 3. Train on NORMAL data only ──────────</span>
+<span class="var">oc_svm</span>.<span class="fn">fit</span>(<span class="var">X_scaled</span>)
+
+<span class="cm"># ── 4. Get values ─────────────────────────</span>
+<span class="cm"># Labels: +1 = normal · -1 = anomaly</span>
+<span class="var">labels</span>   <span class="op">=</span> <span class="var">oc_svm</span>.<span class="fn">predict</span>(<span class="var">X_test_scaled</span>)
+
+<span class="cm"># Signed distance from boundary</span>
+<span class="var">scores</span>   <span class="op">=</span> <span class="var">oc_svm</span>.<span class="fn">decision_function</span>(<span class="var">X_test_scaled</span>)
+
+<span class="cm"># ── 5. Filter anomalies ───────────────────</span>
+<span class="var">anomalies</span> <span class="op">=</span> <span class="var">X_test</span>[<span class="var">labels</span> <span class="op">==</span> <span class="op">-</span><span class="num">1</span>]
+<span class="var">normals</span>   <span class="op">=</span> <span class="var">X_test</span>[<span class="var">labels</span> <span class="op">==</span>  <span class="num">1</span>]</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OC-SVM Decision Boundary Diagram -->
+    <div class="p-6">
+      <div class="label mb-3">One-Class SVM — Decision Boundary Visualised</div>
+      <div class="diagram-wrap">
+        <div class="diagram-title">
+          <span class="mono" style="font-size:0.65rem;color:var(--dim);">RBF boundary around normal cluster · Purple zone = inside (normal) · Points outside = anomalies · Hover for score</span>
+          <span class="mono" style="font-size:0.6rem;color:var(--c-purple);">d3.js · interactive</span>
+        </div>
+        <div id="ocsvm-diagram" style="height:360px;position:relative;"></div>
+        <div class="tooltip" id="ocsvm-tip"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════ COMPARISON TABLE ══════ -->
+<section class="mt-12" id="compare">
+  <div class="card overflow-hidden">
+    <div class="p-4 border-b" style="border-color:var(--border);"><div class="label">Anomaly Detection — Full Algorithm Comparison</div></div>
+    <table>
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th style="color:var(--c-yellow);">Z-Score</th>
+          <th style="color:var(--c-green);">Isolation Forest</th>
+          <th style="color:var(--c-blue);">LOF</th>
+          <th style="color:var(--c-purple);">One-Class SVM</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Type</td><td>Statistical</td><td>Isolation-Based</td><td>Density-Based</td><td>Boundary-Based</td></tr>
+        <tr><td>Assumes Gaussian?</td><td><span style="color:var(--c-red);">✓ Yes (required)</span></td><td><span style="color:var(--c-green);">✕ No</span></td><td><span style="color:var(--c-green);">✕ No</span></td><td><span style="color:var(--c-green);">✕ No</span></td></tr>
+        <tr><td>Needs labels?</td><td><span style="color:var(--c-green);">✕ No</span></td><td><span style="color:var(--c-green);">✕ No</span></td><td><span style="color:var(--c-green);">✕ No</span></td><td><span style="color:var(--c-green);">✕ No</span></td></tr>
+        <tr><td>Scalability</td><td><span style="color:var(--c-green);">Excellent (O(n))</span></td><td><span style="color:var(--c-green);">Very good</span></td><td><span style="color:var(--c-red);">Poor (O(n²))</span></td><td><span style="color:var(--c-yellow);">Moderate (O(n²–n³))</span></td></tr>
+        <tr><td>High-dim data</td><td>Poor</td><td>Good</td><td>Poor (curse of dim)</td><td>Good (kernel maps)</td></tr>
+        <tr><td>Varying density clusters</td><td><span style="color:var(--c-red);">✕ No</span></td><td>Partial</td><td><span style="color:var(--c-green);">✓ Yes</span></td><td>Partial</td></tr>
+        <tr><td>Interpretability</td><td><span style="color:var(--c-green);">High (Z-Score = clear)</span></td><td>Medium</td><td>Medium (LOF ratio)</td><td><span style="color:var(--c-red);">Low (kernel space)</span></td></tr>
+        <tr><td>Key hyperparameter</td><td>threshold (σ)</td><td>n_estimators, contamination</td><td>n_neighbors</td><td>nu, gamma, kernel</td></tr>
+        <tr><td>sklearn class</td><td><span class="mono" style="font-size:0.72rem;">scipy.stats.zscore</span></td><td><span class="mono" style="font-size:0.72rem;">IsolationForest</span></td><td><span class="mono" style="font-size:0.72rem;">LocalOutlierFactor</span></td><td><span class="mono" style="font-size:0.72rem;">OneClassSVM</span></td></tr>
+        <tr><td>Best for</td><td>Known Gaussian features, fast monitoring</td><td>Large datasets, many features, production</td><td>Varying-density clusters, spatial data</td><td>Small datasets, novelty detection</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card mt-4 p-5" style="background:linear-gradient(135deg,#0b0f18,#0d1020);">
+    <div class="label mb-4">Decision Guide — Which Method to Use?</div>
+    <div class="grid-4">
+      <div class="card-inner p-4"><div class="mono mb-2" style="font-size:0.65rem;color:var(--c-yellow);">Data is roughly Gaussian?</div><div style="font-size:0.82rem;">Start with <strong style="color:var(--c-yellow);">Z-Score</strong>. Fast, transparent, no training needed.</div></div>
+      <div class="card-inner p-4"><div class="mono mb-2" style="font-size:0.65rem;color:var(--c-green);">Large, messy, high-dim dataset?</div><div style="font-size:0.82rem;">Use <strong style="color:var(--c-green);">Isolation Forest</strong>. Robust, fast, minimal tuning.</div></div>
+      <div class="card-inner p-4"><div class="mono mb-2" style="font-size:0.65rem;color:var(--c-blue);">Clusters with different densities?</div><div style="font-size:0.82rem;">Use <strong style="color:var(--c-blue);">LOF</strong>. Only local comparison matters, not global.</div></div>
+      <div class="card-inner p-4"><div class="mono mb-2" style="font-size:0.65rem;color:var(--c-purple);">Only normal examples available?</div><div style="font-size:0.82rem;">Use <strong style="color:var(--c-purple);">One-Class SVM</strong>. Learns tight boundary from clean data.</div></div>
+    </div>
+  </div>
+</section>
+
+<footer class="mt-16 pt-6 border-t" style="border-color:var(--border);">
+  <div class="flex justify-between items-center">
+    <div class="label">ML Recall Notes · Anomaly Detection</div>
+    <div class="label">Z-Score · Isolation Forest · LOF · One-Class SVM</div>
+  </div>
+</footer>
+</div>
+
+<!-- ═══════════════════ D3 SCRIPTS ═══════════════════ -->
+<script>
+const C = {
+  bg:'#080a0f',surface:'#111318',card:'#161a22',border:'#1f2430',border2:'#2a3040',
+  muted:'#3d4558',dim:'#6b7794',text:'#c9d1e0',bright:'#eef1f8',
+  orange:'#e8743a',blue:'#4a9eff',green:'#3ecf8e',purple:'#a78bfa',
+  yellow:'#f6c344',red:'#f06575',cyan:'#22d3ee',pink:'#f472b6'
+};
+
+/* ─────────────────────────────────────────────────
+   1. ANOMALY TYPES DIAGRAM
+───────────────────────────────────────────────── */
+(function(){
+  const el = document.getElementById('anomaly-types-diagram');
+  const W = el.clientWidth||960, H = 280;
+  const tip = document.getElementById('atype-tip');
+  const svg = d3.select('#anomaly-types-diagram').append('svg')
+    .attr('width','100%').attr('height',H).attr('viewBox',`0 0 ${W} ${H}`);
+
+  const panelW = W/3;
+
+  // Panels
+  const labels = ['A — Point Anomaly','B — Contextual Anomaly','C — Collective Anomaly'];
+  const colors = [C.red, C.orange, C.yellow];
+  labels.forEach((lbl,i)=>{
+    svg.append('rect').attr('x',i*panelW+4).attr('y',4).attr('width',panelW-8).attr('height',H-8)
+      .attr('fill',C.surface).attr('stroke',colors[i]).attr('stroke-width',1).attr('rx',5).attr('opacity',0.5);
+    svg.append('text').attr('x',i*panelW+panelW/2).attr('y',22)
+      .attr('text-anchor','middle').attr('fill',colors[i]).attr('font-size','9').text(lbl);
+  });
+
+  // ── Panel A: Point Anomaly ──
+  const rng = d3.randomNormal.source(d3.randomLcg(42));
+  const normalA = d3.range(40).map(()=>({x:rng(panelW*0.5,panelW*0.1)(), y:rng(H/2,H*0.12)()}));
+  normalA.forEach(p=>{
+    svg.append('circle').attr('cx',p.x).attr('cy',p.y).attr('r',4)
+      .attr('fill',C.blue+'66').attr('stroke',C.blue).attr('stroke-width',1);
+  });
+  // Single outlier
+  const ptAnomaly = {x:panelW*0.82, y:H*0.22};
+  svg.append('circle').attr('cx',ptAnomaly.x).attr('cy',ptAnomaly.y).attr('r',7)
+    .attr('fill',C.red+'55').attr('stroke',C.red).attr('stroke-width',2)
+    .style('cursor','pointer')
+    .on('mousemove',function(ev){
+      tip.innerHTML='<strong style="color:#f06575">Point Anomaly</strong><br>Single point far from<br>the main cluster.<br>Z-Score &gt; 3σ';
+      tip.style.opacity=1;
+      const r=el.getBoundingClientRect();
+      tip.style.left=(ev.clientX-r.left+12)+'px';tip.style.top=(ev.clientY-r.top-40)+'px';
+    }).on('mouseleave',()=>{tip.style.opacity=0;});
+  svg.append('text').attr('x',ptAnomaly.x+10).attr('y',ptAnomaly.y+4)
+    .attr('fill',C.red).attr('font-size','9').text('anomaly');
+
+  // ── Panel B: Contextual (time series style) ──
+  const bX = panelW;
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const temps   = [2, 4, 8, 14, 20, 25, 28, 27, 21, 14, 7, 28]; // Dec is anomalous
+  const bW = panelW-20, bH = H-50, bPad = 16;
+  const xS = d3.scaleLinear().domain([0,11]).range([bX+bPad, bX+bW-bPad]);
+  const yS = d3.scaleLinear().domain([0,32]).range([H-30, 35]);
+  const line = d3.line().x((_,i)=>xS(i)).y(d=>yS(d)).curve(d3.curveCatmullRom);
+  svg.append('path').datum(temps.slice(0,11)).attr('d',line)
+    .attr('fill','none').attr('stroke',C.orange).attr('stroke-width',1.5).attr('opacity',0.7);
+  temps.forEach((t,i)=>{
+    const isAnomaly = i===11;
+    if(i===11){
+      // Draw the anomalous Dec point separately
+      svg.append('line')
+        .attr('x1',xS(10)).attr('y1',yS(temps[10]))
+        .attr('x2',xS(11)).attr('y2',yS(28))
+        .attr('stroke',C.red).attr('stroke-width',1.5).attr('stroke-dasharray','3,2');
+    }
+    svg.append('circle').attr('cx',xS(i)).attr('cy',yS(t)).attr('r',isAnomaly?7:3.5)
+      .attr('fill',isAnomaly?C.red+'55':C.orange+'55')
+      .attr('stroke',isAnomaly?C.red:C.orange).attr('stroke-width',isAnomaly?2:1)
+      .style('cursor',isAnomaly?'pointer':'default')
+      .on('mousemove',isAnomaly?function(ev){
+        tip.innerHTML='<strong style="color:#e8743a">Contextual Anomaly</strong><br>28°C in December<br>Normal in July (26°C)<br>Anomalous in this season';
+        tip.style.opacity=1;
+        const r=el.getBoundingClientRect();
+        tip.style.left=(ev.clientX-r.left+12)+'px';tip.style.top=(ev.clientY-r.top-50)+'px';
+      }:null).on('mouseleave',isAnomaly?()=>{tip.style.opacity=0;}:null);
+    if(i%2===0||i===11){
+      svg.append('text').attr('x',xS(i)).attr('y',H-14).attr('text-anchor','middle')
+        .attr('fill',i===11?C.red:C.dim).attr('font-size','8').text(months[i]);
+    }
+  });
+  svg.append('text').attr('x',xS(11)+10).attr('y',yS(28)-6)
+    .attr('fill',C.red).attr('font-size','9').text('anomaly!');
+
+  // ── Panel C: Collective ──
+  const cX = panelW*2;
+  const cW = panelW - 20;
+  const ecgPoints = [];
+  for(let i=0;i<80;i++){
+    let y = H/2;
+    const phase = i%20;
+    if(phase===5) y=H*0.25;
+    else if(phase===6) y=H*0.72;
+    else if(phase===7) y=H*0.25;
+    else if(phase===3||phase===9) y=H/2-18;
+    ecgPoints.push({x:cX+10+i*(cW/80), y:y+d3.randomUniform.source(d3.randomLcg(i*7))(-4,4)()});
+  }
+  // Inject collective anomaly (weird pattern)
+  for(let i=42;i<54;i++){
+    ecgPoints[i].y = H/2 + 30*Math.sin((i-42)*Math.PI/6);
+    ecgPoints[i].anomaly=true;
+  }
+  const ecgLine = d3.line().x(d=>d.x).y(d=>d.y).curve(d3.curveCatmullRom);
+  svg.append('path').datum(ecgPoints.filter((_,i)=>i<42||i>=54)).attr('d',ecgLine)
+    .attr('fill','none').attr('stroke',C.green).attr('stroke-width',1.5).attr('opacity',0.8);
+  svg.append('path').datum(ecgPoints.filter((_,i)=>i>=41&&i<=54)).attr('d',ecgLine)
+    .attr('fill','none').attr('stroke',C.yellow).attr('stroke-width',2);
+  svg.append('rect')
+    .attr('x',ecgPoints[42].x-2).attr('y',H*0.2).attr('width',ecgPoints[53].x-ecgPoints[42].x+4).attr('height',H*0.6)
+    .attr('fill',C.yellow+'18').attr('stroke',C.yellow).attr('stroke-width',1).attr('stroke-dasharray','3,2').attr('rx',2)
+    .style('cursor','pointer')
+    .on('mousemove',function(ev){
+      tip.innerHTML='<strong style="color:#f6c344">Collective Anomaly</strong><br>Individual ECG values look<br>normal, but the pattern<br>across 12 beats is abnormal<br>(possible arrhythmia)';
+      tip.style.opacity=1;
+      const r=el.getBoundingClientRect();
+      tip.style.left=(ev.clientX-r.left+12)+'px';tip.style.top=(ev.clientY-r.top-60)+'px';
+    }).on('mouseleave',()=>{tip.style.opacity=0;});
+  svg.append('text').attr('x',ecgPoints[48].x).attr('y',H*0.17)
+    .attr('text-anchor','middle').attr('fill',C.yellow).attr('font-size','9').text('anomalous segment');
+})();
+
+
+/* ─────────────────────────────────────────────────
+   2. Z-SCORE BELL CURVE DIAGRAM
+───────────────────────────────────────────────── */
+(function(){
+  const el = document.getElementById('zscore-diagram');
+  const W = el.clientWidth||960, H = 280;
+  const tip = document.getElementById('zscore-tip');
+  const mg = {t:30, r:40, b:40, l:50};
+  const iW = W-mg.l-mg.r, iH = H-mg.t-mg.b;
+
+  const svg = d3.select('#zscore-diagram').append('svg')
+    .attr('width','100%').attr('height',H).attr('viewBox',`0 0 ${W} ${H}`);
+  const g = svg.append('g').attr('transform',`translate(${mg.l},${mg.t})`);
+
+  const xS = d3.scaleLinear().domain([-4.5,4.5]).range([0,iW]);
+  const normal = x => Math.exp(-0.5*x*x)/Math.sqrt(2*Math.PI);
+  const yS = d3.scaleLinear().domain([0, normal(0)*1.1]).range([iH,0]);
+
+  const pts = d3.range(-4.5,4.51,0.05).map(x=>({x,y:normal(x)}));
+
+  // Sigma zone fills
+  const zones = [
+    {lo:-3,hi:3,   fill:C.green+'18',  label:'99.7%  (±3σ)'},
+    {lo:-2,hi:2,   fill:C.blue+'22',   label:'95.4%  (±2σ)'},
+    {lo:-1,hi:1,   fill:C.purple+'28', label:'68.3%  (±1σ)'},
+  ];
+  zones.forEach(z=>{
+    const area = d3.area().x(d=>xS(d.x)).y0(iH).y1(d=>yS(d.y))
+      .defined(d=>d.x>=z.lo&&d.x<=z.hi);
+    g.append('path').datum(pts).attr('d',area).attr('fill',z.fill);
+  });
+
+  // Threshold lines ±3σ
+  [-3,3].forEach(t=>{
+    g.append('line').attr('x1',xS(t)).attr('x2',xS(t)).attr('y1',0).attr('y2',iH)
+      .attr('stroke',C.red).attr('stroke-width',1.5).attr('stroke-dasharray','5,3');
+    g.append('text').attr('x',xS(t)).attr('y',-8).attr('text-anchor','middle')
+      .attr('fill',C.red).attr('font-size','9').text(t>0?'+3σ':'-3σ');
+  });
+  [-2,2].forEach(t=>{
+    g.append('line').attr('x1',xS(t)).attr('x2',xS(t)).attr('y1',0).attr('y2',iH)
+      .attr('stroke',C.blue).attr('stroke-width',1).attr('stroke-dasharray','3,3').attr('opacity',0.6);
+  });
+
+  // Curve
+  const lineGen = d3.line().x(d=>xS(d.x)).y(d=>yS(d.y)).curve(d3.curveCatmullRom);
+  g.append('path').datum(pts).attr('d',lineGen)
+    .attr('fill','none').attr('stroke',C.green).attr('stroke-width',2.5);
+
+  // Anomaly points outside ±3σ
+  const anomPts = [-4.1,-3.8,-3.5,3.6,4.0,4.2];
+  anomPts.forEach(ax=>{
+    g.append('circle').attr('cx',xS(ax)).attr('cy',yS(normal(ax))+20).attr('r',6)
+      .attr('fill',C.red+'55').attr('stroke',C.red).attr('stroke-width',2)
+      .style('cursor','pointer')
+      .on('mousemove',function(ev){
+        tip.innerHTML=`<strong style="color:#f06575">Anomaly</strong><br>Z = ${ax.toFixed(1)}<br>|Z| > 3σ threshold<br>p(x) &lt; 0.003`;
+        tip.style.opacity=1;
+        const r=el.getBoundingClientRect();
+        tip.style.left=(ev.clientX-r.left+12)+'px';tip.style.top=(ev.clientY-r.top-40)+'px';
+      }).on('mouseleave',()=>{tip.style.opacity=0;});
+  });
+
+  // x-axis labels
+  d3.range(-4,5).forEach(t=>{
+    g.append('text').attr('x',xS(t)).attr('y',iH+16).attr('text-anchor','middle')
+      .attr('fill',C.dim).attr('font-size','9').text(t===0?'μ':t+'σ');
+  });
+
+  // Legend
+  const lg = svg.append('g').attr('transform',`translate(${W-260},${mg.t+5})`);
+  zones.forEach((z,i)=>{
+    lg.append('rect').attr('x',0).attr('y',i*18).attr('width',12).attr('height',12).attr('rx',2).attr('fill',z.fill).attr('stroke',i===0?C.green:i===1?C.blue:C.purple).attr('stroke-width',1);
+    lg.append('text').attr('x',16).attr('y',i*18+10).attr('fill',C.dim).attr('font-size','9').text(z.label);
+  });
+  lg.append('rect').attr('x',0).attr('y',54).attr('width',12).attr('height',12).attr('rx',2).attr('fill',C.red+'55').attr('stroke',C.red).attr('stroke-width',1);
+  lg.append('text').attr('x',16).attr('y',64).attr('fill',C.red).attr('font-size','9').text('Anomaly (|Z| > 3)');
+})();
+
+
+/* ─────────────────────────────────────────────────
+   3. ISOLATION FOREST DIAGRAM
+───────────────────────────────────────────────── */
+(function(){
+  const el = document.getElementById('iforest-diagram');
+  const W = el.clientWidth||960, H = 340;
+  const tip = document.getElementById('iforest-tip');
+  const mg = {t:20,r:20,b:20,l:20};
+  const iW = W-mg.l-mg.r, iH = H-mg.t-mg.b;
+
+  const svg = d3.select('#iforest-diagram').append('svg')
+    .attr('width','100%').attr('height',H).attr('viewBox',`0 0 ${W} ${H}`);
+  const g = svg.append('g').attr('transform',`translate(${mg.l},${mg.t})`);
+
+  const rnd = d3.randomNormal.source(d3.randomLcg(99));
+
+  // Normal cluster points
+  const normals = d3.range(80).map(()=>({
+    x: rnd(iW*0.42, iW*0.09)(),
+    y: rnd(iH*0.5,  iH*0.09)(),
+    depth: Math.floor(Math.random()*5)+6, isAnomaly:false
+  }));
+  // Anomaly points (sparse, far)
+  const anomalies = [
+    {x:iW*0.12,y:iH*0.15,depth:2,isAnomaly:true},
+    {x:iW*0.85,y:iH*0.2, depth:3,isAnomaly:true},
+    {x:iW*0.78,y:iH*0.82,depth:2,isAnomaly:true},
+    {x:iW*0.18,y:iH*0.78,depth:3,isAnomaly:true},
+    {x:iW*0.91,y:iH*0.5, depth:2,isAnomaly:true},
+  ];
+  const allPts = [...normals,...anomalies];
+
+  // Draw random partition lines (illustrative)
+  const partitions = [
+    {x1:iW*0.62,y1:0,x2:iW*0.62,y2:iH,depth:1},
+    {x1:iW*0.62,y1:iH*0.3,x2:iW,y2:iH*0.3,depth:2},
+    {x1:iW*0.62,y1:iH*0.65,x2:iW,y2:iH*0.65,depth:2},
+    {x1:0,y1:iH*0.45,x2:iW*0.62,y2:iH*0.45,depth:2},
+    {x1:iW*0.22,y1:0,x2:iW*0.22,y2:iH*0.45,depth:3},
+    {x1:0,y1:iH*0.22,x2:iW*0.22,y2:iH*0.22,depth:4},
+    {x1:0,y1:iH*0.68,x2:iW*0.22,y2:iH*0.68,depth:4},
+  ];
+
+  const depthColor = d3.scaleLinear().domain([1,5]).range([C.surface, C.border2]);
+  partitions.forEach(p=>{
+    g.append('line').attr('x1',p.x1).attr('y1',p.y1).attr('x2',p.x2).attr('y2',p.y2)
+      .attr('stroke',C.border2).attr('stroke-width',1).attr('stroke-dasharray','4,3').attr('opacity',0.7);
+  });
+
+  // Colour map: depth 2-3 = anomaly (red), 6-10 = normal (green)
+  const ptColor = d=>d.isAnomaly ? C.red : C.green;
+  const ptFill  = d=>d.isAnomaly ? C.red+'44' : C.green+'33';
+
+  allPts.forEach(p=>{
+    g.append('circle').attr('cx',p.x).attr('cy',p.y).attr('r',p.isAnomaly?7:5)
+      .attr('fill',ptFill(p)).attr('stroke',ptColor(p)).attr('stroke-width',p.isAnomaly?2:1)
+      .style('cursor','pointer')
+      .on('mousemove',function(ev){
+        const score = p.isAnomaly ? (1 - p.depth/12).toFixed(2) : (p.depth/14).toFixed(2);
+        tip.innerHTML=`<strong style="color:${ptColor(p)}">${p.isAnomaly?'⚠ Anomaly':'✓ Normal'}</strong><br>Avg path depth: ${p.depth}<br>Anomaly score: ~${p.isAnomaly?'0.8–0.95':'0.4–0.5'}<br>${p.isAnomaly?'Isolated in few splits':'Requires many splits'}`;
+        tip.style.opacity=1;
+        const r=el.getBoundingClientRect();
+        tip.style.left=(ev.clientX-r.left+12)+'px';tip.style.top=(ev.clientY-r.top-55)+'px';
+      }).on('mouseleave',()=>{tip.style.opacity=0;});
+  });
+
+  // Annotations
+  g.append('text').attr('x',iW*0.42).attr('y',iH*0.5+4).attr('text-anchor','middle')
+    .attr('fill',C.green).attr('font-size','10').text('Dense cluster → long path → normal');
+  g.append('text').attr('x',iW*0.12).attr('y',iH*0.08).attr('text-anchor','middle')
+    .attr('fill',C.red).attr('font-size','10').text('Sparse → short path → anomaly');
+
+  // Legend
+  [[C.green,'Normal (deep isolation)'],[C.red,'Anomaly (shallow isolation)']].forEach(([c,l],i)=>{
+    svg.append('circle').attr('cx',mg.l+8).attr('cy',H-mg.b-24+i*18).attr('r',5)
+      .attr('fill',c+'44').attr('stroke',c).attr('stroke-width',1.5);
+    svg.append('text').attr('x',mg.l+18).attr('y',H-mg.b-20+i*18)
+      .attr('fill',C.dim).attr('font-size','9').text(l);
+  });
+})();
+
+
+/* ─────────────────────────────────────────────────
+   4. LOF DIAGRAM
+───────────────────────────────────────────────── */
+(function(){
+  const el = document.getElementById('lof-diagram');
+  const W = el.clientWidth||960, H = 360;
+  const tip = document.getElementById('lof-tip');
+  const mg = {t:30,r:30,b:30,l:30};
+  const iW = W-mg.l-mg.r, iH = H-mg.t-mg.b;
+
+  const svg = d3.select('#lof-diagram').append('svg')
+    .attr('width','100%').attr('height',H).attr('viewBox',`0 0 ${W} ${H}`);
+  const g = svg.append('g').attr('transform',`translate(${mg.l},${mg.t})`);
+
+  const rnd = d3.randomNormal.source(d3.randomLcg(77));
+
+  // Two dense clusters + outlier
+  const clusterA = d3.range(30).map(()=>({x:rnd(iW*0.22,iW*0.07)(),y:rnd(iH*0.35,iH*0.07)(),cluster:'A',lof:1.0+Math.random()*0.3}));
+  const clusterB = d3.range(30).map(()=>({x:rnd(iW*0.65,iW*0.06)(),y:rnd(iH*0.65,iH*0.06)(),cluster:'B',lof:1.0+Math.random()*0.3}));
+  const borderPt = {x:iW*0.42,y:iH*0.18,cluster:'border',lof:1.8}; // between clusters
+  const outlierA = {x:iW*0.88,y:iH*0.12,cluster:'outlier',lof:4.2};
+  const outlierB = {x:iW*0.08,y:iH*0.82,cluster:'outlier',lof:3.9};
+
+  const allPts = [...clusterA,...clusterB,borderPt,outlierA,outlierB];
+
+  // Draw k-neighbourhood circles for selected points
+  const showNeigh = [
+    {pt:clusterA[5],  r:iW*0.085, color:C.blue,  label:'Dense neighbourhood'},
+    {pt:outlierA,     r:iW*0.18,  color:C.red,   label:'Sparse neighbourhood'},
+  ];
+  showNeigh.forEach(n=>{
+    g.append('circle').attr('cx',n.pt.x).attr('cy',n.pt.y).attr('r',n.r)
+      .attr('fill','none').attr('stroke',n.color).attr('stroke-width',1.5)
+      .attr('stroke-dasharray','5,3').attr('opacity',0.6);
+    g.append('text').attr('x',n.pt.x).attr('y',n.pt.y-n.r-8)
+      .attr('text-anchor','middle').attr('fill',n.color).attr('font-size','9')
+      .text(n.label);
+  });
+
+  // Draw points
+  const ptColor = d=>{
+    if(d.lof>3)   return C.red;
+    if(d.lof>1.5) return C.orange;
+    return C.blue;
+  };
+  allPts.forEach(p=>{
+    const r = p.cluster==='outlier'?8:p.cluster==='border'?6:4;
+    g.append('circle').attr('cx',p.x).attr('cy',p.y).attr('r',r)
+      .attr('fill',ptColor(p)+'55').attr('stroke',ptColor(p)).attr('stroke-width',p.cluster==='outlier'?2:1)
+      .style('cursor','pointer')
+      .on('mousemove',function(ev){
+        const status = p.lof>3?'⚠ Anomaly':p.lof>1.5?'⚠ Borderline':'✓ Normal';
+        const sc = p.lof>3?C.red:p.lof>1.5?C.orange:C.blue;
+        tip.innerHTML=`<strong style="color:${sc}">${status}</strong><br>LOF Score: ${p.lof.toFixed(2)}<br>${p.lof>1.5?'Local density much lower<br>than neighbours':'Local density ≈ neighbours'}`;
+        tip.style.opacity=1;
+        const r2=el.getBoundingClientRect();
+        tip.style.left=(ev.clientX-r2.left+12)+'px';tip.style.top=(ev.clientY-r2.top-50)+'px';
+      }).on('mouseleave',()=>{tip.style.opacity=0;});
+  });
+
+  // LOF score annotations on outliers
+  [{pt:outlierA,score:'LOF=4.2'},{pt:outlierB,score:'LOF=3.9'},{pt:borderPt,score:'LOF=1.8'}].forEach(a=>{
+    const c = a.score.includes('4')||a.score.includes('3')?C.red:C.orange;
+    g.append('text').attr('x',a.pt.x+12).attr('y',a.pt.y+4).attr('fill',c).attr('font-size','9').text(a.score);
+  });
+
+  // Cluster labels
+  g.append('text').attr('x',iW*0.22).attr('y',iH*0.1).attr('text-anchor','middle')
+    .attr('fill',C.blue).attr('font-size','10').text('Cluster A — high density → LOF ≈ 1');
+  g.append('text').attr('x',iW*0.65).attr('y',iH*0.84).attr('text-anchor','middle')
+    .attr('fill',C.blue).attr('font-size','10').text('Cluster B — high density → LOF ≈ 1');
+
+  // Legend
+  [[C.blue,'LOF ≈ 1  (normal)'],[C.orange,'LOF 1.5–3 (borderline)'],[C.red,'LOF > 3  (anomaly)']].forEach(([c,l],i)=>{
+    svg.append('circle').attr('cx',mg.l+8).attr('cy',H-mg.b-38+i*18).attr('r',5)
+      .attr('fill',c+'55').attr('stroke',c).attr('stroke-width',1.5);
+    svg.append('text').attr('x',mg.l+18).attr('y',H-mg.b-34+i*18)
+      .attr('fill',C.dim).attr('font-size','9').text(l);
+  });
+})();
+
+
+/* ─────────────────────────────────────────────────
+   5. ONE-CLASS SVM DIAGRAM
+───────────────────────────────────────────────── */
+(function(){
+  const el = document.getElementById('ocsvm-diagram');
+  const W = el.clientWidth||960, H = 360;
+  const tip = document.getElementById('ocsvm-tip');
+  const mg = {t:30,r:30,b:30,l:30};
+  const iW = W-mg.l-mg.r, iH = H-mg.t-mg.b;
+
+  const svg = d3.select('#ocsvm-diagram').append('svg')
+    .attr('width','100%').attr('height',H).attr('viewBox',`0 0 ${W} ${H}`);
+  const g = svg.append('g').attr('transform',`translate(${mg.l},${mg.t})`);
+
+  // Draw RBF-shaped boundary (egg-shaped closed curve)
+  const cx = iW*0.45, cy = iH*0.5;
+  const rx = iW*0.28, ry = iH*0.34;
+  const boundary = [];
+  for(let a=0;a<=2*Math.PI;a+=0.05){
+    boundary.push({x:cx+rx*Math.cos(a)*(1+0.08*Math.sin(3*a)), y:cy+ry*Math.sin(a)*(1+0.06*Math.cos(2*a))});
+  }
+  boundary.push(boundary[0]);
+
+  // Outer glow
+  const lineGen = d3.line().x(d=>d.x).y(d=>d.y).curve(d3.curveCatmullRom);
+  g.append('path').datum(boundary).attr('d',lineGen)
+    .attr('fill',C.purple+'14').attr('stroke',C.purple).attr('stroke-width',2.5);
+
+  // Inner zone label
+  g.append('text').attr('x',cx).attr('y',cy-ry*0.55)
+    .attr('text-anchor','middle').attr('fill',C.purple).attr('opacity',0.5)
+    .attr('font-size','10').text('Normal Region (inside boundary)');
+
+  // Support vector markers along boundary
+  for(let a=0;a<2*Math.PI;a+=0.62){
+    const sx = cx+rx*Math.cos(a)*(1+0.08*Math.sin(3*a));
+    const sy = cy+ry*Math.sin(a)*(1+0.06*Math.cos(2*a));
+    g.append('circle').attr('cx',sx).attr('cy',sy).attr('r',5)
+      .attr('fill','none').attr('stroke',C.cyan).attr('stroke-width',2).attr('opacity',0.8);
+  }
+  g.append('text').attr('x',cx+rx+18).attr('y',cy-10)
+    .attr('fill',C.cyan).attr('font-size','9').text('support');
+  g.append('text').attr('x',cx+rx+18).attr('y',cy+4)
+    .attr('fill',C.cyan).attr('font-size','9').text('vectors');
+
+  const rnd = d3.randomNormal.source(d3.randomLcg(55));
+
+  // Inside points (normal)
+  const insidePts = d3.range(70).map(()=>{
+    let px,py,tries=0;
+    do {
+      px = rnd(cx, rx*0.5)(); py = rnd(cy, ry*0.4)(); tries++;
+    } while(((px-cx)**2/(rx*0.85)**2)+((py-cy)**2/(ry*0.78)**2)>1 && tries<30);
+    return {x:px,y:py,inside:true};
+  });
+
+  // Outside anomalies
+  const outsidePts = [
+    {x:iW*0.05,y:iH*0.1,inside:false},
+    {x:iW*0.9, y:iH*0.15,inside:false},
+    {x:iW*0.93,y:iH*0.7, inside:false},
+    {x:iW*0.07,y:iH*0.85,inside:false},
+    {x:iW*0.5, y:iH*0.03,inside:false},
+    {x:iW*0.5, y:iH*0.97,inside:false},
+    {x:iW*0.02,y:iH*0.5, inside:false},
+    {x:iW*0.97,y:iH*0.45,inside:false},
+  ];
+
+  [...insidePts,...outsidePts].forEach(p=>{
+    g.append('circle').attr('cx',p.x).attr('cy',p.y).attr('r',p.inside?4:7)
+      .attr('fill',p.inside?C.purple+'44':C.red+'44')
+      .attr('stroke',p.inside?C.purple:C.red).attr('stroke-width',p.inside?1:2)
+      .style('cursor','pointer')
+      .on('mousemove',function(ev){
+        const sc = p.inside?C.purple:C.red;
+        tip.innerHTML=`<strong style="color:${sc}">${p.inside?'✓ Normal (inside)':'⚠ Anomaly (outside)'}</strong><br>Decision function: ${p.inside?'> 0':'< 0'}<br>${p.inside?'Within learned boundary':'Outside hypersphere'}`;
+        tip.style.opacity=1;
+        const r=el.getBoundingClientRect();
+        tip.style.left=(ev.clientX-r.left+12)+'px';tip.style.top=(ev.clientY-r.top-50)+'px';
+      }).on('mouseleave',()=>{tip.style.opacity=0;});
+  });
+
+  // Legend
+  [[C.purple,'Normal (f(x) > 0)'],[C.cyan,'Support Vectors'],[C.red,'Anomaly (f(x) < 0)']].forEach(([c,l],i)=>{
+    svg.append('circle').attr('cx',mg.l+8).attr('cy',H-mg.b-38+i*18).attr('r',5)
+      .attr('fill',c+'55').attr('stroke',c).attr('stroke-width',1.5);
+    svg.append('text').attr('x',mg.l+18).attr('y',H-mg.b-34+i*18)
+      .attr('fill',C.dim).attr('font-size','9').text(l);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Continuous Random Variables — PDF Cheat Sheet</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #08090c;
+  --surface:   #0f1117;
+  --surface2:  #161822;
+  --border:    #1f2133;
+  --border2:   #2a2d44;
+  --text:      #e2e4f0;
+  --text-dim:  #7b7f9e;
+  --text-faint:#3a3d55;
+
+  --unif:  #38bdf8;
+  --norm:  #a78bfa;
+  --exp:   #34d399;
+  --gamma: #fb923c;
+  --beta:  #f472b6;
+  --tdist: #facc15;
+  --chi2:  #fb7185;
+  --fdist: #4ade80;
+  --lnorm: #c084fc;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  line-height: 1.65;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity: 0.4;
+}
+
+.display { font-family: 'Crimson Pro', serif; }
+.mono    { font-family: 'JetBrains Mono', monospace; }
+
+nav {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(8,9,12,0.88);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  display: flex; align-items: center; height: 50px; gap: 0;
+}
+.nav-brand {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem; letter-spacing: 0.2em;
+  color: var(--text-dim); text-transform: uppercase;
+  margin-right: auto;
+}
+.nav-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.2rem 0.7rem; border-radius: 2px;
+  border: 1px solid var(--border2); color: var(--text-dim);
+  margin-left: 0.75rem;
+}
+
+.hero {
+  position: relative; padding: 5rem 2rem 4rem; text-align: center;
+  overflow: hidden;
+}
+.hero-bg {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 50%, rgba(56,189,248,0.06) 0%, transparent 65%),
+    radial-gradient(ellipse 50% 40% at 85% 40%, rgba(167,139,250,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 35% at 50% 100%, rgba(52,211,153,0.04) 0%, transparent 60%);
+}
+.hero-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--text-faint); margin-bottom: 1.25rem;
+}
+.hero h1 {
+  font-family: 'Crimson Pro', serif;
+  font-size: clamp(3rem, 7vw, 6rem);
+  font-weight: 300; letter-spacing: -0.02em; line-height: 0.95;
+  color: var(--text);
+}
+.hero h1 em { font-style: italic; color: #93c5fd; }
+.hero-sub {
+  font-size: 0.9rem; color: var(--text-dim);
+  margin-top: 1.25rem; max-width: 520px; margin-left: auto; margin-right: auto;
+}
+
+.page { max-width: 1320px; margin: 0 auto; padding: 0 1.5rem 6rem; position: relative; z-index: 1; }
+
+.section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem; letter-spacing: 0.25em; text-transform: uppercase;
+  color: var(--text-faint); padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;
+}
+.section-label span { flex-shrink: 0; }
+
+.intro-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 1px; background: var(--border); border: 1px solid var(--border);
+  margin-bottom: 3.5rem;
+}
+.intro-cell { background: var(--surface); padding: 1.25rem 1.5rem; }
+.intro-cell .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--text-faint); margin-bottom: 0.5rem;
+}
+.intro-cell p { font-size: 0.85rem; color: var(--text-dim); line-height: 1.6; }
+.intro-cell .formula-big {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem; color: #93c5fd;
+  background: var(--surface2); padding: 0.5rem 0.75rem;
+  border-left: 2px solid #93c5fd40; margin-top: 0.5rem;
+}
+
+.dist-section {
+  margin-bottom: 4rem;
+  animation: fadeUp 0.5s ease both;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.dist-section:nth-child(1){animation-delay:.05s}
+.dist-section:nth-child(2){animation-delay:.10s}
+.dist-section:nth-child(3){animation-delay:.15s}
+.dist-section:nth-child(4){animation-delay:.20s}
+.dist-section:nth-child(5){animation-delay:.25s}
+.dist-section:nth-child(6){animation-delay:.30s}
+.dist-section:nth-child(7){animation-delay:.35s}
+.dist-section:nth-child(8){animation-delay:.40s}
+.dist-section:nth-child(9){animation-delay:.45s}
+
+.dist-header {
+  display: flex; align-items: baseline; gap: 1rem;
+  margin-bottom: 1.5rem; padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+.dist-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem; color: var(--text-faint);
+  letter-spacing: 0.1em; flex-shrink: 0;
+}
+.dist-name {
+  font-family: 'Crimson Pro', serif;
+  font-size: 1.9rem; font-weight: 400; letter-spacing: -0.01em;
+}
+.dist-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 0.18rem 0.6rem; border-radius: 2px; margin-left: auto;
+}
+
+.dist-body {
+  display: grid; grid-template-columns: 1fr 1fr 1.2fr;
+  gap: 1px; background: var(--border); border: 1px solid var(--border);
+}
+.dist-left  { background: var(--surface); padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; }
+.dist-center{ background: var(--surface); padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+.dist-chart { background: var(--surface2); padding: 1.25rem; display: flex; flex-direction: column; }
+
+.micro {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-faint); margin-bottom: 0.4rem;
+}
+
+.intuition {
+  font-family: 'Crimson Pro', serif;
+  font-size: 1.05rem; font-style: italic; color: var(--text-dim);
+  line-height: 1.55; padding-left: 0.75rem;
+  border-left: 2px solid var(--border2);
+}
+
+.formula-wrap {
+  background: var(--surface2); border: 1px solid var(--border2);
+  padding: 0.85rem 1rem;
+}
+.formula-main {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem; color: #e2e4f0; line-height: 1.8;
+}
+.formula-main .accent { color: #93c5fd; }
+.formula-comment {
+  font-size: 0.7rem; color: var(--text-faint);
+  margin-top: 0.4rem; font-family: 'JetBrains Mono', monospace;
+}
+
+.stats-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1px; background: var(--border);
+}
+.stat-cell { background: var(--surface2); padding: 0.6rem 0.75rem; }
+.stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-faint);
+}
+.stat-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem; color: var(--text); margin-top: 0.1rem;
+}
+
+.conditions { list-style: none; }
+.conditions li {
+  display: flex; gap: 0.5rem; align-items: flex-start;
+  font-size: 0.8rem; color: var(--text-dim);
+  padding: 0.3rem 0; border-bottom: 1px solid var(--border);
+}
+.conditions li:last-child { border: none; }
+.conditions .bullet { flex-shrink: 0; margin-top: 0.05rem; }
+
+.usecase { font-size: 0.82rem; color: var(--text-dim); line-height: 1.6; }
+.usecase strong { color: var(--text); font-weight: 500; }
+
+.chart-controls { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.ctrl-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem; color: var(--text-faint); letter-spacing: 0.1em;
+  text-transform: uppercase; display: flex; flex-direction: column; gap: 0.2rem;
+  flex: 1; min-width: 70px;
+}
+.ctrl-label input[type=range] { width: 100%; accent-color: currentColor; height: 3px; cursor: pointer; }
+.ctrl-val { font-size: 0.7rem; color: var(--text); }
+.chart-canvas-wrap { flex: 1; position: relative; min-height: 160px; }
+
+.note {
+  background: rgba(147,197,253,0.05); border-left: 2px solid #93c5fd30;
+  padding: 0.5rem 0.75rem; font-size: 0.78rem; color: var(--text-dim);
+  margin-top: 0.5rem;
+}
+
+.callout {
+  padding: 0.5rem 0.75rem; font-size: 0.78rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.cmp-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.cmp-table th {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-faint);
+  padding: 0.5rem 0.75rem; text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.cmp-table td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top; color: var(--text-dim);
+}
+.cmp-table td:first-child { color: var(--text); font-weight: 500; }
+.cmp-table tr:last-child td { border: none; }
+.cmp-table .formula-col {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: #93c5fd;
+}
+
+@media (max-width: 900px) {
+  .dist-body { grid-template-columns: 1fr; }
+  .intro-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-brand">crv // pdf reference</span>
+  <span class="nav-pill">Continuous</span>
+  <span class="nav-pill">Probability</span>
+</nav>
+
+<div class="hero">
+  <div class="hero-bg"></div>
+  <div style="position:relative">
+    <div class="hero-eyebrow">University Statistics — Chapter Reference</div>
+    <h1 class="display">Continuous<br><em>Random Variables</em></h1>
+    <p class="hero-sub">PDF · CDF · Parameters · Intuition · Use Cases · Interactive Visualizations</p>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- 00 FOUNDATIONS -->
+  <div class="section-label"><span>00 — Foundations</span></div>
+  <div class="intro-grid">
+    <div class="intro-cell">
+      <div class="label">What is a Continuous RV?</div>
+      <p>A random variable X is <strong style="color:var(--text)">continuous</strong> when it can take any value in an interval — uncountably many possible outcomes. Think measurements: height, time, temperature. No single point has positive probability.</p>
+    </div>
+    <div class="intro-cell">
+      <div class="label">PDF — Probability Density Function</div>
+      <p>The PDF gives <strong style="color:var(--text)">density</strong>, not probability. P(X = x) = 0 always. Probability only exists over intervals — it is the <em>area</em> under the curve.</p>
+      <div class="formula-big">P(a ≤ X ≤ b) = ∫ₐᵇ f(x) dx</div>
+    </div>
+    <div class="intro-cell">
+      <div class="label">Two PDF Rules (always hold)</div>
+      <p>Every valid PDF must satisfy both axioms — integrals replace the sums used in PMFs.</p>
+      <div class="formula-big">① f(x) ≥ 0  for all x<br>② ∫₋∞^∞ f(x) dx = 1</div>
+    </div>
+  </div>
+
+  <div class="intro-grid">
+    <div class="intro-cell">
+      <div class="label">CDF — Cumulative Distribution Function</div>
+      <p>F(x) = P(X ≤ x). Always non-decreasing; F(−∞)=0 and F(+∞)=1. The PDF is the derivative of the CDF.</p>
+      <div class="formula-big">F(x) = ∫₋∞ˣ f(t) dt<br>f(x) = dF(x)/dx</div>
+    </div>
+    <div class="intro-cell">
+      <div class="label">Key Moments (via integration)</div>
+      <p>Expected value and variance are defined by integrating over the full support — the continuous analogues of weighted sums.</p>
+      <div class="formula-big">E[X]   = ∫ x·f(x) dx<br>Var(X) = E[X²] − (E[X])²</div>
+    </div>
+    <div class="intro-cell">
+      <div class="label">Standardization</div>
+      <p>Any continuous RV can be standardized. The result always has mean 0 and variance 1, enabling table lookups and comparisons across different distributions.</p>
+      <div class="formula-big">Z = (X − μ) / σ</div>
+    </div>
+  </div>
+
+  <!-- 01 UNIFORM -->
+  <div class="section-label"><span>01 — Uniform</span></div>
+  <div class="dist-section">
+    <div class="dist-header">
+      <span class="dist-number">U(a,b)</span>
+      <span class="dist-name" style="color:var(--unif)">Uniform Distribution</span>
+      <span class="dist-tag" style="background:rgba(56,189,248,0.1);color:var(--unif);border:1px solid rgba(56,189,248,0.2)">Maximum Uncertainty</span>
+    </div>
+    <div class="dist-body">
+      <div class="dist-left">
+        <div>
+          <div class="micro">Simple Intuition</div>
+          <p class="intuition">"Pick a random point anywhere on a line segment. Every location is equally likely — no part of the interval is more probable than any other of the same width."</p>
+        </div>
+        <div>
+          <div class="micro">Technical Definition</div>
+          <p class="usecase">All values in [a, b] share the same constant density 1/(b−a). It is the <strong>maximum entropy</strong> distribution over a bounded interval — it encodes zero prior preference for any sub-region. The simplest continuous distribution and the starting point for simulation.</p>
+        </div>
+        <div>
+          <div class="micro">Conditions</div>
+          <ul class="conditions">
+            <li><span class="bullet" style="color:var(--unif)">▸</span><span>Outcome is bounded to a finite interval [a, b]</span></li>
+            <li><span class="bullet" style="color:var(--unif)">▸</span><span>All sub-intervals of equal width are equally probable</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="micro">Real-World Use Cases</div>
+          <p class="usecase">Random number generation in software. Rounding errors in numerical computation. Arrival time when no schedule is known. Uninformative Bayesian priors. Simulation seeding via the Probability Integral Transform.</p>
+        </div>
+      </div>
+      <div class="dist-center">
+        <div>
+          <div class="micro">PDF &amp; CDF</div>
+          <div class="formula-wrap">
+            <div class="formula-main">
+              f(x) = <span class="accent">1 / (b − a)</span>,   x ∈ [a, b]<br>
+              f(x) = 0,  otherwise<br><br>
+              F(x) = <span class="accent">(x − a) / (b − a)</span>,  x ∈ [a, b]
+            </div>
+            <div class="formula-comment">// Flat PDF — the rectangle shape<br>// CDF is a straight diagonal line</div>
+          </div>
+        </div>
+        <div>
+          <div class="micro">Parameters &amp; Moments</div>
+          <div class="stats-row">
+            <div class="stat-cell"><div class="stat-label">Parameters</div><div class="stat-val">a, b ∈ ℝ,  a &lt; b</div></div>
+            <div class="stat-cell"><div class="stat-label">Support</div><div class="stat-val">x ∈ [a, b]</div></div>
+            <div class="stat-cell"><div class="stat-label">Mean  E[X]</div><div class="stat-val" style="color:var(--unif)">(a + b) / 2</div></div>
+            <div class="stat-cell"><div class="stat-label">Variance</div><div class="stat-val" style="color:var(--unif)">(b − a)² / 12</div></div>
+            <div class="stat-cell"><div class="stat-label">Median</div><div class="stat-val">(a + b) / 2</div></div>
+            <div class="stat-cell"><div class="stat-label">Skewness</div><div class="stat-val">0  (symmetric)</div></div>
+          </div>
+        </div>
+        <div class="note"><strong style="color:var(--text)">Probability Integral Transform:</strong> If X ~ U(0,1) and F is any valid CDF, then F⁻¹(X) follows the distribution with CDF F. This is how simulation software generates samples from any arbitrary distribution using only a uniform RNG.</div>
+      </div>
+      <div class="dist-chart">
+        <div class="micro" style="color:var(--unif)">Interactive PDF</div>
+        <div class="chart-controls">
+          <label class="ctrl-label" style="color:var(--unif)">
+            a (lower bound)
+            <input type="range" id="unif-a" min="-4" max="0" step="0.5" value="0">
+            <span class="ctrl-val" id="unif-a-val">0.0</span>
+          </label>
+          <label class="ctrl-label" style="color:var(--unif)">
+            b (upper bound)
+            <input type="range" id="unif-b" min="1" max="8" step="0.5" value="4">
+            <span class="ctrl-val" id="unif-b-val">4.0</span>
+          </label>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chart-unif"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 02 NORMAL -->
+  <div class="section-label"><span>02 — Normal (Gaussian)</span></div>
+  <div class="dist-section">
+    <div class="dist-header">
+      <span class="dist-number">N(μ, σ²)</span>
+      <span class="dist-name" style="color:var(--norm)">Normal Distribution</span>
+      <span class="dist-tag" style="background:rgba(167,139,250,0.1);color:var(--norm);border:1px solid rgba(167,139,250,0.2)">The Bell Curve</span>
+    </div>
+    <div class="dist-body">
+      <div class="dist-left">
+        <div>
+          <div class="micro">Simple Intuition</div>
+          <p class="intuition">"Measure anything that results from many small, independent influences added together. The total clusters around a center and tapers off symmetrically in both directions — a bell curve."</p>
+        </div>
+        <div>
+          <div class="micro">Technical Definition</div>
+          <p class="usecase">The most important distribution in statistics. Its bell shape arises via the <strong>Central Limit Theorem</strong>: the sample mean of any large i.i.d. sample is approximately Normal, regardless of the original distribution. μ controls location; σ² controls spread.</p>
+        </div>
+        <div>
+          <div class="micro">The 68–95–99.7 Rule</div>
+          <ul class="conditions">
+            <li><span class="bullet" style="color:var(--norm)">▸</span><span>68% of data lies within μ ± 1σ</span></li>
+            <li><span class="bullet" style="color:var(--norm)">▸</span><span>95% of data lies within μ ± 2σ</span></li>
+            <li><span class="bullet" style="color:var(--norm)">▸</span><span>99.7% of data lies within μ ± 3σ</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="micro">Real-World Use Cases</div>
+          <p class="usecase">Human height and weight. Measurement errors in science. IQ scores. Financial return approximations. Residuals in linear regression. Any sum of many independent random effects.</p>
+        </div>
+      </div>
+      <div class="dist-center">
+        <div>
+          <div class="micro">PDF &amp; Standard Form</div>
+          <div class="formula-wrap">
+            <div class="formula-main">
+              f(x) = <span class="accent">1/(σ√2π) · exp(−(x−μ)²/2σ²)</span><br><br>
+              Standard Z = (X−μ)/σ ~ N(0,1)<br>
+              f(z) = <span class="accent">1/√(2π) · exp(−z²/2)</span>
+            </div>
+            <div class="formula-comment">// No closed-form CDF — use z-tables or erf()<br>// Φ(z) = P(Z ≤ z) is the standard normal CDF</div>
+          </div>
+        </div>
+        <div>
+          <div class="micro">Parameters &amp; Moments</div>
+          <div class="stats-row">
+            <div class="stat-cell"><div class="stat-label">Parameters</div><div class="stat-val">μ ∈ ℝ,  σ² &gt; 0</div></div>
+            <div class="stat-cell"><div class="stat-label">Support</div><div class="stat-val">x ∈ (−∞, +∞)</div></div>
+            <div class="stat-cell"><div class="stat-label">Mean  E[X]</div><div class="stat-val" style="color:var(--norm)">μ</div></div>
+            <div class="stat-cell"><div class="stat-label">Variance</div><div class="stat-val" style="color:var(--norm)">σ²</div></div>
+            <div class="stat-cell"><div class="stat-label">Skewness</div><div class="stat-val">0  (perfectly symmetric)</div></div>
+            <div class="stat-cell"><div class="stat-label">Excess Kurtosis</div><div class="stat-val">0  (the reference point)</div></div>
+          </div>
+        </div>
+        <div class="note"><strong style="color:var(--text)">Reproductive property:</strong> If X~N(μ₁,σ₁²) and Y~N(μ₂,σ₂²) independently, then X+Y~N(μ₁+μ₂, σ₁²+σ₂²). Sums of independent normals are always normal.</div>
+      </div>
+      <div class="dist-chart">
+        <div class="micro" style="color:var(--norm)">Interactive PDF</div>
+        <div class="chart-controls">
+          <label class="ctrl-label" style="color:var(--norm)">
+            μ (mean)
+            <input type="range" id="norm-mu" min="-3" max="3" step="0.1" value="0">
+            <span class="ctrl-val" id="norm-mu-val">0.0</span>
+          </label>
+          <label class="ctrl-label" style="color:var(--norm)">
+            σ (std dev)
+            <input type="range" id="norm-sig" min="0.3" max="3" step="0.1" value="1">
+            <span class="ctrl-val" id="norm-sig-val">1.0</span>
+          </label>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chart-norm"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 EXPONENTIAL -->
+  <div class="section-label"><span>03 — Exponential</span></div>
+  <div class="dist-section">
+    <div class="dist-header">
+      <span class="dist-number">Exp(λ)</span>
+      <span class="dist-name" style="color:var(--exp)">Exponential Distribution</span>
+      <span class="dist-tag" style="background:rgba(52,211,153,0.1);color:var(--exp);border:1px solid rgba(52,211,153,0.2)">Time Between Events</span>
+    </div>
+    <div class="dist-body">
+      <div class="dist-left">
+        <div>
+          <div class="micro">Simple Intuition</div>
+          <p class="intuition">"Customers arrive at a rate of λ per hour. How long do you wait for the next one? That waiting time is Exponential — short waits are most likely, long waits are rare but possible."</p>
+        </div>
+        <div>
+          <div class="micro">Technical Definition</div>
+          <p class="usecase">The continuous analogue of the Geometric distribution. X measures <strong>time between consecutive events</strong> in a Poisson process with rate λ. The PDF decays as a pure exponential. λ is the rate (events per unit time), so 1/λ is the average wait.</p>
+        </div>
+        <div>
+          <div class="micro">Memoryless Property</div>
+          <ul class="conditions">
+            <li><span class="bullet" style="color:var(--exp)">▸</span><span>P(X &gt; s+t | X &gt; s) = P(X &gt; t)</span></li>
+            <li><span class="bullet" style="color:var(--exp)">▸</span><span>Past waiting time gives no information about future wait</span></li>
+            <li><span class="bullet" style="color:var(--exp)">▸</span><span>The only continuous distribution with this property</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="micro">Real-World Use Cases</div>
+          <p class="usecase">Time until next server request. Lifetime of electronic components before failure. Time between radioactive decay events. Inter-arrival times in a queueing system. Duration of phone calls.</p>
+        </div>
+      </div>
+      <div class="dist-center">
+        <div>
+          <div class="micro">PDF &amp; CDF</div>
+          <div class="formula-wrap">
+            <div class="formula-main">
+              f(x) = <span class="accent">λ · e^(−λx)</span>,   x ≥ 0<br>
+              f(x) = 0,  x &lt; 0<br><br>
+              F(x) = <span class="accent">1 − e^(−λx)</span>,  x ≥ 0
+            </div>
+            <div class="formula-comment">// λ = rate (events per unit time)<br>// Mean wait = 1/λ  (e.g. λ=2 → avg wait = 0.5)</div>
+          </div>
+        </div>
+        <div>
+          <div class="micro">Parameters &amp; Moments</div>
+          <div class="stats-row">
+            <div class="stat-cell"><div class="stat-label">Parameter</div><div class="stat-val">λ &gt; 0  (rate)</div></div>
+            <div class="stat-cell"><div class="stat-label">Support</div><div class="stat-val">x ∈ [0, +∞)</div></div>
+            <div class="stat-cell"><div class="stat-label">Mean  E[X]</div><div class="stat-val" style="color:var(--exp)">1 / λ</div></div>
+            <div class="stat-cell"><div class="stat-label">Variance</div><div class="stat-val" style="color:var(--exp)">1 / λ²</div></div>
+            <div class="stat-cell"><div class="stat-label">Median</div><div class="stat-val">ln(2) / λ  ≈ 0.693/λ</div></div>
+            <div class="stat-cell"><div class="stat-label">Skewness</div><div class="stat-val">2  (always right-skewed)</div></div>
+          </div>
+        </div>
+        <div class="note"><strong style="color:var(--text)">Poisson connection:</strong> If events follow Poisson(λ) in time, then inter-arrival times follow Exp(λ). One counts events; the other measures gaps. Two views of the same underlying Poisson process.</div>
+      </div>
+      <div class="dist-chart">
+        <div class="micro" style="color:var(--exp)">Interactive PDF</div>
+        <div class="chart-controls">
+          <label class="ctrl-label" style="color:var(--exp)">
+            λ (rate)
+            <input type="range" id="exp-l" min="0.2" max="3" step="0.1" value="1">
+            <span class="ctrl-val" id="exp-l-val">1.0</span>
+          </label>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chart-exp"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 04 GAMMA -->
+  <div class="section-label"><span>04 — Gamma</span></div>
+  <div class="dist-section">
+    <div class="dist-header">
+      <span class="dist-number">Gamma(α, β)</span>
+      <span class="dist-name" style="color:var(--gamma)">Gamma Distribution</span>
+      <span class="dist-tag" style="background:rgba(251,146,60,0.1);color:var(--gamma);border:1px solid rgba(251,146,60,0.2)">Generalised Waiting Time</span>
+    </div>
+    <div class="dist-body">
+      <div class="dist-left">
+        <div>
+          <div class="micro">Simple Intuition</div>
+          <p class="intuition">"You need to wait for not just 1 event, but α events in a row. The total waiting time — the sum of α independent exponential waits — follows a Gamma distribution."</p>
+        </div>
+        <div>
+          <div class="micro">Technical Definition</div>
+          <p class="usecase">X is the sum of α independent Exp(1/β) random variables. α (shape) controls how many exponential stages are summed; β (scale) stretches the time axis. The Gamma function Γ(α) generalises the factorial: Γ(n) = (n−1)! for positive integers. When α=1, it collapses to Exponential.</p>
+        </div>
+        <div>
+          <div class="micro">Special Cases</div>
+          <ul class="conditions">
+            <li><span class="bullet" style="color:var(--gamma)">▸</span><span>α = 1 → Exponential(1/β)</span></li>
+            <li><span class="bullet" style="color:var(--gamma)">▸</span><span>α = k/2, β = 2 → Chi-Squared(k)</span></li>
+            <li><span class="bullet" style="color:var(--gamma)">▸</span><span>Integer α → Erlang distribution (used in queuing)</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="micro">Real-World Use Cases</div>
+          <p class="usecase">Total service time for multiple tasks. Insurance claim sizes. Time until α-th failure in a reliability system. Rainfall totals. Bayesian prior for a Poisson rate λ (conjugate prior).</p>
+        </div>
+      </div>
+      <div class="dist-center">
+        <div>
+          <div class="micro">PDF</div>
+          <div class="formula-wrap">
+            <div class="formula-main">
+              f(x) = <span class="accent">x^(α−1) · e^(−x/β)</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="accent">─────────────────</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="accent">β^α · Γ(α)</span><br><br>
+              x &gt; 0,  α &gt; 0,  β &gt; 0
+            </div>
+            <div class="formula-comment">// Γ(α) = ∫₀^∞ t^(α−1)e^(−t)dt  (generalised factorial)<br>// α = shape,  β = scale</div>
+          </div>
+        </div>
+        <div>
+          <div class="micro">Parameters &amp; Moments</div>
+          <div class="stats-row">
+            <div class="stat-cell"><div class="stat-label">Parameters</div><div class="stat-val">α &gt; 0 (shape), β &gt; 0 (scale)</div></div>
+            <div class="stat-cell"><div class="stat-label">Support</div><div class="stat-val">x ∈ (0, +∞)</div></div>
+            <div class="stat-cell"><div class="stat-label">Mean  E[X]</div><div class="stat-val" style="color:var(--gamma)">αβ</div></div>
+            <div class="stat-cell"><div class="stat-label">Variance</div><div class="stat-val" style="color:var(--gamma)">αβ²</div></div>
+            <div class="stat-cell"><div class="stat-label">Mode</div><div class="stat-val">(α − 1)β,  α ≥ 1</div></div>
+            <div class="stat-cell"><div class="stat-label">Skewness</div><div class="stat-val">2 / √α</div></div>
+          </div>
+        </div>
+        <div class="note"><strong style="color:var(--text)">Additive property:</strong> If X~Gamma(α₁,β) and Y~Gamma(α₂,β) independently, then X+Y~Gamma(α₁+α₂, β). Shapes add when the scale is shared — mirrors the Poisson additive property.</div>
+      </div>
+      <div class="dist-chart">
+        <div class="micro" style="color:var(--gamma)">Interactive PDF</div>
+        <div class="chart-controls">
+          <label class="ctrl-label" style="color:var(--gamma)">
+            α (shape)
+            <input type="range" id="gam-a" min="0.5" max="8" step="0.5" value="2">
+            <span class="ctrl-val" id="gam-a-val">2.0</span>
+          </label>
+          <label class="ctrl-label" style="color:var(--gamma)">
+            β (scale)
+            <input type="range" id="gam-b" min="0.5" max="4" step="0.5" value="1">
+            <span class="ctrl-val" id="gam-b-val">1.0</span>
+          </label>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chart-gam"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 05 BETA -->
+  <div class="section-label"><span>05 — Beta</span></div>
+  <div class="dist-section">
+    <div class="dist-header">
+      <span class="dist-number">Beta(α, β)</span>
+      <span class="dist-name" style="color:var(--beta)">Beta Distribution</span>
+      <span class="dist-tag" style="background:rgba(244,114,182,0.1);color:var(--beta);border:1px solid rgba(244,114,182,0.2)">Modelling Probabilities</span>
+    </div>
+    <div class="dist-body">
+      <div class="dist-left">
+        <div>
+          <div class="micro">Simple Intuition</div>
+          <p class="intuition">"You want a distribution that only lives between 0 and 1 — for modelling a probability, proportion, or rate. Beta is the answer. Adjust α and β to get almost any shape you need."</p>
+        </div>
+        <div>
+          <div class="micro">Technical Definition</div>
+          <p class="usecase">Defined on [0,1], shaped by two positive parameters. It is the <strong>conjugate prior</strong> for the Binomial in Bayesian statistics: start with Beta(α,β) as your prior belief about a probability p; observe k successes in n trials; posterior is Beta(α+k, β+n−k). No re-computation needed — just update the counts.</p>
+        </div>
+        <div>
+          <div class="micro">Shape Behaviour</div>
+          <ul class="conditions">
+            <li><span class="bullet" style="color:var(--beta)">▸</span><span>α = β = 1 → Uniform(0,1)</span></li>
+            <li><span class="bullet" style="color:var(--beta)">▸</span><span>α &gt; β → left-skewed (mass toward 1)</span></li>
+            <li><span class="bullet" style="color:var(--beta)">▸</span><span>α &lt; β → right-skewed (mass toward 0)</span></li>
+            <li><span class="bullet" style="color:var(--beta)">▸</span><span>α = β → symmetric about 0.5</span></li>
+            <li><span class="bullet" style="color:var(--beta)">▸</span><span>α, β &lt; 1 → U-shaped (bimodal at endpoints)</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="micro">Real-World Use Cases</div>
+          <p class="usecase">Bayesian posterior for a probability. Proportion of defective items. Click-through rates in A/B testing. Project completion fractions. Any measurement naturally bounded in [0,1].</p>
+        </div>
+      </div>
+      <div class="dist-center">
+        <div>
+          <div class="micro">PDF</div>
+          <div class="formula-wrap">
+            <div class="formula-main">
+              f(x) = <span class="accent">x^(α−1) · (1−x)^(β−1)</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="accent">─────────────────────</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="accent">B(α, β)</span><br><br>
+              x ∈ [0,1],  α &gt; 0,  β &gt; 0
+            </div>
+            <div class="formula-comment">// B(α,β) = Γ(α)Γ(β)/Γ(α+β)  (Beta function)<br>// Normalising constant ensuring ∫f=1</div>
+          </div>
+        </div>
+        <div>
+          <div class="micro">Parameters &amp; Moments</div>
+          <div class="stats-row">
+            <div class="stat-cell"><div class="stat-label">Parameters</div><div class="stat-val">α &gt; 0,  β &gt; 0</div></div>
+            <div class="stat-cell"><div class="stat-label">Support</div><div class="stat-val">x ∈ [0, 1]</div></div>
+            <div class="stat-cell"><div class="stat-label">Mean  E[X]</div><div class="stat-val" style="color:var(--beta)">α / (α + β)</div></div>
+            <div class="stat-cell"><div class="stat-label">Variance</div><div class="stat-val" style="color:var(--beta)">αβ / [(α+β)²(α+β+1)]</div></div>
+            <div class="stat-cell"><div class="stat-label">Mode</div><div class="stat-val">(α−1)/(α+β−2),  α,β &gt; 1</div></div>
+            <div class="stat-cell"><div class="stat-label">Special</div><div class="stat-val">Beta(1,1) = Uniform(0,1)</div></div>
+          </div>
+        </div>
+        <div class="note"><strong style="color:var(--text)">Bayesian update:</strong> Prior Beta(α,β) + k successes + (n−k) failures → Posterior Beta(α+k, β+n−k). The parameters act as pseudo-counts of prior experience with successes and failures.</div>
+      </div>
+      <div class="dist-chart">
+        <div class="micro" style="color:var(--beta)">Interactive PDF</div>
+        <div class="chart-controls">
+          <label class="ctrl-label" style="color:var(--beta)">
+            α (shape 1)
+            <input type="range" id="beta-a" min="0.5" max="8" step="0.5" value="2">
+            <span class="ctrl-val" id="beta-a-val">2.0</span>
+          </label>
+          <label class="ctrl-label" style="color:var(--beta)">
+            β (shape 2)
+            <input type="range" id="beta-b" min="0.5" max="8" step="0.5" value="5">
+            <span class="ctrl-val" id="beta-b-val">5.0</span>
+          </label>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chart-beta"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 06 STUDENT'S t -->
+  <div class="section-label"><span>06 — Student's t</span></div>
+  <div class="dist-section">
+    <div class="dist-header">
+      <span class="dist-number">t(ν)</span>
+      <span class="dist-name" style="color:var(--tdist)">Student's t-Distribution</span>
+      <span class="dist-tag" style="background:rgba(250,204,21,0.1);color:var(--tdist);border:1px solid rgba(250,204,21,0.2)">Small-Sample Inference</span>
+    </div>
+    <div class="dist-body">
+      <div class="dist-left">
+        <div>
+          <div class="micro">Simple Intuition</div>
+          <p class="intuition">"It looks like the Normal distribution, but with heavier tails — because your σ is estimated from a small sample, not known exactly. Smaller samples mean heavier tails and more uncertainty."</p>
+        </div>
+        <div>
+          <div class="micro">Technical Definition</div>
+          <p class="usecase">Arises as Z/√(χ²/ν) — the ratio of a standard Normal to the square root of a scaled Chi-Squared. It is the exact distribution of the t-statistic (x̄−μ)/(s/√n) when sampling from a Normal population with unknown σ. As ν→∞, t(ν)→N(0,1) exactly.</p>
+        </div>
+        <div>
+          <div class="micro">Degrees of Freedom ν</div>
+          <ul class="conditions">
+            <li><span class="bullet" style="color:var(--tdist)">▸</span><span>One-sample t-test: ν = n − 1</span></li>
+            <li><span class="bullet" style="color:var(--tdist)">▸</span><span>Two-sample t-test: ν ≈ n₁ + n₂ − 2</span></li>
+            <li><span class="bullet" style="color:var(--tdist)">▸</span><span>Small ν → very heavy tails → more conservative CIs</span></li>
+            <li><span class="bullet" style="color:var(--tdist)">▸</span><span>ν ≥ 30: practically indistinguishable from Normal</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="micro">Real-World Use Cases</div>
+          <p class="usecase">Hypothesis tests for means when σ is unknown. Confidence intervals from small samples. Regression coefficient significance tests. A/B testing with small sample sizes.</p>
+        </div>
+      </div>
+      <div class="dist-center">
+        <div>
+          <div class="micro">PDF</div>
+          <div class="formula-wrap">
+            <div class="formula-main">
+              f(t) = <span class="accent">Γ((ν+1)/2)</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="accent">───────────────────────────────</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="accent">√(νπ)·Γ(ν/2)·(1 + t²/ν)^((ν+1)/2)</span>
+            </div>
+            <div class="formula-comment">// ν = degrees of freedom<br>// Symmetric about 0; heavier tails than Normal</div>
+          </div>
+        </div>
+        <div>
+          <div class="micro">Parameters &amp; Moments</div>
+          <div class="stats-row">
+            <div class="stat-cell"><div class="stat-label">Parameter</div><div class="stat-val">ν &gt; 0  (df)</div></div>
+            <div class="stat-cell"><div class="stat-label">Support</div><div class="stat-val">t ∈ (−∞, +∞)</div></div>
+            <div class="stat-cell"><div class="stat-label">Mean  E[X]</div><div class="stat-val" style="color:var(--tdist)">0  (ν &gt; 1)</div></div>
+            <div class="stat-cell"><div class="stat-label">Variance</div><div class="stat-val" style="color:var(--tdist)">ν/(ν−2)  (ν &gt; 2)</div></div>
+            <div class="stat-cell"><div class="stat-label">Skewness</div><div class="stat-val">0  (symmetric)</div></div>
+            <div class="stat-cell"><div class="stat-label">Excess Kurtosis</div><div class="stat-val">6/(ν−4)  (ν &gt; 4)</div></div>
+          </div>
+        </div>
+        <div class="note"><strong style="color:var(--text)">Construction:</strong> If Z~N(0,1) and V~χ²(ν) are independent, then T = Z/√(V/ν) ~ t(ν). This is why df matters — it controls how noisy the estimated standard deviation is in the denominator.</div>
+      </div>
+      <div class="dist-chart">
+        <div class="micro" style="color:var(--tdist)">Interactive PDF vs N(0,1)</div>
+        <div class="chart-controls">
+          <label class="ctrl-label" style="color:var(--tdist)">
+            ν (degrees of freedom)
+            <input type="range" id="t-nu" min="1" max="40" step="1" value="3">
+            <span class="ctrl-val" id="t-nu-val">3</span>
+          </label>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chart-t"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 07 CHI-SQUARED -->
+  <div class="section-label"><span>07 — Chi-Squared</span></div>
+  <div class="dist-section">
+    <div class="dist-header">
+      <span class="dist-number">χ²(k)</span>
+      <span class="dist-name" style="color:var(--chi2)">Chi-Squared Distribution</span>
+      <span class="dist-tag" style="background:rgba(251,113,133,0.1);color:var(--chi2);border:1px solid rgba(251,113,133,0.2)">Sum of Squared Normals</span>
+    </div>
+    <div class="dist-body">
+      <div class="dist-left">
+        <div>
+          <div class="micro">Simple Intuition</div>
+          <p class="intuition">"Take k independent standard Normal values. Square each one. Add them all up. That total follows a Chi-Squared distribution with k degrees of freedom."</p>
+        </div>
+        <div>
+          <div class="micro">Technical Definition</div>
+          <p class="usecase">If Z₁,…,Zₖ are i.i.d. N(0,1), then X = Z₁²+…+Zₖ² ~ χ²(k). It is a special case of Gamma(k/2, 2). Always non-negative and right-skewed, becoming more symmetric and Normal-like as k increases (by CLT).</p>
+        </div>
+        <div>
+          <div class="micro">Where It Appears</div>
+          <ul class="conditions">
+            <li><span class="bullet" style="color:var(--chi2)">▸</span><span>Goodness-of-fit test: χ² = Σ(O−E)²/E</span></li>
+            <li><span class="bullet" style="color:var(--chi2)">▸</span><span>Test of independence (contingency tables)</span></li>
+            <li><span class="bullet" style="color:var(--chi2)">▸</span><span>Confidence interval for variance: (n−1)s²/σ² ~ χ²(n−1)</span></li>
+            <li><span class="bullet" style="color:var(--chi2)">▸</span><span>Building block for t and F distributions</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="micro">Real-World Use Cases</div>
+          <p class="usecase">Testing if observed categorical frequencies match a theoretical distribution. Testing independence between two categorical variables. Estimating population variance from a sample.</p>
+        </div>
+      </div>
+      <div class="dist-center">
+        <div>
+          <div class="micro">PDF</div>
+          <div class="formula-wrap">
+            <div class="formula-main">
+              f(x) = <span class="accent">x^(k/2−1) · e^(−x/2)</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="accent">──────────────────────</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="accent">2^(k/2) · Γ(k/2)</span><br><br>
+              x &gt; 0
+            </div>
+            <div class="formula-comment">// Special case: Gamma(k/2, 2)<br>// k = degrees of freedom (positive integer)</div>
+          </div>
+        </div>
+        <div>
+          <div class="micro">Parameters &amp; Moments</div>
+          <div class="stats-row">
+            <div class="stat-cell"><div class="stat-label">Parameter</div><div class="stat-val">k ∈ ℤ⁺  (df)</div></div>
+            <div class="stat-cell"><div class="stat-label">Support</div><div class="stat-val">x ∈ (0, +∞)</div></div>
+            <div class="stat-cell"><div class="stat-label">Mean  E[X]</div><div class="stat-val" style="color:var(--chi2)">k</div></div>
+            <div class="stat-cell"><div class="stat-label">Variance</div><div class="stat-val" style="color:var(--chi2)">2k</div></div>
+            <div class="stat-cell"><div class="stat-label">Mode</div><div class="stat-val">max(k − 2, 0)</div></div>
+            <div class="stat-cell"><div class="stat-label">Skewness</div><div class="stat-val">√(8/k)  → 0 as k → ∞</div></div>
+          </div>
+        </div>
+        <div class="note"><strong style="color:var(--text)">Additive property:</strong> If X~χ²(k₁) and Y~χ²(k₂) independently, then X+Y~χ²(k₁+k₂). Degrees of freedom simply add — just like variance adds for independent Normal sums.</div>
+      </div>
+      <div class="dist-chart">
+        <div class="micro" style="color:var(--chi2)">Interactive PDF</div>
+        <div class="chart-controls">
+          <label class="ctrl-label" style="color:var(--chi2)">
+            k (degrees of freedom)
+            <input type="range" id="chi-k" min="1" max="20" step="1" value="3">
+            <span class="ctrl-val" id="chi-k-val">3</span>
+          </label>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chart-chi"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 08 F-DISTRIBUTION -->
+  <div class="section-label"><span>08 — F-Distribution</span></div>
+  <div class="dist-section">
+    <div class="dist-header">
+      <span class="dist-number">F(d₁, d₂)</span>
+      <span class="dist-name" style="color:var(--fdist)">F-Distribution</span>
+      <span class="dist-tag" style="background:rgba(74,222,128,0.1);color:var(--fdist);border:1px solid rgba(74,222,128,0.2)">Ratio of Variances</span>
+    </div>
+    <div class="dist-body">
+      <div class="dist-left">
+        <div>
+          <div class="micro">Simple Intuition</div>
+          <p class="intuition">"Divide two independent Chi-Squared variables, each scaled by its degrees of freedom. The ratio follows an F-distribution — and a large F tells you one source of variance is much bigger than the other."</p>
+        </div>
+        <div>
+          <div class="micro">Technical Definition</div>
+          <p class="usecase">If U~χ²(d₁) and V~χ²(d₂) independently, then F = (U/d₁)/(V/d₂) ~ F(d₁,d₂). Always non-negative and right-skewed. In ANOVA, the F-statistic compares <strong>between-group</strong> to <strong>within-group</strong> variance — a large F means groups differ beyond chance.</p>
+        </div>
+        <div>
+          <div class="micro">Where It Appears</div>
+          <ul class="conditions">
+            <li><span class="bullet" style="color:var(--fdist)">▸</span><span>ANOVA overall F-test: MSB / MSW</span></li>
+            <li><span class="bullet" style="color:var(--fdist)">▸</span><span>Regression overall significance: MSR / MSE</span></li>
+            <li><span class="bullet" style="color:var(--fdist)">▸</span><span>Testing equality of two population variances</span></li>
+            <li><span class="bullet" style="color:var(--fdist)">▸</span><span>Levene's and Bartlett's variance tests</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="micro">Real-World Use Cases</div>
+          <p class="usecase">ANOVA: do three teaching methods produce different mean scores? Regression: does the model explain significantly more variance than chance alone? Comparing process variability across two factories.</p>
+        </div>
+      </div>
+      <div class="dist-center">
+        <div>
+          <div class="micro">PDF</div>
+          <div class="formula-wrap">
+            <div class="formula-main">
+              f(x) = <span class="accent">√((d₁x)^d₁·d₂^d₂/(d₁x+d₂)^(d₁+d₂))</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="accent">─────────────────────────────────────</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="accent">x · B(d₁/2, d₂/2)</span><br><br>
+              x &gt; 0
+            </div>
+            <div class="formula-comment">// d₁ = numerator df, d₂ = denominator df<br>// 1/F ~ F(d₂, d₁)  (reciprocal is also F)</div>
+          </div>
+        </div>
+        <div>
+          <div class="micro">Parameters &amp; Moments</div>
+          <div class="stats-row">
+            <div class="stat-cell"><div class="stat-label">Parameters</div><div class="stat-val">d₁ &gt; 0,  d₂ &gt; 0</div></div>
+            <div class="stat-cell"><div class="stat-label">Support</div><div class="stat-val">x ∈ (0, +∞)</div></div>
+            <div class="stat-cell"><div class="stat-label">Mean  E[X]</div><div class="stat-val" style="color:var(--fdist)">d₂/(d₂−2)  (d₂ &gt; 2)</div></div>
+            <div class="stat-cell"><div class="stat-label">Mode</div><div class="stat-val">d₁(d₂−2)/[d₂(d₁+2)]  (d₁&gt;2)</div></div>
+            <div class="stat-cell"><div class="stat-label">Relation</div><div class="stat-val">t²(ν) ~ F(1, ν)</div></div>
+            <div class="stat-cell"><div class="stat-label">Relation</div><div class="stat-val">1/F ~ F(d₂, d₁)</div></div>
+          </div>
+        </div>
+        <div class="note"><strong style="color:var(--text)">t–F connection:</strong> If T~t(ν), then T²~F(1,ν). A two-tailed t-test with ν df is equivalent to an F-test with (1,ν) df. ANOVA with two groups reduces exactly to a two-sample t-test.</div>
+      </div>
+      <div class="dist-chart">
+        <div class="micro" style="color:var(--fdist)">Interactive PDF</div>
+        <div class="chart-controls">
+          <label class="ctrl-label" style="color:var(--fdist)">
+            d₁ (num. df)
+            <input type="range" id="f-d1" min="1" max="20" step="1" value="5">
+            <span class="ctrl-val" id="f-d1-val">5</span>
+          </label>
+          <label class="ctrl-label" style="color:var(--fdist)">
+            d₂ (denom. df)
+            <input type="range" id="f-d2" min="3" max="40" step="1" value="10">
+            <span class="ctrl-val" id="f-d2-val">10</span>
+          </label>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chart-f"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 09 LOG-NORMAL -->
+  <div class="section-label"><span>09 — Log-Normal</span></div>
+  <div class="dist-section">
+    <div class="dist-header">
+      <span class="dist-number">LogN(μ, σ²)</span>
+      <span class="dist-name" style="color:var(--lnorm)">Log-Normal Distribution</span>
+      <span class="dist-tag" style="background:rgba(192,132,252,0.1);color:var(--lnorm);border:1px solid rgba(192,132,252,0.2)">Multiplicative Growth</span>
+    </div>
+    <div class="dist-body">
+      <div class="dist-left">
+        <div>
+          <div class="micro">Simple Intuition</div>
+          <p class="intuition">"If taking the logarithm of X gives you a Normal distribution, then X itself is Log-Normal. It models quantities that grow multiplicatively — like prices, incomes, or bacterial populations."</p>
+        </div>
+        <div>
+          <div class="micro">Technical Definition</div>
+          <p class="usecase">If Y~N(μ,σ²), then X = eʸ ~ LogNormal(μ,σ²). Equivalently, ln(X)~N(μ,σ²). The multiplicative CLT applies: when many independent positive factors are multiplied together, their product tends toward Log-Normal. Always strictly positive and right-skewed.</p>
+        </div>
+        <div>
+          <div class="micro">Key Properties</div>
+          <ul class="conditions">
+            <li><span class="bullet" style="color:var(--lnorm)">▸</span><span>Strictly positive: X &gt; 0 always</span></li>
+            <li><span class="bullet" style="color:var(--lnorm)">▸</span><span>Right-skewed regardless of parameters</span></li>
+            <li><span class="bullet" style="color:var(--lnorm)">▸</span><span>μ, σ² are parameters of ln(X), not of X itself</span></li>
+            <li><span class="bullet" style="color:var(--lnorm)">▸</span><span>Mean &gt; Median &gt; Mode always (skew signature)</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="micro">Real-World Use Cases</div>
+          <p class="usecase">Stock prices and financial asset returns. Income and wealth distributions. City and website population sizes. Biological concentrations (blood levels, cell sizes). Internet traffic and file sizes. Insurance claim amounts.</p>
+        </div>
+      </div>
+      <div class="dist-center">
+        <div>
+          <div class="micro">PDF</div>
+          <div class="formula-wrap">
+            <div class="formula-main">
+              f(x) = <span class="accent">exp(−(ln x − μ)² / 2σ²)</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="accent">─────────────────────────</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="accent">x · σ · √(2π)</span><br><br>
+              x &gt; 0
+            </div>
+            <div class="formula-comment">// μ, σ are the mean and std dev of ln(X)<br>// E[X] = e^(μ+σ²/2)  ← not e^μ</div>
+          </div>
+        </div>
+        <div>
+          <div class="micro">Parameters &amp; Moments</div>
+          <div class="stats-row">
+            <div class="stat-cell"><div class="stat-label">Parameters</div><div class="stat-val">μ ∈ ℝ,  σ² &gt; 0  (of ln X)</div></div>
+            <div class="stat-cell"><div class="stat-label">Support</div><div class="stat-val">x ∈ (0, +∞)</div></div>
+            <div class="stat-cell"><div class="stat-label">Mean  E[X]</div><div class="stat-val" style="color:var(--lnorm)">e^(μ + σ²/2)</div></div>
+            <div class="stat-cell"><div class="stat-label">Variance</div><div class="stat-val" style="color:var(--lnorm)">(e^σ²−1) · e^(2μ+σ²)</div></div>
+            <div class="stat-cell"><div class="stat-label">Median</div><div class="stat-val">e^μ</div></div>
+            <div class="stat-cell"><div class="stat-label">Mode</div><div class="stat-val">e^(μ − σ²)</div></div>
+          </div>
+        </div>
+        <div class="note"><strong style="color:var(--text)">Mean &gt; Median &gt; Mode always.</strong> Because of the right skew, these three measures are always strictly ordered this way. Seeing this ordering in count or measurement data is a strong signal the underlying process may be log-normal.</div>
+      </div>
+      <div class="dist-chart">
+        <div class="micro" style="color:var(--lnorm)">Interactive PDF</div>
+        <div class="chart-controls">
+          <label class="ctrl-label" style="color:var(--lnorm)">
+            μ (mean of ln X)
+            <input type="range" id="ln-mu" min="-1" max="2" step="0.1" value="0">
+            <span class="ctrl-val" id="ln-mu-val">0.0</span>
+          </label>
+          <label class="ctrl-label" style="color:var(--lnorm)">
+            σ (std of ln X)
+            <input type="range" id="ln-sig" min="0.2" max="1.5" step="0.1" value="0.5">
+            <span class="ctrl-val" id="ln-sig-val">0.5</span>
+          </label>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chart-ln"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPARISON TABLE -->
+  <div class="section-label" style="margin-top:1rem"><span>10 — Quick Comparison</span></div>
+  <div style="background:var(--surface);border:1px solid var(--border);overflow-x:auto;margin-bottom:3rem">
+    <table class="cmp-table">
+      <thead>
+        <tr>
+          <th>Distribution</th>
+          <th>Question answered</th>
+          <th>Support</th>
+          <th>E[X]</th>
+          <th>Var(X)</th>
+          <th>Key distinguisher</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="color:var(--unif)">Uniform(a,b)</td>
+          <td>Which value in a bounded range?</td>
+          <td class="formula-col">[a, b]</td>
+          <td class="formula-col" style="color:var(--unif)">(a+b)/2</td>
+          <td class="formula-col" style="color:var(--unif)">(b−a)²/12</td>
+          <td>Flat PDF; maximum entropy</td>
+        </tr>
+        <tr>
+          <td style="color:var(--norm)">Normal(μ,σ²)</td>
+          <td>Where does a sum of many effects land?</td>
+          <td class="formula-col">(−∞, +∞)</td>
+          <td class="formula-col" style="color:var(--norm)">μ</td>
+          <td class="formula-col" style="color:var(--norm)">σ²</td>
+          <td>Bell curve; CLT; symmetric</td>
+        </tr>
+        <tr>
+          <td style="color:var(--exp)">Exponential(λ)</td>
+          <td>How long until the next event?</td>
+          <td class="formula-col">[0, +∞)</td>
+          <td class="formula-col" style="color:var(--exp)">1/λ</td>
+          <td class="formula-col" style="color:var(--exp)">1/λ²</td>
+          <td>Memoryless; Poisson inter-arrivals</td>
+        </tr>
+        <tr>
+          <td style="color:var(--gamma)">Gamma(α,β)</td>
+          <td>Time to wait for α events?</td>
+          <td class="formula-col">(0, +∞)</td>
+          <td class="formula-col" style="color:var(--gamma)">αβ</td>
+          <td class="formula-col" style="color:var(--gamma)">αβ²</td>
+          <td>Sum of α exponentials; flexible shape</td>
+        </tr>
+        <tr>
+          <td style="color:var(--beta)">Beta(α,β)</td>
+          <td>What is a probability or proportion?</td>
+          <td class="formula-col">[0, 1]</td>
+          <td class="formula-col" style="color:var(--beta)">α/(α+β)</td>
+          <td class="formula-col" style="color:var(--beta)">αβ/[(α+β)²(α+β+1)]</td>
+          <td>Models probabilities; conjugate prior</td>
+        </tr>
+        <tr>
+          <td style="color:var(--tdist)">t(ν)</td>
+          <td>Where is x̄ when σ is unknown?</td>
+          <td class="formula-col">(−∞, +∞)</td>
+          <td class="formula-col" style="color:var(--tdist)">0  (ν &gt; 1)</td>
+          <td class="formula-col" style="color:var(--tdist)">ν/(ν−2)</td>
+          <td>Heavy tails; small-sample Normal</td>
+        </tr>
+        <tr>
+          <td style="color:var(--chi2)">χ²(k)</td>
+          <td>How large is a sum of k squared normals?</td>
+          <td class="formula-col">(0, +∞)</td>
+          <td class="formula-col" style="color:var(--chi2)">k</td>
+          <td class="formula-col" style="color:var(--chi2)">2k</td>
+          <td>Variance tests; goodness-of-fit</td>
+        </tr>
+        <tr>
+          <td style="color:var(--fdist)">F(d₁,d₂)</td>
+          <td>Are two variances significantly different?</td>
+          <td class="formula-col">(0, +∞)</td>
+          <td class="formula-col" style="color:var(--fdist)">d₂/(d₂−2)</td>
+          <td class="formula-col" style="color:var(--fdist)">2d₂²(d₁+d₂−2)/[d₁(d₂−2)²(d₂−4)]</td>
+          <td>ANOVA; ratio of χ² variables</td>
+        </tr>
+        <tr>
+          <td style="color:var(--lnorm)">LogNormal(μ,σ²)</td>
+          <td>What is the product of many positive factors?</td>
+          <td class="formula-col">(0, +∞)</td>
+          <td class="formula-col" style="color:var(--lnorm)">e^(μ+σ²/2)</td>
+          <td class="formula-col" style="color:var(--lnorm)">(e^σ²−1)e^(2μ+σ²)</td>
+          <td>Multiplicative growth; always positive</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<div style="border-top:1px solid var(--border);padding:2rem;text-align:center;position:relative;z-index:1">
+  <p style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;color:var(--text-faint);text-transform:uppercase">
+    Continuous Random Variables — PDF Reference · University Statistics
+  </p>
+</div>
+
+<script>
+// ── Global Chart.js defaults ──────────────────────────────────────────────────
+Chart.defaults.color = '#7b7f9e';
+Chart.defaults.font.family = 'JetBrains Mono, monospace';
+Chart.defaults.font.size = 10;
+
+function chartOpts(color) {
+  return {
+    responsive: true, maintainAspectRatio: false,
+    animation: { duration: 200 },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#0f1117', borderColor: '#1f2133', borderWidth: 1,
+        titleColor: color, bodyColor: '#e2e4f0', padding: 8, cornerRadius: 2,
+        callbacks: {
+          title: ctx => `x = ${parseFloat(ctx[0].label).toFixed(3)}`,
+          label: ctx => `f(x) = ${ctx[0].raw.toFixed(5)}`
+        }
+      }
+    },
+    scales: {
+      x: { grid: { color: '#1f2133' }, ticks: { color: '#3a3d55', maxTicksLimit: 8 } },
+      y: { grid: { color: '#1f2133' }, ticks: { color: '#3a3d55', maxTicksLimit: 5 }, beginAtZero: true }
+    }
+  };
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function linspace(a, b, n) {
+  const out = [], step = (b - a) / (n - 1);
+  for (let i = 0; i < n; i++) out.push(+(a + i * step).toFixed(6));
+  return out;
+}
+
+// Lanczos log-gamma (~15 digit accuracy)
+function logGamma(z) {
+  const g = 7;
+  const c = [0.99999999999980993,676.5203681218851,-1259.1392167224028,
+    771.32342877765313,-176.61502916214059,12.507343278686905,
+    -0.13857109526572012,9.9843695780195716e-6,1.5056327351493116e-7];
+  if (z < 0.5) return Math.log(Math.PI / Math.sin(Math.PI * z)) - logGamma(1 - z);
+  z -= 1;
+  let x = c[0];
+  for (let i = 1; i < g + 2; i++) x += c[i] / (z + i);
+  const t = z + g + 0.5;
+  return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+}
+
+function normalPDF(x, mu, sig) {
+  return Math.exp(-0.5 * ((x - mu) / sig) ** 2) / (sig * Math.sqrt(2 * Math.PI));
+}
+
+function makeLineChart(id, xs, ys, color, extraDatasets) {
+  const datasets = [
+    { data: ys, borderColor: color, backgroundColor: color + '18',
+      borderWidth: 2, fill: true, tension: 0.35, pointRadius: 0 },
+    ...(extraDatasets || [])
+  ];
+  return new Chart(document.getElementById(id), {
+    type: 'line',
+    data: { labels: xs.map(v => v.toFixed(3)), datasets },
+    options: chartOpts(color)
+  });
+}
+
+// ── 1. UNIFORM ────────────────────────────────────────────────────────────────
+let unifChart;
+function buildUnif() {
+  const a = parseFloat(document.getElementById('unif-a').value);
+  const b = parseFloat(document.getElementById('unif-b').value);
+  document.getElementById('unif-a-val').textContent = a.toFixed(1);
+  document.getElementById('unif-b-val').textContent = b.toFixed(1);
+  const pad = (b - a) * 0.3;
+  const xs = linspace(a - pad, b + pad, 300);
+  const h  = 1 / (b - a);
+  const ys = xs.map(x => (x >= a && x <= b) ? h : 0);
+  if (unifChart) unifChart.destroy();
+  unifChart = makeLineChart('chart-unif', xs, ys, '#38bdf8');
+}
+buildUnif();
+['unif-a','unif-b'].forEach(id => document.getElementById(id).addEventListener('input', buildUnif));
+
+// ── 2. NORMAL ─────────────────────────────────────────────────────────────────
+let normChart;
+function buildNorm() {
+  const mu  = parseFloat(document.getElementById('norm-mu').value);
+  const sig = parseFloat(document.getElementById('norm-sig').value);
+  document.getElementById('norm-mu-val').textContent  = mu.toFixed(1);
+  document.getElementById('norm-sig-val').textContent = sig.toFixed(1);
+  const xs = linspace(mu - 4.5 * sig, mu + 4.5 * sig, 400);
+  const ys = xs.map(x => normalPDF(x, mu, sig));
+  if (normChart) normChart.destroy();
+  normChart = makeLineChart('chart-norm', xs, ys, '#a78bfa');
+}
+buildNorm();
+['norm-mu','norm-sig'].forEach(id => document.getElementById(id).addEventListener('input', buildNorm));
+
+// ── 3. EXPONENTIAL ────────────────────────────────────────────────────────────
+let expChart;
+function buildExp() {
+  const lam = parseFloat(document.getElementById('exp-l').value);
+  document.getElementById('exp-l-val').textContent = lam.toFixed(1);
+  const xs = linspace(0.001, 6 / lam, 400);
+  const ys = xs.map(x => lam * Math.exp(-lam * x));
+  if (expChart) expChart.destroy();
+  expChart = makeLineChart('chart-exp', xs, ys, '#34d399');
+}
+buildExp();
+document.getElementById('exp-l').addEventListener('input', buildExp);
+
+// ── 4. GAMMA ──────────────────────────────────────────────────────────────────
+function gammaPDF(x, alpha, beta) {
+  if (x <= 0) return 0;
+  const logP = (alpha - 1) * Math.log(x) - x / beta - alpha * Math.log(beta) - logGamma(alpha);
+  return Math.exp(logP);
+}
+let gamChart;
+function buildGam() {
+  const a = parseFloat(document.getElementById('gam-a').value);
+  const b = parseFloat(document.getElementById('gam-b').value);
+  document.getElementById('gam-a-val').textContent = a.toFixed(1);
+  document.getElementById('gam-b-val').textContent = b.toFixed(1);
+  const mean = a * b, std = Math.sqrt(a) * b;
+  const xs = linspace(0.01, mean + 4.5 * std, 400);
+  const ys = xs.map(x => gammaPDF(x, a, b));
+  if (gamChart) gamChart.destroy();
+  gamChart = makeLineChart('chart-gam', xs, ys, '#fb923c');
+}
+buildGam();
+['gam-a','gam-b'].forEach(id => document.getElementById(id).addEventListener('input', buildGam));
+
+// ── 5. BETA ───────────────────────────────────────────────────────────────────
+function betaPDF(x, a, b) {
+  if (x <= 0 || x >= 1) return 0;
+  const logB = logGamma(a) + logGamma(b) - logGamma(a + b);
+  return Math.exp((a - 1) * Math.log(x) + (b - 1) * Math.log(1 - x) - logB);
+}
+let betaChart;
+function buildBeta() {
+  const a = parseFloat(document.getElementById('beta-a').value);
+  const b = parseFloat(document.getElementById('beta-b').value);
+  document.getElementById('beta-a-val').textContent = a.toFixed(1);
+  document.getElementById('beta-b-val').textContent = b.toFixed(1);
+  const xs = linspace(0.001, 0.999, 400);
+  const ys = xs.map(x => betaPDF(x, a, b));
+  if (betaChart) betaChart.destroy();
+  betaChart = makeLineChart('chart-beta', xs, ys, '#f472b6');
+}
+buildBeta();
+['beta-a','beta-b'].forEach(id => document.getElementById(id).addEventListener('input', buildBeta));
+
+// ── 6. STUDENT'S t ────────────────────────────────────────────────────────────
+function tPDF(t, nu) {
+  const logC = logGamma((nu + 1) / 2) - 0.5 * Math.log(nu * Math.PI) - logGamma(nu / 2);
+  return Math.exp(logC - ((nu + 1) / 2) * Math.log(1 + t * t / nu));
+}
+let tChart;
+function buildT() {
+  const nu = parseInt(document.getElementById('t-nu').value);
+  document.getElementById('t-nu-val').textContent = nu;
+  const xs = linspace(-5, 5, 500);
+  const yt = xs.map(x => tPDF(x, nu));
+  const yn = xs.map(x => normalPDF(x, 0, 1));
+  if (tChart) tChart.destroy();
+  tChart = new Chart(document.getElementById('chart-t'), {
+    type: 'line',
+    data: {
+      labels: xs.map(v => v.toFixed(3)),
+      datasets: [
+        { data: yt, borderColor: '#facc15', backgroundColor: '#facc1520',
+          borderWidth: 2, fill: true, tension: 0.35, pointRadius: 0, label: `t(${nu})` },
+        { data: yn, borderColor: '#a78bfa66', backgroundColor: 'transparent',
+          borderWidth: 1.5, fill: false, tension: 0.35, pointRadius: 0,
+          borderDash: [4,3], label: 'N(0,1)' }
+      ]
+    },
+    options: {
+      ...chartOpts('#facc15'),
+      plugins: {
+        ...chartOpts('#facc15').plugins,
+        legend: { display: true, labels: { color: '#7b7f9e', boxWidth: 12, font: { size: 9 } } }
+      }
+    }
+  });
+}
+buildT();
+document.getElementById('t-nu').addEventListener('input', buildT);
+
+// ── 7. CHI-SQUARED ────────────────────────────────────────────────────────────
+function chi2PDF(x, k) {
+  if (x <= 0) return 0;
+  return Math.exp((k / 2 - 1) * Math.log(x) - x / 2 - (k / 2) * Math.log(2) - logGamma(k / 2));
+}
+let chiChart;
+function buildChi() {
+  const k = parseInt(document.getElementById('chi-k').value);
+  document.getElementById('chi-k-val').textContent = k;
+  const xMax = k + 5.5 * Math.sqrt(2 * k);
+  const xs = linspace(0.05, xMax, 500);
+  const ys = xs.map(x => chi2PDF(x, k));
+  if (chiChart) chiChart.destroy();
+  chiChart = makeLineChart('chart-chi', xs, ys, '#fb7185');
+}
+buildChi();
+document.getElementById('chi-k').addEventListener('input', buildChi);
+
+// ── 8. F-DISTRIBUTION ─────────────────────────────────────────────────────────
+function fPDF(x, d1, d2) {
+  if (x <= 0) return 0;
+  const logNum = 0.5 * (d1 * Math.log(d1 * x) + d2 * Math.log(d2))
+               - 0.5 * (d1 + d2) * Math.log(d1 * x + d2);
+  const logDen = Math.log(x) + logGamma(d1/2) + logGamma(d2/2) - logGamma((d1+d2)/2);
+  return Math.exp(logNum - logDen);
+}
+let fChart;
+function buildF() {
+  const d1 = parseInt(document.getElementById('f-d1').value);
+  const d2 = parseInt(document.getElementById('f-d2').value);
+  document.getElementById('f-d1-val').textContent = d1;
+  document.getElementById('f-d2-val').textContent = d2;
+  const meanF = d2 > 2 ? d2 / (d2 - 2) : 2;
+  const xs = linspace(0.02, meanF + 7, 500);
+  const ys = xs.map(x => fPDF(x, d1, d2));
+  if (fChart) fChart.destroy();
+  fChart = makeLineChart('chart-f', xs, ys, '#4ade80');
+}
+buildF();
+['f-d1','f-d2'].forEach(id => document.getElementById(id).addEventListener('input', buildF));
+
+// ── 9. LOG-NORMAL ─────────────────────────────────────────────────────────────
+function lnPDF(x, mu, sig) {
+  if (x <= 0) return 0;
+  return Math.exp(-((Math.log(x) - mu) ** 2) / (2 * sig * sig))
+       / (x * sig * Math.sqrt(2 * Math.PI));
+}
+let lnChart;
+function buildLN() {
+  const mu  = parseFloat(document.getElementById('ln-mu').value);
+  const sig = parseFloat(document.getElementById('ln-sig').value);
+  document.getElementById('ln-mu-val').textContent  = mu.toFixed(1);
+  document.getElementById('ln-sig-val').textContent = sig.toFixed(1);
+  const median = Math.exp(mu);
+  const xMax   = Math.min(median * Math.exp(4 * sig), median * 14 + 1);
+  const xs = linspace(0.01, xMax, 500);
+  const ys = xs.map(x => lnPDF(x, mu, sig));
+  if (lnChart) lnChart.destroy();
+  lnChart = makeLineChart('chart-ln', xs, ys, '#c084fc');
+}
+buildLN();
+['ln-mu','ln-sig'].forEach(id => document.getElementById(id).addEventListener('input', buildLN));
+</script>
+</body>
+</html>

@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ML Recall Notes — Association Rule Mining</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,600;0,700;1,400&family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #0b0d11;
+    --surface:  #111318;
+    --card:     #161a22;
+    --border:   #1f2430;
+    --border2:  #2a3040;
+    --muted:    #3d4558;
+    --dim:      #6b7794;
+    --text:     #c9d1e0;
+    --bright:   #eef1f8;
+
+    --c-orange: #e8743a;
+    --c-blue:   #4a9eff;
+    --c-green:  #3ecf8e;
+    --c-purple: #a78bfa;
+    --c-yellow: #f6c344;
+    --c-red:    #f06575;
+    --c-cyan:   #22d3ee;
+    --c-pink:   #f472b6;
+
+    --arm-accent: #f6c344;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Open Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+
+  .display { font-family: 'Open Sans', sans-serif; font-weight: 800; letter-spacing: -0.02em; }
+  .mono    { font-family: 'JetBrains Mono', monospace; }
+  .label   { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--dim); }
+  .bright  { color: var(--bright); }
+  .page    { max-width: 1000px; margin: 0 auto; padding: 0 32px 100px; }
+
+  .card       { background: var(--card); border: 1px solid var(--border); border-radius: 8px; }
+  .card-inner { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
+
+  .pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 3px 9px; border-radius: 3px; border: 1px solid; white-space: nowrap;
+  }
+
+  .step-num {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; font-weight: 700;
+    width: 22px; height: 22px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 2px;
+  }
+
+  .callout { border-radius: 6px; padding: 12px 14px; font-size: 0.82rem; line-height: 1.65; }
+  .c-note   { background: #0d1a2b; border-left: 3px solid var(--c-blue); }
+  .c-warn   { background: #1e1209; border-left: 3px solid var(--c-orange); }
+  .c-good   { background: #0a1e14; border-left: 3px solid var(--c-green); }
+  .c-yellow { background: #1a1505; border-left: 3px solid var(--c-yellow); }
+  .c-purple { background: #130e1f; border-left: 3px solid var(--c-purple); }
+  .c-cyan   { background: #061618; border-left: 3px solid var(--c-cyan); }
+  .c-pink   { background: #1a0a10; border-left: 3px solid var(--c-pink); }
+
+  .code-wrap { background: #080a0f; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .code-hdr  { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .dots      { display: flex; gap: 5px; }
+  .dot       { width: 9px; height: 9px; border-radius: 50%; }
+  pre {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+    line-height: 1.85; padding: 18px 20px; overflow-x: auto; color: #abb2bf;
+  }
+
+  .kw  { color: #c678dd; } .fn  { color: #61afef; } .cls { color: #e5c07b; }
+  .str { color: #98c379; } .cm  { color: #4b5568; font-style: italic; }
+  .num { color: #d19a66; } .op  { color: #56b6c2; } .prp { color: #e06c75; }
+  .var { color: #abb2bf; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  @media(max-width:700px){ .grid-2,.grid-3{ grid-template-columns:1fr; } }
+
+  .section-hdr {
+    border-radius: 8px 8px 0 0; padding: 28px 28px 20px;
+    border-bottom: 1px solid var(--border); position: relative; overflow: hidden;
+  }
+  .section-hdr::after {
+    content: attr(data-bg); position: absolute; right: -8px; top: 50%;
+    transform: translateY(-50%); font-family: 'Open Sans', sans-serif;
+    font-weight: 800; font-size: 5.5rem; letter-spacing: -0.04em;
+    opacity: 0.04; pointer-events: none; white-space: nowrap;
+  }
+
+  .formal-sentence {
+    font-size: 0.9rem; line-height: 1.8; color: var(--text);
+    border-left: 2px solid var(--arm-accent); padding-left: 14px; max-width: 660px;
+  }
+
+  .toc-link {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.68rem;
+    color: var(--dim); text-decoration: none;
+    display: flex; align-items: center; gap: 6px; padding: 4px 0;
+    transition: color 0.15s;
+  }
+  .toc-link:hover { color: var(--bright); }
+
+  .metric-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 14px 16px;
+  }
+  .metric-formula {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;
+    background: #080a0f; border: 1px solid var(--border2);
+    border-radius: 4px; padding: 8px 12px; margin-top: 6px;
+    color: var(--c-yellow);
+  }
+
+  table { border-collapse: collapse; width: 100%; font-size: 0.8rem; }
+  thead th {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.58rem;
+    letter-spacing: 0.12em; text-transform: uppercase; padding: 10px 14px;
+    text-align: left; background: var(--surface); color: var(--dim);
+    border-bottom: 1px solid var(--border2);
+  }
+  td { padding: 9px 14px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td:first-child { color: var(--bright); font-weight: 600; }
+
+  /* ── D3 diagram styles ── */
+  .diagram-wrap {
+    background: #080a0f; border: 1px solid var(--border);
+    border-radius: 6px; overflow: hidden; position: relative;
+  }
+  .diagram-title {
+    padding: 10px 16px; border-bottom: 1px solid var(--border);
+    background: var(--surface); display: flex; align-items: center; justify-content: space-between;
+  }
+  svg text { font-family: 'JetBrains Mono', monospace; }
+
+  /* Lattice node */
+  .lat-node circle { stroke-width: 1.5px; }
+  .lat-node text   { font-size: 10px; }
+
+  /* FP-tree node */
+  .fp-node circle  { stroke-width: 1.5px; cursor: pointer; transition: r 0.2s; }
+  .fp-node:hover circle { r: 26px; }
+  .fp-link { fill: none; stroke-width: 1.5; }
+
+  .tooltip {
+    position: absolute; background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 6px; padding: 8px 12px; font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem; color: var(--text); pointer-events: none;
+    opacity: 0; transition: opacity 0.15s; max-width: 200px; line-height: 1.6;
+  }
+
+  /* Seq diagram */
+  .seq-box {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px; border-radius: 4px; font-size: 0.72rem;
+    font-family: 'JetBrains Mono', monospace; font-weight: 700;
+  }
+  .seq-arrow { color: var(--muted); font-size: 1.1rem; line-height: 36px; }
+</style>
+</head>
+<body>
+
+<!-- ══════════ HERO ══════════ -->
+<header class="page pt-14 pb-4">
+  <div class="label mb-4">Machine Learning · Recall Notes · Unsupervised Learning</div>
+  <h1 class="display mb-2" style="font-size:clamp(2.2rem,5.5vw,3.8rem); line-height:1.05; color:var(--bright);">
+    Association<br><span style="color:var(--arm-accent);">Rule Mining</span>
+  </h1>
+  <p class="mono mt-3 mb-8" style="font-size:0.72rem; color:var(--dim); line-height:1.7;">
+    Frequent Itemset · Tree-Based · Sequential Pattern Mining<br>
+    Apriori · FP-Growth · GSP
+  </p>
+
+  <!-- TOC -->
+  <div class="card p-5" style="max-width:520px;">
+    <div class="label mb-4">Contents</div>
+    <div class="grid-2">
+      <div>
+        <div class="mono mb-2" style="font-size:0.62rem; color:var(--arm-accent);">FOUNDATIONS</div>
+        <a href="#definition"  class="toc-link"><span style="color:var(--arm-accent);">›</span> Definition</a>
+        <a href="#global-terms" class="toc-link"><span style="color:var(--arm-accent);">›</span> Global Metrics & Terms</a>
+        <a href="#arm-types"   class="toc-link"><span style="color:var(--arm-accent);">›</span> Three Types Overview</a>
+      </div>
+      <div>
+        <div class="mono mb-2" style="font-size:0.62rem; color:var(--c-blue);">ALGORITHMS</div>
+        <a href="#apriori"     class="toc-link"><span style="color:var(--c-blue);">›</span> Apriori (Frequent Itemset)</a>
+        <a href="#fpgrowth"    class="toc-link"><span style="color:var(--c-green);">›</span> FP-Growth (Tree-Based)</a>
+        <a href="#gsp"         class="toc-link"><span style="color:var(--c-purple);">›</span> GSP (Sequential)</a>
+        <a href="#compare"     class="toc-link"><span style="color:var(--dim);">›</span> Comparison Table</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+
+<!-- ══════════ DEFINITION ══════════ -->
+<section class="mt-10" id="definition">
+  <div class="card">
+    <div class="section-hdr" data-bg="ARM" style="background:linear-gradient(135deg,#1a1505 0%,var(--card) 65%);">
+      <div class="label mb-2">Chapter — Unsupervised Learning</div>
+      <div class="display mb-3" style="font-size:2rem; color:var(--arm-accent);">Association Rule Mining</div>
+      <div class="flex items-center gap-4 mb-5">
+        <span class="label">One-word definition</span>
+        <span class="mono bright" style="font-size:1rem; color:var(--arm-accent);">Relationships</span>
+      </div>
+      <div class="formal-sentence">
+        Association Rule Mining is an unsupervised machine learning technique that discovers statistically significant co-occurrence relationships between items in large transactional datasets, generating IF–THEN rules that reveal hidden purchase patterns, behaviours, or dependencies without labelled supervision.
+      </div>
+    </div>
+
+    <!-- Real-world analogy -->
+    <div class="p-6 border-b" style="border-color:var(--border);">
+      <div class="label mb-3">Real-World Analogy — Market Basket Analysis</div>
+      <div class="grid-3">
+        <div class="card-inner p-4">
+          <div class="mono mb-2" style="font-size:0.68rem; color:var(--c-yellow);">Transaction Data</div>
+          <div style="font-size:0.8rem; color:var(--dim);">
+            A supermarket stores every receipt — each receipt is a <strong style="color:var(--text);">transaction</strong> listing items bought together.
+          </div>
+        </div>
+        <div class="card-inner p-4">
+          <div class="mono mb-2" style="font-size:0.68rem; color:var(--c-yellow);">The Rule Found</div>
+          <div style="font-size:0.8rem; color:var(--dim);">
+            <span class="mono" style="color:var(--c-green);">{Bread, Butter} → {Milk}</span><br>
+            "Customers who buy Bread & Butter also tend to buy Milk."
+          </div>
+        </div>
+        <div class="card-inner p-4">
+          <div class="mono mb-2" style="font-size:0.68rem; color:var(--c-yellow);">Business Value</div>
+          <div style="font-size:0.8rem; color:var(--dim);">
+            Place Milk near Bread & Butter. Bundle them. Recommend them online. Optimise shelf layout.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Global metrics -->
+    <div class="p-6" id="global-terms">
+      <div class="label mb-4">Core Metrics — Used Across All ARM Algorithms</div>
+      <div class="grid-3 mb-4">
+        <div class="metric-card">
+          <div class="mono mb-1" style="font-size:0.72rem; color:var(--c-blue); font-weight:700;">Support</div>
+          <div style="font-size:0.78rem; color:var(--dim); margin-bottom:6px;">How frequently the itemset appears in all transactions. Measures raw popularity.</div>
+          <div class="metric-formula">Support(A) = freq(A) / N</div>
+          <div style="font-size:0.72rem; color:var(--dim); margin-top:6px;">N = total transactions. Range: 0 → 1.</div>
+        </div>
+        <div class="metric-card">
+          <div class="mono mb-1" style="font-size:0.72rem; color:var(--c-orange); font-weight:700;">Confidence</div>
+          <div style="font-size:0.78rem; color:var(--dim); margin-bottom:6px;">Given A is bought, how often is B also bought? Measures rule reliability.</div>
+          <div class="metric-formula">Conf(A→B) = Support(A∪B) / Support(A)</div>
+          <div style="font-size:0.72rem; color:var(--dim); margin-top:6px;">Range: 0 → 1. High = reliable rule.</div>
+        </div>
+        <div class="metric-card">
+          <div class="mono mb-1" style="font-size:0.72rem; color:var(--c-green); font-weight:700;">Lift</div>
+          <div style="font-size:0.78rem; color:var(--dim); margin-bottom:6px;">Are A and B truly correlated, or just individually popular? Corrects for base rate.</div>
+          <div class="metric-formula">Lift(A→B) = Conf(A→B) / Support(B)</div>
+          <div style="font-size:0.72rem; color:var(--dim); margin-top:6px;">Lift &gt; 1 = positive correlation. = 1 → independent. &lt; 1 → negative.</div>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="callout c-yellow">
+          <span style="color:var(--c-yellow); font-weight:700;">min_support threshold:</span> The minimum support value an itemset must meet to be considered <em>frequent</em>. Itemsets below this are discarded (pruned). Setting it too low → explosion of rules.
+        </div>
+        <div class="callout c-yellow">
+          <span style="color:var(--c-yellow); font-weight:700;">min_confidence threshold:</span> The minimum confidence a rule must meet to be retained. Rules below this are too unreliable to act on. Both thresholds must be tuned for your dataset.
+        </div>
+      </div>
+    </div>
+
+    <!-- Three Types -->
+    <div class="p-6 border-t" style="border-color:var(--border);" id="arm-types">
+      <div class="label mb-4">Three Types of Association Rule Mining</div>
+      <div class="grid-3">
+        <div class="card-inner p-4" style="border-left:3px solid var(--c-blue);">
+          <div class="mono mb-1" style="font-size:0.65rem; color:var(--c-blue);">Type 01</div>
+          <div class="bright" style="font-size:0.88rem; font-weight:700; margin-bottom:4px;">Frequent Itemset Mining</div>
+          <div style="font-size:0.77rem; color:var(--dim);">Find all sets of items that appear together frequently. Generate rules from them. Classic approach.</div>
+          <div class="mono mt-2" style="font-size:0.65rem; color:var(--c-blue);">Algorithm covered → Apriori</div>
+        </div>
+        <div class="card-inner p-4" style="border-left:3px solid var(--c-green);">
+          <div class="mono mb-1" style="font-size:0.65rem; color:var(--c-green);">Type 02</div>
+          <div class="bright" style="font-size:0.88rem; font-weight:700; margin-bottom:4px;">Tree-Based Mining</div>
+          <div style="font-size:0.77rem; color:var(--dim);">Compress the transaction database into a compact prefix tree, then mine it without re-scanning data.</div>
+          <div class="mono mt-2" style="font-size:0.65rem; color:var(--c-green);">Algorithm covered → FP-Growth</div>
+        </div>
+        <div class="card-inner p-4" style="border-left:3px solid var(--c-purple);">
+          <div class="mono mb-1" style="font-size:0.65rem; color:var(--c-purple);">Type 03</div>
+          <div class="bright" style="font-size:0.88rem; font-weight:700; margin-bottom:4px;">Sequential Pattern Mining</div>
+          <div style="font-size:0.77rem; color:var(--dim);">Items have a temporal order. Find patterns in sequences of events over time (e.g. customer journeys).</div>
+          <div class="mono mt-2" style="font-size:0.65rem; color:var(--c-purple);">Algorithm covered → GSP</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ TYPE 1: APRIORI ══════════ -->
+<section class="mt-12" id="apriori">
+  <div class="card">
+    <div class="section-hdr" data-bg="APRIORI" style="background:linear-gradient(135deg,#061625 0%,var(--card) 60%);">
+      <div class="label mb-1">Type 01 · Frequent Itemset Mining</div>
+      <div class="display bright" style="font-size:1.8rem;">Apriori Algorithm</div>
+      <div class="mono mt-1" style="font-size:0.65rem; color:var(--dim);">Agrawal & Srikant, 1994 · The foundational ARM algorithm</div>
+      <div class="formal-sentence mt-4" style="border-color:var(--c-blue);">
+        Apriori iteratively generates candidate itemsets of increasing size, pruning those that fail the minimum support threshold — exploiting the <em>Apriori Property</em>: any subset of a frequent itemset must also be frequent.
+      </div>
+    </div>
+
+    <div class="p-6 border-b" style="border-color:var(--border);">
+      <!-- Apriori Property -->
+      <div class="callout c-note mb-5">
+        <span style="color:var(--c-blue); font-weight:700;">⚡ The Apriori Property (Anti-Monotone):</span><br>
+        If itemset {A, B} is <em>infrequent</em>, then <em>any superset</em> {A, B, C} must also be infrequent. This lets us prune entire branches of the search space without evaluating them — this is the core insight that makes Apriori practical.
+      </div>
+
+      <!-- Terms -->
+      <div class="label mb-3">Key Terms</div>
+      <div class="grid-2 gap-3 mb-5">
+        <div class="callout c-note"><span style="color:var(--c-blue); font-weight:700;">Transaction (T):</span> A single record containing a set of items. E.g., one grocery receipt = {Bread, Milk, Eggs}.</div>
+        <div class="callout c-note"><span style="color:var(--c-blue); font-weight:700;">Itemset:</span> Any subset of items. A 1-itemset = {Bread}, 2-itemset = {Bread, Milk}, etc.</div>
+        <div class="callout c-note"><span style="color:var(--c-blue); font-weight:700;">Frequent Itemset (L_k):</span> An itemset whose support ≥ min_support. The goal is to find all of these.</div>
+        <div class="callout c-note"><span style="color:var(--c-blue); font-weight:700;">Candidate Itemset (C_k):</span> A k-sized itemset generated as a potential frequent itemset, before support is verified.</div>
+        <div class="callout c-note"><span style="color:var(--c-blue); font-weight:700;">Pruning:</span> Discarding candidate itemsets whose subsets are already infrequent — using the Apriori Property.</div>
+        <div class="callout c-note"><span style="color:var(--c-blue); font-weight:700;">Association Rule (A→B):</span> A→B means "when A occurs, B tends to occur." A = antecedent, B = consequent.</div>
+      </div>
+
+      <div class="grid-2 gap-6">
+        <!-- Steps -->
+        <div>
+          <div class="label mb-3">Algorithm Steps</div>
+          <div class="space-y-3">
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#061625; color:var(--c-blue);">01</div>
+              <div>
+                <div class="bright" style="font-size:0.83rem; font-weight:600;">Scan database → find frequent 1-itemsets (L₁)</div>
+                <div style="font-size:0.76rem; color:var(--dim);">Count occurrences of every single item. Keep only those with support ≥ min_support.</div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#061625; color:var(--c-blue);">02</div>
+              <div>
+                <div class="bright" style="font-size:0.83rem; font-weight:600;">Generate candidates C_{k+1} from L_k (Join Step)</div>
+                <div style="font-size:0.76rem; color:var(--dim);">Join pairs of k-frequent itemsets that share a (k−1) prefix to generate (k+1)-candidate itemsets.</div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#061625; color:var(--c-blue);">03</div>
+              <div>
+                <div class="bright" style="font-size:0.83rem; font-weight:600;">Prune C_{k+1} (Prune Step)</div>
+                <div style="font-size:0.76rem; color:var(--dim);">Remove any candidate whose (k)-subsets are NOT in L_k. These cannot be frequent by the Apriori Property.</div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#061625; color:var(--c-blue);">04</div>
+              <div>
+                <div class="bright" style="font-size:0.83rem; font-weight:600;">Scan database → compute support for survivors</div>
+                <div style="font-size:0.76rem; color:var(--dim);">Count actual occurrences of each surviving candidate in the full transaction database.</div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#061625; color:var(--c-blue);">05</div>
+              <div>
+                <div class="bright" style="font-size:0.83rem; font-weight:600;">Keep those with support ≥ min_support → L_{k+1}</div>
+                <div style="font-size:0.76rem; color:var(--dim);">Survivors become the new frequent itemset list for the next iteration.</div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#061625; color:var(--c-blue);">06</div>
+              <div>
+                <div class="bright" style="font-size:0.83rem; font-weight:600;">Repeat steps 2–5 until no new frequent itemsets</div>
+                <div style="font-size:0.76rem; color:var(--dim);">When C_k = ∅ or L_k = ∅, stop. All frequent itemsets of all sizes are now found.</div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#061625; color:var(--c-blue);">07</div>
+              <div>
+                <div class="bright" style="font-size:0.83rem; font-weight:600;">Generate rules from all frequent itemsets</div>
+                <div style="font-size:0.76rem; color:var(--dim);">For each frequent itemset, try all possible A→B splits. Keep rules where confidence ≥ min_confidence.</div>
+              </div>
+            </div>
+          </div>
+          <div class="callout c-warn mt-4">
+            <span style="color:var(--c-orange); font-weight:700;">Bottleneck:</span> Apriori scans the entire database once per itemset size k. For large datasets or low min_support, this creates massive I/O overhead and memory pressure — motivating FP-Growth.
+          </div>
+        </div>
+
+        <!-- Code -->
+        <div>
+          <div class="label mb-3">Code Syntax (mlxtend)</div>
+          <div class="code-wrap">
+            <div class="code-hdr">
+              <div class="dots"><div class="dot" style="background:#ff5f57;"></div><div class="dot" style="background:#febc2e;"></div><div class="dot" style="background:#28c840;"></div></div>
+              <span class="mono" style="font-size:0.6rem; color:var(--dim);">apriori.py</span>
+            </div>
+            <pre><span class="cm"># ── 1. Import ─────────────────────────────</span>
+<span class="kw">from</span> <span class="var">mlxtend.frequent_patterns</span> <span class="kw">import</span> <span class="cls">apriori</span>
+<span class="kw">from</span> <span class="var">mlxtend.frequent_patterns</span> <span class="kw">import</span> <span class="cls">association_rules</span>
+<span class="kw">from</span> <span class="var">mlxtend.preprocessing</span>   <span class="kw">import</span> <span class="cls">TransactionEncoder</span>
+<span class="kw">import</span> <span class="var">pandas</span> <span class="kw">as</span> <span class="var">pd</span>
+
+<span class="cm"># ── 2. Prepare data ───────────────────────</span>
+<span class="var">dataset</span> <span class="op">=</span> [
+    [<span class="str">'Bread'</span>, <span class="str">'Milk'</span>],
+    [<span class="str">'Bread'</span>, <span class="str">'Butter'</span>, <span class="str">'Milk'</span>],
+    [<span class="str">'Butter'</span>, <span class="str">'Milk'</span>, <span class="str">'Eggs'</span>],
+    [<span class="str">'Bread'</span>, <span class="str">'Butter'</span>],
+]
+<span class="var">te</span>    <span class="op">=</span> <span class="cls">TransactionEncoder</span>()
+<span class="var">te_df</span> <span class="op">=</span> <span class="var">pd</span>.<span class="fn">DataFrame</span>(
+    <span class="var">te</span>.<span class="fn">fit_transform</span>(<span class="var">dataset</span>),
+    columns<span class="op">=</span><span class="var">te</span>.columns_
+)  <span class="cm"># one-hot encoded boolean DataFrame</span>
+
+<span class="cm"># ── 3. Find frequent itemsets ────────────</span>
+<span class="var">freq_items</span> <span class="op">=</span> <span class="fn">apriori</span>(
+    <span class="var">te_df</span>,
+    min_support<span class="op">=</span><span class="num">0.5</span>,     <span class="cm"># 50% of transactions</span>
+    use_colnames<span class="op">=</span><span class="kw">True</span>
+)
+
+<span class="cm"># ── 4. Generate association rules ────────</span>
+<span class="var">rules</span> <span class="op">=</span> <span class="fn">association_rules</span>(
+    <span class="var">freq_items</span>,
+    metric<span class="op">=</span><span class="str">"confidence"</span>,
+    min_threshold<span class="op">=</span><span class="num">0.7</span>
+)
+
+<span class="cm"># ── 5. Get values ─────────────────────────</span>
+<span class="var">rules</span>[[<span class="str">'antecedents'</span>, <span class="str">'consequents'</span>,
+       <span class="str">'support'</span>, <span class="str">'confidence'</span>, <span class="str">'lift'</span>]]</pre>
+          </div>
+
+          <!-- Metrics reminder -->
+          <div class="label mt-4 mb-2">Output columns explained</div>
+          <table style="font-size:0.75rem;">
+            <thead><tr><th>Column</th><th>What it tells you</th></tr></thead>
+            <tbody>
+              <tr><td>antecedents</td><td>The IF part of the rule</td></tr>
+              <tr><td>consequents</td><td>The THEN part of the rule</td></tr>
+              <tr><td>support</td><td>How often this combination appears</td></tr>
+              <tr><td>confidence</td><td>How reliable this rule is</td></tr>
+              <tr><td>lift</td><td>Whether correlation is real or coincidental</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Apriori Lattice Diagram -->
+    <div class="p-6">
+      <div class="label mb-3">Apriori Itemset Lattice — Candidate Generation Visualised</div>
+      <div class="diagram-wrap">
+        <div class="diagram-title">
+          <span class="mono" style="font-size:0.65rem; color:var(--dim);">Items: {A, B, C, D} · Each level = k-itemsets · Orange = pruned (infrequent)</span>
+          <span class="mono" style="font-size:0.6rem; color:var(--c-blue);">d3.js</span>
+        </div>
+        <div id="lattice-diagram" style="height:320px; position:relative;"></div>
+        <div class="tooltip" id="lattice-tip"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ TYPE 2: FP-GROWTH ══════════ -->
+<section class="mt-12" id="fpgrowth">
+  <div class="card">
+    <div class="section-hdr" data-bg="FP-TREE" style="background:linear-gradient(135deg,#091a10 0%,var(--card) 60%);">
+      <div class="label mb-1">Type 02 · Tree-Based Mining</div>
+      <div class="display bright" style="font-size:1.8rem;">FP-Growth Algorithm</div>
+      <div class="mono mt-1" style="font-size:0.65rem; color:var(--dim);">Han, Pei & Yin, 2000 · Frequent Pattern Growth</div>
+      <div class="formal-sentence mt-4" style="border-color:var(--c-green);">
+        FP-Growth eliminates the costly repeated database scanning of Apriori by compressing all transaction data into a single compact FP-Tree structure, then mining frequent patterns directly from this tree using recursive conditional pattern base extraction.
+      </div>
+    </div>
+
+    <div class="p-6 border-b" style="border-color:var(--border);">
+      <div class="callout c-good mb-5">
+        <span style="color:var(--c-green); font-weight:700;">⚡ Key Advantage over Apriori:</span> Apriori scans the database once per itemset size. FP-Growth scans the database exactly <em>twice</em> — once to count item frequencies, once to build the FP-Tree. Everything after that works on the in-memory tree. Result: orders of magnitude faster on large datasets.
+      </div>
+
+      <!-- FP-Growth Terms -->
+      <div class="label mb-3">Key Terms</div>
+      <div class="grid-2 gap-3 mb-5">
+        <div class="callout c-good"><span style="color:var(--c-green); font-weight:700;">FP-Tree (Frequent Pattern Tree):</span> A prefix tree where each path represents a transaction, each node stores an item name and count. Shared prefixes are merged, massively compressing the data.</div>
+        <div class="callout c-good"><span style="color:var(--c-green); font-weight:700;">Header Table:</span> A table listing each frequent item with its total count and a pointer to the first occurrence in the FP-Tree. Used to traverse all nodes of an item quickly.</div>
+        <div class="callout c-good"><span style="color:var(--c-green); font-weight:700;">Conditional Pattern Base:</span> For a given item X, the set of prefix paths in the FP-Tree that end at X, together with their counts. These are the contexts in which X appears.</div>
+        <div class="callout c-good"><span style="color:var(--c-green); font-weight:700;">Conditional FP-Tree:</span> A smaller FP-Tree built from the conditional pattern base of item X. Mining it gives all frequent itemsets that contain X. Recursively applied.</div>
+        <div class="callout c-good"><span style="color:var(--c-green); font-weight:700;">Node-link:</span> A linked list connecting all occurrences of the same item across different branches of the FP-Tree. Allows header table traversals without full tree scans.</div>
+        <div class="callout c-good"><span style="color:var(--c-green); font-weight:700;">Prefix Path:</span> The path from the root to a specific node in the FP-Tree. Each prefix path represents a co-occurrence context for the item at that node.</div>
+      </div>
+
+      <div class="grid-2 gap-6">
+        <!-- Steps -->
+        <div>
+          <div class="label mb-3">Algorithm Steps</div>
+          <div class="space-y-3">
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#091a10; color:var(--c-green);">01</div>
+              <div>
+                <div class="bright" style="font-size:0.83rem; font-weight:600;">Scan DB once → count item frequencies</div>
+                <div style="font-size:0.76rem; color:var(--dim);">Remove items below min_support. Sort remaining items by frequency (descending) — this order is critical for tree compression.</div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#091a10; color:var(--c-green);">02</div>
+              <div>
+                <div class="bright" style="font-size:0.83rem; font-weight:600;">Build the FP-Tree (second scan)</div>
+                <div style="font-size:0.76rem; color:var(--dim);">For each transaction, insert items (sorted by frequency) into the tree. Merge paths that share a common prefix, incrementing node counts.</div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#091a10; color:var(--c-green);">03</div>
+              <div>
+                <div class="bright" style="font-size:0.83rem; font-weight:600;">Build Header Table with node-links</div>
+                <div style="font-size:0.76rem; color:var(--dim);">Create a lookup table of all frequent items → their total count → pointer to first tree node.</div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#091a10; color:var(--c-green);">04</div>
+              <div>
+                <div class="bright" style="font-size:0.83rem; font-weight:600;">Mine tree starting from least frequent item</div>
+                <div style="font-size:0.76rem; color:var(--dim);">For each item (bottom of header table first), collect its conditional pattern base — all prefix paths leading to it.</div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#091a10; color:var(--c-green);">05</div>
+              <div>
+                <div class="bright" style="font-size:0.83rem; font-weight:600;">Build Conditional FP-Tree</div>
+                <div style="font-size:0.76rem; color:var(--dim);">Filter the conditional pattern base (min_support), build a new smaller FP-Tree for this item's context.</div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#091a10; color:var(--c-green);">06</div>
+              <div>
+                <div class="bright" style="font-size:0.83rem; font-weight:600;">Recursively mine conditional FP-Trees</div>
+                <div style="font-size:0.76rem; color:var(--dim);">Repeat steps 4–5 on each conditional tree until the tree is empty or has a single path. Single paths = enumerate all subsets directly.</div>
+              </div>
+            </div>
+          </div>
+          <div class="callout c-warn mt-4">
+            <span style="color:var(--c-orange); font-weight:700;">Memory note:</span> FP-Tree can still be huge if min_support is very low or data is very diverse. In those cases, consider disk-based variants or ECLAT.
+          </div>
+        </div>
+
+        <!-- Code -->
+        <div>
+          <div class="label mb-3">Code Syntax (mlxtend)</div>
+          <div class="code-wrap">
+            <div class="code-hdr">
+              <div class="dots"><div class="dot" style="background:#ff5f57;"></div><div class="dot" style="background:#febc2e;"></div><div class="dot" style="background:#28c840;"></div></div>
+              <span class="mono" style="font-size:0.6rem; color:var(--dim);">fp_growth.py</span>
+            </div>
+            <pre><span class="cm"># ── 1. Import ─────────────────────────────</span>
+<span class="kw">from</span> <span class="var">mlxtend.frequent_patterns</span> <span class="kw">import</span> <span class="cls">fpgrowth</span>
+<span class="kw">from</span> <span class="var">mlxtend.frequent_patterns</span> <span class="kw">import</span> <span class="cls">association_rules</span>
+<span class="kw">from</span> <span class="var">mlxtend.preprocessing</span>   <span class="kw">import</span> <span class="cls">TransactionEncoder</span>
+<span class="kw">import</span> <span class="var">pandas</span> <span class="kw">as</span> <span class="var">pd</span>
+
+<span class="cm"># ── 2. Prepare data (same as Apriori) ────</span>
+<span class="var">te</span>    <span class="op">=</span> <span class="cls">TransactionEncoder</span>()
+<span class="var">te_df</span> <span class="op">=</span> <span class="var">pd</span>.<span class="fn">DataFrame</span>(
+    <span class="var">te</span>.<span class="fn">fit_transform</span>(<span class="var">dataset</span>),
+    columns<span class="op">=</span><span class="var">te</span>.columns_
+)
+
+<span class="cm"># ── 3. Find frequent itemsets ────────────</span>
+<span class="var">freq_items</span> <span class="op">=</span> <span class="fn">fpgrowth</span>(
+    <span class="var">te_df</span>,
+    min_support<span class="op">=</span><span class="num">0.5</span>,
+    use_colnames<span class="op">=</span><span class="kw">True</span>
+)   <span class="cm"># much faster than apriori()</span>
+
+<span class="cm"># ── 4. Generate rules ─────────────────────</span>
+<span class="var">rules</span> <span class="op">=</span> <span class="fn">association_rules</span>(
+    <span class="var">freq_items</span>,
+    metric<span class="op">=</span><span class="str">"lift"</span>,
+    min_threshold<span class="op">=</span><span class="num">1.2</span>
+)
+
+<span class="cm"># ── 5. Sort by lift descending ────────────</span>
+<span class="var">rules</span>.<span class="fn">sort_values</span>(<span class="str">'lift'</span>, ascending<span class="op">=</span><span class="kw">False</span>)
+
+<span class="cm"># ── Alternative: mlxtend FPTree directly ──</span>
+<span class="kw">from</span> <span class="var">mlxtend.frequent_patterns</span> <span class="kw">import</span> <span class="cls">fpmax</span>
+<span class="cm"># fpmax() → maximal frequent itemsets only</span></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FP-Tree Interactive Diagram -->
+    <div class="p-6">
+      <div class="label mb-3">Interactive FP-Tree — Hover nodes to inspect</div>
+      <div class="diagram-wrap">
+        <div class="diagram-title">
+          <span class="mono" style="font-size:0.65rem; color:var(--dim);">Transactions: T1{f,a,c,d,g,i,m,p} T2{a,b,c,f,l,m,o} T3{b,f,h,j,o} T4{b,c,k,s,p} T5{a,f,c,e,l,p,m,n} · min_sup=3</span>
+          <span class="mono" style="font-size:0.6rem; color:var(--c-green);">d3.js · interactive</span>
+        </div>
+        <div id="fptree-diagram" style="height:400px; position:relative;"></div>
+        <div class="tooltip" id="fptree-tip"></div>
+      </div>
+
+      <!-- Conditional Pattern Base example table -->
+      <div class="label mt-5 mb-3">Conditional Pattern Base — Example for item <span style="color:var(--c-green);">m</span></div>
+      <div class="grid-2 gap-4">
+        <table>
+          <thead><tr><th>Prefix Path</th><th>Count</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td>{f, c, a}</td><td style="color:var(--c-yellow);">2</td><td style="color:var(--dim);">m appeared after f,c,a twice</td></tr>
+            <tr><td>{f, c, a, b}</td><td style="color:var(--c-yellow);">1</td><td style="color:var(--dim);">m appeared after f,c,a,b once</td></tr>
+            <tr><td>{f}</td><td style="color:var(--c-yellow);">1</td><td style="color:var(--dim);">m appeared after f once</td></tr>
+          </tbody>
+        </table>
+        <div>
+          <div class="callout c-good" style="font-size:0.78rem;">
+            <strong style="color:var(--c-green);">Reading the conditional pattern base:</strong><br>
+            Each row = a prefix path that leads to node <em>m</em> in the FP-Tree.<br>
+            The count = how many transactions share that exact path ending at m.<br><br>
+            From this base, we build the <strong>Conditional FP-Tree for m</strong> by counting how often each item appears across all prefix paths (weighted by count). Items below min_support are pruned.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ TYPE 3: GSP ══════════ -->
+<section class="mt-12" id="gsp">
+  <div class="card">
+    <div class="section-hdr" data-bg="SEQUENCE" style="background:linear-gradient(135deg,#130e1f 0%,var(--card) 60%);">
+      <div class="label mb-1">Type 03 · Sequential Pattern Mining</div>
+      <div class="display bright" style="font-size:1.8rem;">GSP Algorithm</div>
+      <div class="mono mt-1" style="font-size:0.65rem; color:var(--dim);">Generalized Sequential Patterns · Srikant & Agrawal, 1996</div>
+      <div class="formal-sentence mt-4" style="border-color:var(--c-purple);">
+        GSP extends association rule mining to ordered sequences of events, discovering patterns where items must appear in a specific temporal order across transactions, enabling analysis of customer journeys, web clickstreams, and time-series behaviours.
+      </div>
+    </div>
+
+    <div class="p-6 border-b" style="border-color:var(--border);">
+      <!-- Sequence vs Itemset -->
+      <div class="callout c-purple mb-5">
+        <span style="color:var(--c-purple); font-weight:700;">🕐 Key Distinction — Order matters in GSP:</span><br>
+        In Apriori/FP-Growth, {Bread, Milk} and {Milk, Bread} are the same itemset. In GSP, &lt;{Bread} → {Milk}&gt; and &lt;{Milk} → {Bread}&gt; are <em>different sequences</em> — the temporal ordering defines a new dimension of meaning.
+      </div>
+
+      <!-- Terms -->
+      <div class="label mb-3">Key Terms</div>
+      <div class="grid-2 gap-3 mb-5">
+        <div class="callout c-purple"><span style="color:var(--c-purple); font-weight:700;">Sequence (S):</span> An ordered list of itemsets (events), separated by time. Written as &lt;{A}{B,C}{D}&gt;. Each {} is one time-step.</div>
+        <div class="callout c-purple"><span style="color:var(--c-purple); font-weight:700;">Event / Element:</span> A single time-step in a sequence. Can contain multiple items if they occur simultaneously at that time. E.g., {Bread, Butter} as one event.</div>
+        <div class="callout c-purple"><span style="color:var(--c-purple); font-weight:700;">Sequential Support:</span> The fraction of all customer sequences that contain a given pattern as a sub-sequence (in order). Must be ≥ min_support.</div>
+        <div class="callout c-purple"><span style="color:var(--c-purple); font-weight:700;">Sub-sequence:</span> Pattern &lt;A,B,C&gt; is a sub-sequence of &lt;X,A,Y,B,Z,C&gt; if A, B, C appear in that order (gaps allowed).</div>
+        <div class="callout c-purple"><span style="color:var(--c-purple); font-weight:700;">Window Size (maxspan):</span> A time constraint — the pattern must occur within a specified time window. E.g., "all events within 7 days."</div>
+        <div class="callout c-purple"><span style="color:var(--c-purple); font-weight:700;">Gap Constraints (mingap/maxgap):</span> Minimum and maximum allowed time between consecutive events in the pattern. Controls how "close" events must be.</div>
+      </div>
+
+      <div class="grid-2 gap-6">
+        <!-- Steps -->
+        <div>
+          <div class="label mb-3">Algorithm Steps</div>
+          <div class="space-y-3">
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#130e1f; color:var(--c-purple);">01</div>
+              <div>
+                <div class="bright" style="font-size:0.83rem; font-weight:600;">Sort & map sequences</div>
+                <div style="font-size:0.76rem; color:var(--dim);">Sort the database by customer ID and time. Map items to integer IDs. Group transactions into per-customer sequences.</div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#130e1f; color:var(--c-purple);">02</div>
+              <div>
+                <div class="bright" style="font-size:0.83rem; font-weight:600;">Find frequent 1-sequences (F₁)</div>
+                <div style="font-size:0.76rem; color:var(--dim);">Count each single-item sequence. Keep only those with sequential support ≥ min_support.</div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#130e1f; color:var(--c-purple);">03</div>
+              <div>
+                <div class="bright" style="font-size:0.83rem; font-weight:600;">Generate candidate k-sequences (C_k) — Join</div>
+                <div style="font-size:0.76rem; color:var(--dim);">Join pairs of (k−1) frequent sequences by appending one item/event. Three join types: append as new event, merge into existing event, or extend.</div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#130e1f; color:var(--c-purple);">04</div>
+              <div>
+                <div class="bright" style="font-size:0.83rem; font-weight:600;">Prune C_k using contiguous sub-sequence check</div>
+                <div style="font-size:0.76rem; color:var(--dim);">Remove candidate sequences whose (k−1) contiguous sub-sequences are NOT all in F_{k−1}. Uses same anti-monotone property as Apriori.</div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#130e1f; color:var(--c-purple);">05</div>
+              <div>
+                <div class="bright" style="font-size:0.83rem; font-weight:600;">Scan DB → count support for each candidate</div>
+                <div style="font-size:0.76rem; color:var(--dim);">Apply gap and window constraints while checking each candidate against actual customer sequences.</div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="step-num" style="background:#130e1f; color:var(--c-purple);">06</div>
+              <div>
+                <div class="bright" style="font-size:0.83rem; font-weight:600;">Repeat until no new frequent sequences</div>
+                <div style="font-size:0.76rem; color:var(--dim);">Keep extending. Stop when no candidates survive. The union of all F_k is the complete set of sequential patterns.</div>
+              </div>
+            </div>
+          </div>
+          <div class="callout c-cyan mt-4">
+            <span style="color:var(--c-cyan); font-weight:700;">Use cases:</span> Web page clickstreams · Customer purchase journey analysis · Medical event sequences · Fraud detection chains · Log file pattern mining.
+          </div>
+        </div>
+
+        <!-- Code -->
+        <div>
+          <div class="label mb-3">Code Syntax (prefixspan)</div>
+          <div class="code-wrap">
+            <div class="code-hdr">
+              <div class="dots"><div class="dot" style="background:#ff5f57;"></div><div class="dot" style="background:#febc2e;"></div><div class="dot" style="background:#28c840;"></div></div>
+              <span class="mono" style="font-size:0.6rem; color:var(--dim);">gsp.py</span>
+            </div>
+            <pre><span class="cm"># ── 1. Import ─────────────────────────────</span>
+<span class="cm"># pip install prefixspan</span>
+<span class="kw">from</span> <span class="var">prefixspan</span> <span class="kw">import</span> <span class="cls">PrefixSpan</span>
+
+<span class="cm"># ── 2. Prepare sequential data ────────────</span>
+<span class="cm"># Each inner list = one customer's sequence</span>
+<span class="cm"># Each sub-list   = one timestep/event</span>
+<span class="var">sequences</span> <span class="op">=</span> [
+    [[<span class="str">'a'</span>, <span class="str">'b'</span>], [<span class="str">'c'</span>], [<span class="str">'d'</span>]],   <span class="cm"># customer 1</span>
+    [[<span class="str">'a'</span>], [<span class="str">'c'</span>], [<span class="str">'b'</span>, <span class="str">'d'</span>]],   <span class="cm"># customer 2</span>
+    [[<span class="str">'a'</span>, <span class="str">'b'</span>], [<span class="str">'d'</span>]],         <span class="cm"># customer 3</span>
+    [[<span class="str">'b'</span>], [<span class="str">'c'</span>], [<span class="str">'d'</span>]],       <span class="cm"># customer 4</span>
+]
+
+<span class="cm"># ── 3. Initialise & train ────────────────</span>
+<span class="var">ps</span> <span class="op">=</span> <span class="cls">PrefixSpan</span>(<span class="var">sequences</span>)
+
+<span class="cm"># ── 4. Get frequent sequences ────────────</span>
+<span class="cm"># min_support as absolute count</span>
+<span class="var">results</span> <span class="op">=</span> <span class="var">ps</span>.<span class="fn">frequent</span>(<span class="num">2</span>)  <span class="cm"># min_support = 2</span>
+
+<span class="cm"># ── 5. Output: (support, pattern) ────────</span>
+<span class="kw">for</span> <span class="var">support</span>, <span class="var">pattern</span> <span class="kw">in</span> <span class="var">results</span>:
+    <span class="fn">print</span>(<span class="str">f"Support:</span> {<span class="var">support</span>}<span class="str">  Pattern:</span> {<span class="var">pattern</span>}<span class="str">"</span>)
+
+<span class="cm"># ── GSP with constraints (manual) ────────</span>
+<span class="cm"># For gap/window constraints, use:</span>
+<span class="cm"># pip install sequential-rules</span>
+<span class="kw">from</span> <span class="var">spmf</span> <span class="kw">import</span> <span class="cls">Spmf</span>  <span class="cm"># Java-backed, full GSP</span>
+<span class="var">alg</span> <span class="op">=</span> <span class="cls">Spmf</span>(<span class="str">"GSP"</span>, arguments<span class="op">=</span>[<span class="num">0.5</span>])
+<span class="var">alg</span>.<span class="fn">run</span>(<span class="var">input_file</span>)
+<span class="var">patterns</span> <span class="op">=</span> <span class="var">alg</span>.<span class="fn">to_pandas_dataframe</span>()</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sequence Diagram -->
+    <div class="p-6">
+      <div class="label mb-3">Sequential Pattern Visualised</div>
+      <div class="diagram-wrap">
+        <div class="diagram-title">
+          <span class="mono" style="font-size:0.65rem; color:var(--dim);">Customer journeys — finding pattern &lt;{Browse} → {AddCart} → {Purchase}&gt;</span>
+          <span class="mono" style="font-size:0.6rem; color:var(--c-purple);">d3.js</span>
+        </div>
+        <div id="seq-diagram" style="height:340px;"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ COMPARISON TABLE ══════════ -->
+<section class="mt-12" id="compare">
+  <div class="card overflow-hidden">
+    <div class="p-4 border-b" style="border-color:var(--border);">
+      <div class="label">ARM Algorithm Comparison</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th style="color:var(--c-blue);">Apriori</th>
+          <th style="color:var(--c-green);">FP-Growth</th>
+          <th style="color:var(--c-purple);">GSP</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Pattern Type</td>
+          <td>Frequent itemsets</td>
+          <td>Frequent itemsets</td>
+          <td>Sequential patterns</td>
+        </tr>
+        <tr>
+          <td>Order of items?</td>
+          <td><span style="color:var(--c-red);">✕ No (unordered)</span></td>
+          <td><span style="color:var(--c-red);">✕ No (unordered)</span></td>
+          <td><span style="color:var(--c-green);">✓ Yes (ordered)</span></td>
+        </tr>
+        <tr>
+          <td>DB Scans</td>
+          <td><span style="color:var(--c-red);">Once per itemset size k</span></td>
+          <td><span style="color:var(--c-green);">Exactly 2 scans</span></td>
+          <td>Once per sequence length k</td>
+        </tr>
+        <tr>
+          <td>Memory Usage</td>
+          <td>Low (generates candidates)</td>
+          <td><span style="color:var(--c-yellow);">Higher (full FP-Tree in RAM)</span></td>
+          <td>Medium</td>
+        </tr>
+        <tr>
+          <td>Speed</td>
+          <td><span style="color:var(--c-red);">Slow on large data</span></td>
+          <td><span style="color:var(--c-green);">Very fast</span></td>
+          <td>Moderate</td>
+        </tr>
+        <tr>
+          <td>Candidate generation?</td>
+          <td><span style="color:var(--c-yellow);">✓ Yes (expensive)</span></td>
+          <td><span style="color:var(--c-green);">✕ No candidates needed</span></td>
+          <td>✓ Yes</td>
+        </tr>
+        <tr>
+          <td>Time constraints?</td>
+          <td>✕ No</td>
+          <td>✕ No</td>
+          <td><span style="color:var(--c-green);">✓ Yes (gap/window)</span></td>
+        </tr>
+        <tr>
+          <td>sklearn support?</td>
+          <td>Via mlxtend</td>
+          <td>Via mlxtend</td>
+          <td>Via prefixspan / SPMF</td>
+        </tr>
+        <tr>
+          <td>Best for</td>
+          <td>Small-medium datasets, learning purposes</td>
+          <td>Large datasets, production use</td>
+          <td>User journeys, clickstreams, time-series</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Decision guide -->
+  <div class="card mt-4 p-5" style="background:linear-gradient(135deg,#0b0f18,#0d1020);">
+    <div class="label mb-4">Decision Guide</div>
+    <div class="grid-3">
+      <div class="card-inner p-4">
+        <div class="mono mb-2" style="font-size:0.68rem; color:var(--c-blue);">Items in a basket, no time?</div>
+        <div style="font-size:0.82rem;">Use <strong style="color:var(--c-blue);">Apriori</strong> to learn. Use <strong style="color:var(--c-green);">FP-Growth</strong> in production.</div>
+      </div>
+      <div class="card-inner p-4">
+        <div class="mono mb-2" style="font-size:0.68rem; color:var(--c-green);">Large dataset, speed critical?</div>
+        <div style="font-size:0.82rem;">Always use <strong style="color:var(--c-green);">FP-Growth</strong>. Far fewer DB scans.</div>
+      </div>
+      <div class="card-inner p-4">
+        <div class="mono mb-2" style="font-size:0.68rem; color:var(--c-purple);">Events ordered over time?</div>
+        <div style="font-size:0.82rem;">Use <strong style="color:var(--c-purple);">GSP</strong>. Web clickstreams, medical events, user journeys.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="mt-16 pt-6 border-t" style="border-color:var(--border);">
+  <div class="flex justify-between items-center">
+    <div class="label">ML Recall Notes · Association Rule Mining</div>
+    <div class="label">Apriori · FP-Growth · GSP</div>
+  </div>
+</footer>
+
+</div><!-- end .page -->
+
+<!-- ══════════════════════════════════════════════
+     D3 DIAGRAMS
+══════════════════════════════════════════════ -->
+<script>
+/* ── Shared colours ── */
+const COL = {
+  bg: '#080a0f', surface: '#111318', card: '#161a22',
+  border: '#1f2430', muted: '#3d4558', dim: '#6b7794', text: '#c9d1e0', bright: '#eef1f8',
+  blue: '#4a9eff', green: '#3ecf8e', purple: '#a78bfa',
+  yellow: '#f6c344', red: '#f06575', orange: '#e8743a', cyan: '#22d3ee', pink: '#f472b6'
+};
+
+/* ══════════════════════════════
+   1. APRIORI LATTICE DIAGRAM
+══════════════════════════════ */
+(function buildLattice() {
+  const el = document.getElementById('lattice-diagram');
+  const W = el.clientWidth || 900, H = 320;
+  const tip = document.getElementById('lattice-tip');
+
+  const svg = d3.select('#lattice-diagram').append('svg')
+    .attr('width', '100%').attr('height', H)
+    .attr('viewBox', `0 0 ${W} ${H}`);
+
+  /* Node data: {id, label, support, frequent, level, x, y} */
+  const levels = [
+    { y: 60,  nodes: [
+      {id:'A',   label:'{A}',   support:0.7, frequent:true },
+      {id:'B',   label:'{B}',   support:0.6, frequent:true },
+      {id:'C',   label:'{C}',   support:0.8, frequent:true },
+      {id:'D',   label:'{D}',   support:0.3, frequent:false},
+    ]},
+    { y: 165, nodes: [
+      {id:'AB',  label:'{A,B}', support:0.5, frequent:true },
+      {id:'AC',  label:'{A,C}', support:0.6, frequent:true },
+      {id:'AD',  label:'{A,D}', support:0.2, frequent:false},
+      {id:'BC',  label:'{B,C}', support:0.5, frequent:true },
+      {id:'BD',  label:'{B,D}', support:0.1, frequent:false},
+      {id:'CD',  label:'{C,D}', support:0.2, frequent:false},
+    ]},
+    { y: 268, nodes: [
+      {id:'ABC', label:'{A,B,C}', support:0.45, frequent:true },
+      {id:'ABD', label:'{A,B,D}', support:null,  frequent:false, pruned:true},
+      {id:'ACD', label:'{A,C,D}', support:null,  frequent:false, pruned:true},
+      {id:'BCD', label:'{B,C,D}', support:null,  frequent:false, pruned:true},
+    ]},
+  ];
+
+  // Compute x positions
+  levels.forEach(lv => {
+    const n = lv.nodes.length;
+    lv.nodes.forEach((node, i) => {
+      node.x = W * (i + 1) / (n + 1);
+      node.y = lv.y;
+    });
+  });
+
+  const nodeMap = {};
+  levels.forEach(lv => lv.nodes.forEach(n => { nodeMap[n.id] = n; }));
+
+  // Edges
+  const edges = [
+    ['A','AB'],['A','AC'],['A','AD'],
+    ['B','AB'],['B','BC'],['B','BD'],
+    ['C','AC'],['C','BC'],['C','CD'],
+    ['D','AD'],['D','BD'],['D','CD'],
+    ['AB','ABC'],['AB','ABD'],
+    ['AC','ABC'],['AC','ACD'],
+    ['BC','ABC'],['BC','BCD'],
+    ['AD','ABD'],['AD','ACD'],
+    ['BD','ABD'],['BD','BCD'],
+    ['CD','ACD'],['CD','BCD'],
+  ];
+
+  // Draw edges
+  edges.forEach(([a, b]) => {
+    const na = nodeMap[a], nb = nodeMap[b];
+    if (!na || !nb) return;
+    const pruned = !na.frequent || !nb.frequent;
+    svg.append('line')
+      .attr('x1', na.x).attr('y1', na.y).attr('x2', nb.x).attr('y2', nb.y)
+      .attr('stroke', pruned ? COL.red : COL.muted)
+      .attr('stroke-width', pruned ? 1 : 1.5)
+      .attr('stroke-dasharray', pruned ? '4,3' : null)
+      .attr('opacity', pruned ? 0.4 : 0.6);
+  });
+
+  // Level labels
+  const levelNames = ['1-Itemsets (C₁)', '2-Itemsets (C₂)', '3-Itemsets (C₃)'];
+  levels.forEach((lv, i) => {
+    svg.append('text')
+      .attr('x', 18).attr('y', lv.y + 4)
+      .attr('fill', COL.dim).attr('font-size', '10')
+      .text(levelNames[i]);
+  });
+
+  // Draw nodes
+  levels.forEach(lv => {
+    lv.nodes.forEach(node => {
+      const g = svg.append('g').attr('class', 'lat-node')
+        .attr('transform', `translate(${node.x},${node.y})`);
+
+      const r = 22;
+      const fill = node.pruned ? '#1a0a0a' : node.frequent ? '#0d1a2b' : '#1a0a0a';
+      const stroke = node.pruned ? COL.red : node.frequent ? COL.blue : COL.orange;
+
+      g.append('circle')
+        .attr('r', r).attr('fill', fill)
+        .attr('stroke', stroke).attr('stroke-width', 1.5);
+
+      g.append('text')
+        .attr('text-anchor', 'middle').attr('dy', '0.35em')
+        .attr('fill', node.pruned ? COL.red : node.frequent ? COL.bright : COL.orange)
+        .attr('font-size', '9.5').text(node.label);
+
+      // Support badge
+      if (node.support !== null) {
+        g.append('text')
+          .attr('text-anchor', 'middle').attr('dy', '1.8em')
+          .attr('fill', node.frequent ? COL.green : COL.red)
+          .attr('font-size', '8')
+          .text(`sup=${node.support}`);
+      } else if (node.pruned) {
+        g.append('text')
+          .attr('text-anchor', 'middle').attr('dy', '1.8em')
+          .attr('fill', COL.red).attr('font-size', '8').text('pruned ✕');
+      }
+
+      // Tooltip
+      g.style('cursor', 'pointer')
+        .on('mousemove', function(event) {
+          const msg = node.pruned
+            ? `${node.label}<br>PRUNED — parent is infrequent<br>Not evaluated`
+            : `${node.label}<br>Support: ${node.support}<br>${node.frequent ? '✓ Frequent' : '✕ Infrequent (pruned)'}`;
+          tip.innerHTML = msg;
+          tip.style.opacity = 1;
+          const rect = el.getBoundingClientRect();
+          tip.style.left = (event.clientX - rect.left + 12) + 'px';
+          tip.style.top  = (event.clientY - rect.top  - 36) + 'px';
+        })
+        .on('mouseleave', () => { tip.style.opacity = 0; });
+    });
+  });
+
+  // Legend
+  const lg = svg.append('g').attr('transform', `translate(${W - 200}, 20)`);
+  [[COL.blue, '✓ Frequent'], [COL.orange, '✕ Infrequent'], [COL.red, '✕ Pruned (no eval)']].forEach(([c, t], i) => {
+    lg.append('circle').attr('cx', 8).attr('cy', i * 18).attr('r', 6).attr('fill', 'none').attr('stroke', c).attr('stroke-width', 1.5);
+    lg.append('text').attr('x', 20).attr('y', i * 18 + 4).attr('fill', c).attr('font-size', '9').text(t);
+  });
+})();
+
+
+/* ══════════════════════════════
+   2. FP-TREE DIAGRAM
+══════════════════════════════ */
+(function buildFPTree() {
+  const el   = document.getElementById('fptree-diagram');
+  const tip  = document.getElementById('fptree-tip');
+  const W    = el.clientWidth || 950, H = 400;
+
+  const svg = d3.select('#fptree-diagram').append('svg')
+    .attr('width', '100%').attr('height', H)
+    .attr('viewBox', `0 0 ${W} ${H}`);
+
+  // Tree data — FP-Tree for classic Han 2000 example (simplified)
+  const treeData = {
+    name: 'root', count: null, color: COL.dim, info: 'Root node (virtual)',
+    children: [
+      { name: 'f', count: 4, color: COL.green, info: 'f appears 4 times\nMost frequent item', children: [
+        { name: 'c', count: 3, color: COL.blue, info: 'f→c: 3 transactions', children: [
+          { name: 'a', count: 3, color: COL.yellow, info: 'f→c→a: 3 transactions', children: [
+            { name: 'b', count: 1, color: COL.orange, info: 'f→c→a→b: 1 transaction', children: [
+              { name: 'm', count: 1, color: COL.pink, info: 'f→c→a→b→m: 1 transaction', children: [
+                { name: 'p', count: 1, color: COL.cyan, info: 'f→c→a→b→m→p: 1', children: [] }
+              ]}
+            ]},
+            { name: 'm', count: 2, color: COL.pink, info: 'f→c→a→m: 2 transactions', children: [
+              { name: 'p', count: 2, color: COL.cyan, info: 'f→c→a→m→p: 2', children: [] }
+            ]}
+          ]}
+        ]},
+        { name: 'b', count: 1, color: COL.orange, info: 'f→b: 1 transaction (T3)', children: [
+          { name: 'h', count: 1, color: COL.red, info: 'f→b→h: T3', children: [] }
+        ]}
+      ]},
+      { name: 'b', count: 1, color: COL.orange, info: 'b (standalone branch, T4)', children: [
+        { name: 'c', count: 1, color: COL.blue, info: 'b→c: T4', children: [
+          { name: 'k', count: 1, color: COL.muted, info: 'b→c→k→s→p: T4', children: [] }
+        ]}
+      ]}
+    ]
+  };
+
+  const root = d3.hierarchy(treeData);
+  const treeLayout = d3.tree().size([W - 80, H - 100]);
+  treeLayout(root);
+
+  const g = svg.append('g').attr('transform', 'translate(40, 50)');
+
+  // Links
+  g.selectAll('.fp-link')
+    .data(root.links())
+    .join('path')
+    .attr('class', 'fp-link')
+    .attr('d', d3.linkVertical().x(d => d.x).y(d => d.y))
+    .attr('stroke', COL.border)
+    .attr('stroke-width', 1.5)
+    .attr('fill', 'none');
+
+  // Nodes
+  const node = g.selectAll('.fp-node')
+    .data(root.descendants())
+    .join('g')
+    .attr('class', 'fp-node')
+    .attr('transform', d => `translate(${d.x},${d.y})`);
+
+  node.append('circle')
+    .attr('r', d => d.data.name === 'root' ? 18 : 20)
+    .attr('fill', d => d.data.name === 'root' ? COL.surface : d.data.color + '22')
+    .attr('stroke', d => d.data.name === 'root' ? COL.muted : d.data.color)
+    .attr('stroke-width', 2);
+
+  // Item name
+  node.append('text')
+    .attr('text-anchor', 'middle')
+    .attr('dy', d => d.data.count !== null ? '-0.2em' : '0.35em')
+    .attr('fill', d => d.data.name === 'root' ? COL.dim : d.data.color)
+    .attr('font-size', '11')
+    .attr('font-weight', '700')
+    .text(d => d.data.name);
+
+  // Count badge
+  node.filter(d => d.data.count !== null)
+    .append('text')
+    .attr('text-anchor', 'middle')
+    .attr('dy', '1.0em')
+    .attr('fill', COL.text)
+    .attr('font-size', '9')
+    .text(d => `:${d.data.count}`);
+
+  // Tooltip
+  node.style('cursor', 'pointer')
+    .on('mousemove', function(event, d) {
+      tip.innerHTML = d.data.info.replace(/\n/g, '<br>');
+      tip.style.opacity = 1;
+      const rect = el.getBoundingClientRect();
+      tip.style.left = (event.clientX - rect.left + 14) + 'px';
+      tip.style.top  = (event.clientY - rect.top  - 40) + 'px';
+    })
+    .on('mouseleave', () => { tip.style.opacity = 0; });
+
+  // Header table (left side)
+  const headerItems = [
+    { item: 'f', count: 4, color: COL.green  },
+    { item: 'c', count: 3, color: COL.blue   },
+    { item: 'a', count: 3, color: COL.yellow },
+    { item: 'b', count: 3, color: COL.orange },
+    { item: 'm', count: 3, color: COL.pink   },
+    { item: 'p', count: 3, color: COL.cyan   },
+  ];
+  const ht = svg.append('g').attr('transform', `translate(${W - 115}, 30)`);
+  ht.append('text').attr('fill', COL.dim).attr('font-size', '9').attr('letter-spacing', '1').text('HEADER TABLE');
+  ht.append('rect').attr('y', 8).attr('width', 100).attr('height', headerItems.length * 22 + 4)
+    .attr('fill', COL.surface).attr('stroke', COL.border).attr('rx', 3);
+  headerItems.forEach((it, i) => {
+    const row = ht.append('g').attr('transform', `translate(6, ${14 + i * 22})`);
+    row.append('circle').attr('cx', 8).attr('cy', 4).attr('r', 7)
+      .attr('fill', it.color + '22').attr('stroke', it.color).attr('stroke-width', 1);
+    row.append('text').attr('x', 8).attr('y', 8).attr('text-anchor', 'middle')
+      .attr('fill', it.color).attr('font-size', '9').attr('font-weight', '700').text(it.item);
+    row.append('text').attr('x', 22).attr('y', 8)
+      .attr('fill', COL.text).attr('font-size', '9').text(`count: ${it.count}`);
+    row.append('text').attr('x', 80).attr('y', 8)
+      .attr('fill', COL.muted).attr('font-size', '9').text('→ link');
+  });
+})();
+
+
+/* ══════════════════════════════
+   3. GSP SEQUENCE DIAGRAM
+══════════════════════════════ */
+(function buildSeqDiagram() {
+  const el = document.getElementById('seq-diagram');
+  const W  = el.clientWidth || 950, H = 340;
+
+  const svg = d3.select('#seq-diagram').append('svg')
+    .attr('width', '100%').attr('height', H)
+    .attr('viewBox', `0 0 ${W} ${H}`);
+
+  const customers = [
+    { id: 'C1', events: [
+      { t: 'Day 1',  items: ['Browse'], match: true  },
+      { t: 'Day 2',  items: ['AddCart'], match: true  },
+      { t: 'Day 5',  items: ['Purchase'], match: true  },
+    ]},
+    { id: 'C2', events: [
+      { t: 'Day 1',  items: ['Browse'], match: true  },
+      { t: 'Day 3',  items: ['Wishlist'], match: false },
+      { t: 'Day 4',  items: ['AddCart'], match: true  },
+      { t: 'Day 9',  items: ['Purchase'], match: true  },
+    ]},
+    { id: 'C3', events: [
+      { t: 'Day 1',  items: ['AddCart'], match: false },
+      { t: 'Day 2',  items: ['Browse', 'Return'], match: false },
+      { t: 'Day 6',  items: ['Browse'], match: false },
+    ]},
+    { id: 'C4', events: [
+      { t: 'Day 1',  items: ['Browse'], match: true  },
+      { t: 'Day 2',  items: ['Browse', 'AddCart'], match: true  },
+      { t: 'Day 3',  items: ['Purchase'], match: true  },
+    ]},
+  ];
+
+  const rowH = 72, colW = (W - 140) / 5, startX = 140, startY = 30;
+  const eventColors = {
+    Browse: COL.blue, AddCart: COL.green, Purchase: COL.yellow,
+    Wishlist: COL.purple, Return: COL.red,
+  };
+
+  // Pattern label
+  svg.append('text').attr('x', W / 2).attr('y', 18)
+    .attr('text-anchor', 'middle').attr('fill', COL.purple)
+    .attr('font-size', '10').attr('font-family', 'JetBrains Mono')
+    .text('Pattern: <{Browse} → {AddCart} → {Purchase}>   min_support = 3 (found in C1, C2, C4)');
+
+  // Timeline header
+  const timeLabels = ['Day 1', 'Day 2–3', 'Day 4–5', 'Day 6–7', 'Day 8+'];
+  timeLabels.forEach((t, i) => {
+    svg.append('text').attr('x', startX + i * colW + colW / 2).attr('y', 36)
+      .attr('text-anchor', 'middle').attr('fill', COL.muted)
+      .attr('font-size', '9').attr('font-family', 'JetBrains Mono').text(t);
+  });
+
+  // Vertical time grid lines
+  for (let i = 0; i <= 5; i++) {
+    svg.append('line')
+      .attr('x1', startX + i * colW).attr('y1', 42)
+      .attr('x2', startX + i * colW).attr('y2', H - 20)
+      .attr('stroke', COL.border).attr('stroke-width', 1);
+  }
+
+  const dayToCol = d => {
+    if (d <= 1) return 0; if (d <= 3) return 1;
+    if (d <= 5) return 2; if (d <= 7) return 3; return 4;
+  };
+
+  customers.forEach((cust, ri) => {
+    const y = startY + 36 + ri * rowH;
+
+    // Customer ID
+    svg.append('text').attr('x', startX - 12).attr('y', y + 26)
+      .attr('text-anchor', 'end').attr('fill', COL.text)
+      .attr('font-size', '10').attr('font-weight', '700')
+      .attr('font-family', 'JetBrains Mono').text(cust.id);
+
+    // Row background
+    svg.append('rect').attr('x', startX).attr('y', y + 4)
+      .attr('width', colW * 5).attr('height', rowH - 10)
+      .attr('fill', COL.surface).attr('rx', 4).attr('opacity', 0.5);
+
+    // Match indicator strip
+    const matched = cust.events.some(e => e.match);
+    svg.append('rect').attr('x', startX - 6).attr('y', y + 8)
+      .attr('width', 3).attr('height', rowH - 18)
+      .attr('fill', matched ? COL.green : COL.red).attr('rx', 1.5);
+
+    // Draw events
+    const eventsByCol = {};
+    cust.events.forEach(ev => {
+      const dayNum = parseInt(ev.t.replace('Day ', ''));
+      const col = dayToCol(dayNum);
+      if (!eventsByCol[col]) eventsByCol[col] = [];
+      eventsByCol[col].push(ev);
+    });
+
+    Object.entries(eventsByCol).forEach(([col, evs]) => {
+      const cx = startX + parseInt(col) * colW + colW / 2;
+      evs.forEach((ev, ei) => {
+        const cy = y + 14 + ei * 20;
+        ev.items.forEach((item, ii) => {
+          const color = eventColors[item] || COL.dim;
+          const boxW  = Math.min(colW - 8, item.length * 6.5 + 10);
+          const bx    = cx - boxW / 2;
+
+          svg.append('rect')
+            .attr('x', bx).attr('y', cy + ii * 18)
+            .attr('width', boxW).attr('height', 16).attr('rx', 3)
+            .attr('fill', ev.match ? color + '33' : color + '11')
+            .attr('stroke', ev.match ? color : COL.muted)
+            .attr('stroke-width', ev.match ? 1.5 : 0.8);
+
+          svg.append('text')
+            .attr('x', cx).attr('y', cy + ii * 18 + 11)
+            .attr('text-anchor', 'middle')
+            .attr('fill', ev.match ? color : COL.muted)
+            .attr('font-size', '8').attr('font-family', 'JetBrains Mono')
+            .attr('font-weight', ev.match ? '700' : '400')
+            .text(item);
+        });
+
+        // Arrow between matched events
+        if (ei > 0 && ev.match) {
+          const prevCx = startX + parseInt(col) * colW + colW / 2;
+        }
+      });
+    });
+
+    // Draw arrows between matched events across columns
+    const matchedEvs = cust.events.filter(e => e.match);
+    matchedEvs.forEach((ev, i) => {
+      if (i === 0) return;
+      const prevEv = matchedEvs[i - 1];
+      const d1 = parseInt(prevEv.t.replace('Day ', ''));
+      const d2 = parseInt(ev.t.replace('Day ', ''));
+      const c1 = dayToCol(d1), c2 = dayToCol(d2);
+      const x1 = startX + c1 * colW + colW / 2 + (colW - 8) / 2 - 2;
+      const x2 = startX + c2 * colW + colW / 2 - (colW - 8) / 2 + 2;
+      const ay = y + 22;
+      svg.append('line').attr('x1', x1).attr('y1', ay).attr('x2', x2).attr('y2', ay)
+        .attr('stroke', COL.purple).attr('stroke-width', 1.5).attr('stroke-dasharray', '3,2')
+        .attr('marker-end', 'url(#arrow)');
+    });
+  });
+
+  // Arrow marker
+  svg.append('defs').append('marker')
+    .attr('id', 'arrow').attr('viewBox', '0 -4 8 8').attr('refX', 6)
+    .attr('refY', 0).attr('markerWidth', 5).attr('markerHeight', 5).attr('orient', 'auto')
+    .append('path').attr('d', 'M0,-4L8,0L0,4').attr('fill', COL.purple);
+
+  // Legend
+  const lg = svg.append('g').attr('transform', `translate(${startX}, ${H - 20})`);
+  const items = [['Matches pattern', COL.green, true], ['Does not match', COL.red, false], ['In sequence', COL.purple, null]];
+  items.forEach(([label, color, match], i) => {
+    const x = i * 180;
+    if (match !== null) {
+      lg.append('rect').attr('x', x).attr('y', -8).attr('width', 12).attr('height', 10).attr('rx', 2)
+        .attr('fill', color + '33').attr('stroke', color).attr('stroke-width', 1.5);
+    } else {
+      lg.append('line').attr('x1', x).attr('y1', -3).attr('x2', x + 12).attr('y2', -3)
+        .attr('stroke', color).attr('stroke-width', 1.5).attr('stroke-dasharray', '3,2');
+    }
+    lg.append('text').attr('x', x + 16).attr('y', 0).attr('fill', COL.dim)
+      .attr('font-size', '9').attr('font-family', 'JetBrains Mono').text(label);
+  });
+})();
+</script>
+</body>
+</html>

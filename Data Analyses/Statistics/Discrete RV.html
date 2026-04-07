@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Discrete Random Variables — PMF Cheat Sheet</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=JetBrains+Mono:wght@400;500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #08090c;
+  --surface:   #0f1117;
+  --surface2:  #161822;
+  --border:    #1f2133;
+  --border2:   #2a2d44;
+  --text:      #e2e4f0;
+  --text-dim:  #7b7f9e;
+  --text-faint:#3a3d55;
+
+  --bern:  #f59e0b;
+  --binom: #34d399;
+  --geo:   #60a5fa;
+  --nb:    #f472b6;
+  --pois:  #a78bfa;
+  --hyper: #fb7185;
+  --unif:  #fbbf24;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  line-height: 1.65;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── Texture overlay ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity: 0.4;
+}
+
+/* ── Typography ── */
+.display { font-family: 'Crimson Pro', serif; }
+.mono    { font-family: 'JetBrains Mono', monospace; }
+
+/* ── Nav ── */
+nav {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(8,9,12,0.88);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  display: flex; align-items: center; height: 50px; gap: 0;
+}
+.nav-brand {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem; letter-spacing: 0.2em;
+  color: var(--text-dim); text-transform: uppercase;
+  margin-right: auto;
+}
+.nav-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.2rem 0.7rem; border-radius: 2px;
+  border: 1px solid var(--border2); color: var(--text-dim);
+  margin-left: 0.75rem;
+}
+
+/* ── Hero ── */
+.hero {
+  position: relative; padding: 5rem 2rem 4rem; text-align: center;
+  overflow: hidden;
+}
+.hero-bg {
+  position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 60% at 20% 50%, rgba(96,165,250,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 80% 40%, rgba(167,139,250,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 50% 100%, rgba(52,211,153,0.04) 0%, transparent 60%);
+}
+.hero-eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem; letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--text-faint); margin-bottom: 1.25rem;
+}
+.hero h1 {
+  font-family: 'Crimson Pro', serif;
+  font-size: clamp(3rem, 7vw, 6rem);
+  font-weight: 300; letter-spacing: -0.02em; line-height: 0.95;
+  color: var(--text);
+}
+.hero h1 em { font-style: italic; color: #a5b4fc; }
+.hero-sub {
+  font-size: 0.9rem; color: var(--text-dim);
+  margin-top: 1.25rem; max-width: 480px; margin-left: auto; margin-right: auto;
+}
+
+/* ── Layout ── */
+.page { max-width: 1320px; margin: 0 auto; padding: 0 1.5rem 6rem; }
+
+/* ── Section label ── */
+.section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem; letter-spacing: 0.25em; text-transform: uppercase;
+  color: var(--text-faint); padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;
+}
+.section-label span { flex-shrink: 0; }
+.section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); display: none; }
+
+/* ── Intro block ── */
+.intro-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 1px; background: var(--border); border: 1px solid var(--border);
+  margin-bottom: 3.5rem;
+}
+.intro-cell {
+  background: var(--surface); padding: 1.25rem 1.5rem;
+}
+.intro-cell .label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.62rem; letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--text-faint); margin-bottom: 0.5rem;
+}
+.intro-cell p { font-size: 0.85rem; color: var(--text-dim); line-height: 1.6; }
+.intro-cell .formula-big {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem; color: #a5b4fc;
+  background: var(--surface2); padding: 0.5rem 0.75rem;
+  border-left: 2px solid #a5b4fc40; margin-top: 0.5rem;
+}
+
+/* ── Distribution card ── */
+.dist-section {
+  margin-bottom: 4rem;
+  animation: fadeUp 0.5s ease both;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.dist-header {
+  display: flex; align-items: baseline; gap: 1rem;
+  margin-bottom: 1.5rem; padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+.dist-number {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem; color: var(--text-faint);
+  letter-spacing: 0.1em; flex-shrink: 0;
+}
+.dist-name {
+  font-family: 'Crimson Pro', serif;
+  font-size: 1.9rem; font-weight: 400; letter-spacing: -0.01em;
+}
+.dist-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 0.18rem 0.6rem; border-radius: 2px; margin-left: auto;
+}
+
+.dist-body {
+  display: grid; grid-template-columns: 1fr 1fr 1.2fr;
+  gap: 1px; background: var(--border); border: 1px solid var(--border);
+}
+
+/* Left col */
+.dist-left {
+  background: var(--surface); padding: 1.5rem;
+  display: flex; flex-direction: column; gap: 1.25rem;
+}
+
+/* Center col */
+.dist-center {
+  background: var(--surface); padding: 1.5rem;
+  display: flex; flex-direction: column; gap: 1rem;
+}
+
+/* Right col — chart */
+.dist-chart {
+  background: var(--surface2); padding: 1.25rem;
+  display: flex; flex-direction: column;
+}
+
+/* Micro-label */
+.micro {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-faint); margin-bottom: 0.4rem;
+}
+
+/* Intuition block */
+.intuition {
+  font-family: 'Crimson Pro', serif;
+  font-size: 1.05rem; font-style: italic; color: var(--text-dim);
+  line-height: 1.55; padding-left: 0.75rem;
+  border-left: 2px solid var(--border2);
+}
+
+/* Formula block */
+.formula-wrap {
+  background: var(--surface2); border: 1px solid var(--border2);
+  padding: 0.85rem 1rem;
+}
+.formula-main {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem; color: #e2e4f0; line-height: 1.7;
+}
+.formula-main .accent { color: #a5b4fc; }
+.formula-comment {
+  font-size: 0.72rem; color: var(--text-faint);
+  margin-top: 0.4rem; font-family: 'JetBrains Mono', monospace;
+}
+
+/* Stats row */
+.stats-row {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 1px; background: var(--border);
+}
+.stat-cell {
+  background: var(--surface2); padding: 0.6rem 0.75rem;
+}
+.stat-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-faint);
+}
+.stat-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem; color: var(--text); margin-top: 0.1rem;
+}
+
+/* Conditions list */
+.conditions { list-style: none; }
+.conditions li {
+  display: flex; gap: 0.5rem; align-items: flex-start;
+  font-size: 0.8rem; color: var(--text-dim);
+  padding: 0.3rem 0; border-bottom: 1px solid var(--border);
+}
+.conditions li:last-child { border: none; }
+.conditions .bullet { flex-shrink: 0; margin-top: 0.05rem; }
+
+/* Use-case */
+.usecase {
+  font-size: 0.82rem; color: var(--text-dim); line-height: 1.6;
+}
+.usecase strong { color: var(--text); font-weight: 500; }
+
+/* Chart controls */
+.chart-controls {
+  display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap;
+}
+.ctrl-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem; color: var(--text-faint); letter-spacing: 0.1em;
+  text-transform: uppercase; display: flex; flex-direction: column; gap: 0.2rem;
+  flex: 1; min-width: 70px;
+}
+.ctrl-label input[type=range] {
+  width: 100%; accent-color: currentColor;
+  height: 3px; cursor: pointer;
+}
+.ctrl-val {
+  font-size: 0.7rem; color: var(--text);
+}
+.chart-canvas-wrap { flex: 1; position: relative; min-height: 160px; }
+
+/* Note callout */
+.note {
+  background: rgba(165,180,252,0.05); border-left: 2px solid #a5b4fc40;
+  padding: 0.5rem 0.75rem; font-size: 0.78rem; color: var(--text-dim);
+  margin-top: 0.5rem;
+}
+
+/* Property badge */
+.prop-badge {
+  display: inline-block; font-family: 'JetBrains Mono', monospace;
+  font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.15rem 0.5rem; border-radius: 2px; margin-right: 0.25rem;
+}
+
+/* ── Memoryless highlight ── */
+.memoryless {
+  background: rgba(251,191,36,0.06); border: 1px solid rgba(251,191,36,0.15);
+  padding: 0.5rem 0.75rem; font-size: 0.78rem; color: #fbbf24cc;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Comparison table ── */
+.cmp-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.cmp-table th {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-faint);
+  padding: 0.5rem 0.75rem; text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+.cmp-table td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top; color: var(--text-dim);
+}
+.cmp-table td:first-child { color: var(--text); font-weight: 500; }
+.cmp-table tr:last-child td { border: none; }
+.cmp-table .formula-col {
+  font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #a5b4fc;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .dist-body { grid-template-columns: 1fr; }
+  .intro-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .dist-body { grid-template-columns: 1fr; }
+}
+
+/* ── Scroll reveal ── */
+.dist-section:nth-child(1) { animation-delay: 0.05s; }
+.dist-section:nth-child(2) { animation-delay: 0.1s; }
+.dist-section:nth-child(3) { animation-delay: 0.15s; }
+.dist-section:nth-child(4) { animation-delay: 0.2s; }
+.dist-section:nth-child(5) { animation-delay: 0.25s; }
+.dist-section:nth-child(6) { animation-delay: 0.3s; }
+.dist-section:nth-child(7) { animation-delay: 0.35s; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <span class="nav-brand">drv // pmf reference</span>
+  <span class="nav-pill">Discrete</span>
+  <span class="nav-pill">Probability</span>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-bg"></div>
+  <div style="position:relative">
+    <div class="hero-eyebrow">University Statistics — Chapter Reference</div>
+    <h1 class="display">Discrete<br><em>Random Variables</em></h1>
+    <p class="hero-sub">PMF · Parameters · Intuition · Use Cases · Interactive Visualizations</p>
+  </div>
+</div>
+
+<div class="page" style="position:relative;z-index:1">
+
+  <!-- INTRO BLOCKS -->
+  <div class="section-label" style="margin-bottom:1.5rem"><span>00 — Foundations</span></div>
+  <div class="intro-grid" style="margin-bottom:3.5rem">
+    <div class="intro-cell">
+      <div class="label">What is a Discrete RV?</div>
+      <p>A random variable X is <strong style="color:var(--text)">discrete</strong> when it can only take a countable number of distinct values — usually whole numbers. Think counts: number of heads, number of arrivals, number of defects.</p>
+    </div>
+    <div class="intro-cell">
+      <div class="label">PMF — Probability Mass Function</div>
+      <p>The PMF gives the exact probability that X equals a specific value k. It answers: <em style="color:var(--text)">"What is the chance of getting exactly k?"</em></p>
+      <div class="formula-big">P(X = k) = f(k),  k ∈ support</div>
+    </div>
+    <div class="intro-cell">
+      <div class="label">Two PMF Rules (always hold)</div>
+      <p>Every valid PMF must satisfy these two axioms — they are non-negotiable:</p>
+      <div class="formula-big">① P(X=k) ≥ 0  for all k<br>② Σ P(X=k) = 1  (sums to one)</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ 1. BERNOULLI ═══════════════════════════════ -->
+  <div class="section-label"><span>01 — Bernoulli</span></div>
+  <div class="dist-section">
+    <div class="dist-header">
+      <span class="dist-number">Ber(p)</span>
+      <span class="dist-name" style="color:var(--bern)">Bernoulli Distribution</span>
+      <span class="dist-tag" style="background:rgba(245,158,11,0.1);color:var(--bern);border:1px solid rgba(245,158,11,0.2)">The Coin Flip</span>
+    </div>
+    <div class="dist-body">
+      <!-- LEFT -->
+      <div class="dist-left">
+        <div>
+          <div class="micro">Simple Intuition</div>
+          <p class="intuition">"One trial. Two outcomes. Either it happens — with probability p — or it doesn't."</p>
+        </div>
+        <div>
+          <div class="micro">Technical Definition</div>
+          <p class="usecase">The simplest building block of all discrete distributions. X takes value <strong>1</strong> (success) with probability p, and <strong>0</strong> (failure) with probability 1−p. Every other discrete distribution is built from or related to Bernoulli trials.</p>
+        </div>
+        <div>
+          <div class="micro">Conditions</div>
+          <ul class="conditions">
+            <li><span class="bullet" style="color:var(--bern)">▸</span><span>Exactly one trial</span></li>
+            <li><span class="bullet" style="color:var(--bern)">▸</span><span>Exactly two outcomes: success or failure</span></li>
+            <li><span class="bullet" style="color:var(--bern)">▸</span><span>P(success) = p is fixed and known</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="micro">Real-World Use Cases</div>
+          <p class="usecase">A patient either responds to a drug or not. A manufactured part is defective or not. An email is spam or not. A student passes or fails a single exam.</p>
+        </div>
+      </div>
+      <!-- CENTER -->
+      <div class="dist-center">
+        <div>
+          <div class="micro">PMF</div>
+          <div class="formula-wrap">
+            <div class="formula-main">
+              P(X=k) = <span class="accent">p<sup>k</sup>(1−p)<sup>1−k</sup></span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;k ∈ {0, 1}
+            </div>
+            <div class="formula-comment">// Equivalently: P(X=1)=p, P(X=0)=1−p</div>
+          </div>
+        </div>
+        <div>
+          <div class="micro">Parameters &amp; Moments</div>
+          <div class="stats-row">
+            <div class="stat-cell"><div class="stat-label">Parameter</div><div class="stat-val">p ∈ (0,1)</div></div>
+            <div class="stat-cell"><div class="stat-label">Support</div><div class="stat-val">k ∈ {0, 1}</div></div>
+            <div class="stat-cell"><div class="stat-label">Mean  E[X]</div><div class="stat-val" style="color:var(--bern)">p</div></div>
+            <div class="stat-cell"><div class="stat-label">Variance</div><div class="stat-val" style="color:var(--bern)">p(1−p)</div></div>
+            <div class="stat-cell"><div class="stat-label">MGF</div><div class="stat-val">(1−p) + pe<sup>t</sup></div></div>
+            <div class="stat-cell"><div class="stat-label">Skewness</div><div class="stat-val">(1−2p)/√Var</div></div>
+          </div>
+        </div>
+        <div class="note">
+          <strong style="color:var(--text)">Key insight:</strong> Variance is maximized at p = 0.5 (most uncertain) and is zero at p = 0 or p = 1 (certainty).
+        </div>
+      </div>
+      <!-- CHART -->
+      <div class="dist-chart">
+        <div class="micro" style="color:var(--bern)">Interactive PMF</div>
+        <div class="chart-controls">
+          <label class="ctrl-label" style="color:var(--bern)">
+            p (success prob)
+            <input type="range" id="bern-p" min="0.01" max="0.99" step="0.01" value="0.4">
+            <span class="ctrl-val" id="bern-p-val">0.40</span>
+          </label>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chart-bern"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ 2. BINOMIAL ═══════════════════════════════ -->
+  <div class="section-label"><span>02 — Binomial</span></div>
+  <div class="dist-section">
+    <div class="dist-header">
+      <span class="dist-number">B(n,p)</span>
+      <span class="dist-name" style="color:var(--binom)">Binomial Distribution</span>
+      <span class="dist-tag" style="background:rgba(52,211,153,0.1);color:var(--binom);border:1px solid rgba(52,211,153,0.2)">Repeated Coin Flips</span>
+    </div>
+    <div class="dist-body">
+      <div class="dist-left">
+        <div>
+          <div class="micro">Simple Intuition</div>
+          <p class="intuition">"You flip a coin n times. How many times does it land heads? That count follows a Binomial distribution."</p>
+        </div>
+        <div>
+          <div class="micro">Technical Definition</div>
+          <p class="usecase">The sum of n independent, identical Bernoulli(p) trials. X counts the total number of successes. The C(n,k) term accounts for all the different orderings in which k successes can occur among n trials.</p>
+        </div>
+        <div>
+          <div class="micro">Conditions (BINS)</div>
+          <ul class="conditions">
+            <li><span class="bullet" style="color:var(--binom)">▸</span><span><strong>B</strong>inary outcomes only</span></li>
+            <li><span class="bullet" style="color:var(--binom)">▸</span><span><strong>I</strong>ndependent trials</span></li>
+            <li><span class="bullet" style="color:var(--binom)">▸</span><span><strong>N</strong>umber of trials n is fixed</span></li>
+            <li><span class="bullet" style="color:var(--binom)">▸</span><span><strong>S</strong>ame probability p each trial</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="micro">Real-World Use Cases</div>
+          <p class="usecase">Quality control: how many defective items in a batch of 100? Drug trial: how many of 50 patients recover? Polling: how many of 1000 voters choose candidate A?</p>
+        </div>
+      </div>
+      <div class="dist-center">
+        <div>
+          <div class="micro">PMF</div>
+          <div class="formula-wrap">
+            <div class="formula-main">
+              P(X=k) = <span class="accent">C(n,k) · p<sup>k</sup> · (1−p)<sup>n−k</sup></span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;k ∈ {0, 1, 2, …, n}
+            </div>
+            <div class="formula-comment">// C(n,k) = n! / [k!(n−k)!]  — "n choose k"</div>
+          </div>
+        </div>
+        <div>
+          <div class="micro">Parameters &amp; Moments</div>
+          <div class="stats-row">
+            <div class="stat-cell"><div class="stat-label">Parameters</div><div class="stat-val">n ∈ ℤ⁺,  p ∈ (0,1)</div></div>
+            <div class="stat-cell"><div class="stat-label">Support</div><div class="stat-val">k ∈ {0,1,…,n}</div></div>
+            <div class="stat-cell"><div class="stat-label">Mean  E[X]</div><div class="stat-val" style="color:var(--binom)">np</div></div>
+            <div class="stat-cell"><div class="stat-label">Variance</div><div class="stat-val" style="color:var(--binom)">np(1−p)</div></div>
+            <div class="stat-cell"><div class="stat-label">Skewness</div><div class="stat-val">(1−2p)/√(np(1−p))</div></div>
+            <div class="stat-cell"><div class="stat-label">Special case</div><div class="stat-val">n=1 → Bernoulli(p)</div></div>
+          </div>
+        </div>
+        <div class="note">
+          <strong style="color:var(--text)">Approximation:</strong> When n is large and p is small (np &lt; 10), use Poisson(λ=np). When n is large and np &gt; 5, use Normal(μ=np, σ²=np(1−p)).
+        </div>
+      </div>
+      <div class="dist-chart">
+        <div class="micro" style="color:var(--binom)">Interactive PMF</div>
+        <div class="chart-controls">
+          <label class="ctrl-label" style="color:var(--binom)">
+            n (trials)
+            <input type="range" id="binom-n" min="1" max="30" step="1" value="10">
+            <span class="ctrl-val" id="binom-n-val">10</span>
+          </label>
+          <label class="ctrl-label" style="color:var(--binom)">
+            p (success)
+            <input type="range" id="binom-p" min="0.01" max="0.99" step="0.01" value="0.4">
+            <span class="ctrl-val" id="binom-p-val">0.40</span>
+          </label>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chart-binom"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ 3. GEOMETRIC ═══════════════════════════════ -->
+  <div class="section-label"><span>03 — Geometric</span></div>
+  <div class="dist-section">
+    <div class="dist-header">
+      <span class="dist-number">Geo(p)</span>
+      <span class="dist-name" style="color:var(--geo)">Geometric Distribution</span>
+      <span class="dist-tag" style="background:rgba(96,165,250,0.1);color:var(--geo);border:1px solid rgba(96,165,250,0.2)">The Waiting Game</span>
+    </div>
+    <div class="dist-body">
+      <div class="dist-left">
+        <div>
+          <div class="micro">Simple Intuition</div>
+          <p class="intuition">"You keep trying until you finally succeed. How many tries does it take? That's the Geometric distribution."</p>
+        </div>
+        <div>
+          <div class="micro">Technical Definition</div>
+          <p class="usecase">X is the number of independent Bernoulli(p) trials needed to get the <strong>first success</strong>. Each failed attempt is (1−p), and the final trial succeeds with probability p. The PMF decays exponentially — the longer you wait, the less likely it becomes.</p>
+        </div>
+        <div>
+          <div class="micro">Conditions</div>
+          <ul class="conditions">
+            <li><span class="bullet" style="color:var(--geo)">▸</span><span>Trials are independent</span></li>
+            <li><span class="bullet" style="color:var(--geo)">▸</span><span>Each trial: same probability p of success</span></li>
+            <li><span class="bullet" style="color:var(--geo)">▸</span><span>Trial continues until first success</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="micro">Real-World Use Cases</div>
+          <p class="usecase">Number of calls until a customer answers. Number of job applications before getting an offer. Number of free-throw attempts until first miss. Server requests until first error.</p>
+        </div>
+        <div class="memoryless">
+          ⚡ Memoryless Property:<br>
+          P(X > m+n | X > m) = P(X > n)<br>
+          Past failures don't affect future probability.
+        </div>
+      </div>
+      <div class="dist-center">
+        <div>
+          <div class="micro">PMF</div>
+          <div class="formula-wrap">
+            <div class="formula-main">
+              P(X=k) = <span class="accent">(1−p)<sup>k−1</sup> · p</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;k ∈ {1, 2, 3, …}
+            </div>
+            <div class="formula-comment">// k−1 failures, then 1 success</div>
+          </div>
+        </div>
+        <div>
+          <div class="micro">Parameters &amp; Moments</div>
+          <div class="stats-row">
+            <div class="stat-cell"><div class="stat-label">Parameter</div><div class="stat-val">p ∈ (0,1)</div></div>
+            <div class="stat-cell"><div class="stat-label">Support</div><div class="stat-val">k ∈ {1, 2, 3, …}</div></div>
+            <div class="stat-cell"><div class="stat-label">Mean  E[X]</div><div class="stat-val" style="color:var(--geo)">1/p</div></div>
+            <div class="stat-cell"><div class="stat-label">Variance</div><div class="stat-val" style="color:var(--geo)">(1−p)/p²</div></div>
+            <div class="stat-cell"><div class="stat-label">Median</div><div class="stat-val">⌈ −1/log₂(1−p) ⌉</div></div>
+            <div class="stat-cell"><div class="stat-label">Alt. form</div><div class="stat-val">k ∈ {0,1,…} → shift by 1</div></div>
+          </div>
+        </div>
+        <div class="note">
+          <strong style="color:var(--text)">Caution — two conventions:</strong> Some textbooks define X as the number of failures before success (support starts at 0). Always check which convention is used; E[X] differs by 1.
+        </div>
+      </div>
+      <div class="dist-chart">
+        <div class="micro" style="color:var(--geo)">Interactive PMF</div>
+        <div class="chart-controls">
+          <label class="ctrl-label" style="color:var(--geo)">
+            p (success prob)
+            <input type="range" id="geo-p" min="0.05" max="0.9" step="0.01" value="0.3">
+            <span class="ctrl-val" id="geo-p-val">0.30</span>
+          </label>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chart-geo"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ 4. NEGATIVE BINOMIAL ═══════════════════════════════ -->
+  <div class="section-label"><span>04 — Negative Binomial</span></div>
+  <div class="dist-section">
+    <div class="dist-header">
+      <span class="dist-number">NB(r,p)</span>
+      <span class="dist-name" style="color:var(--nb)">Negative Binomial Distribution</span>
+      <span class="dist-tag" style="background:rgba(244,114,182,0.1);color:var(--nb);border:1px solid rgba(244,114,182,0.2)">Geometric Generalized</span>
+    </div>
+    <div class="dist-body">
+      <div class="dist-left">
+        <div>
+          <div class="micro">Simple Intuition</div>
+          <p class="intuition">"You don't stop after 1 success — you need r successes. How many total trials does that take? That's the Negative Binomial."</p>
+        </div>
+        <div>
+          <div class="micro">Technical Definition</div>
+          <p class="usecase">X is the number of trials needed to achieve exactly <strong>r successes</strong> in independent Bernoulli(p) trials. The last trial must be the r-th success, and the preceding k−1 trials contain exactly r−1 successes. Geometric is the special case r = 1.</p>
+        </div>
+        <div>
+          <div class="micro">Conditions</div>
+          <ul class="conditions">
+            <li><span class="bullet" style="color:var(--nb)">▸</span><span>Independent Bernoulli trials, fixed p</span></li>
+            <li><span class="bullet" style="color:var(--nb)">▸</span><span>Fixed target: exactly r successes</span></li>
+            <li><span class="bullet" style="color:var(--nb)">▸</span><span>X counts total trials (not failures)</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="micro">Real-World Use Cases</div>
+          <p class="usecase">Recruiting: trials until 5 qualified candidates found. Clinical: patients screened until r respond to drug. Manufacturing: items inspected until r pass QC. Sales: calls made until r deals closed.</p>
+        </div>
+      </div>
+      <div class="dist-center">
+        <div>
+          <div class="micro">PMF</div>
+          <div class="formula-wrap">
+            <div class="formula-main">
+              P(X=k) = <span class="accent">C(k−1, r−1) · p<sup>r</sup> · (1−p)<sup>k−r</sup></span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;k ∈ {r, r+1, r+2, …}
+            </div>
+            <div class="formula-comment">// k−r failures before the r-th success<br>// Last trial is always the r-th success</div>
+          </div>
+        </div>
+        <div>
+          <div class="micro">Parameters &amp; Moments</div>
+          <div class="stats-row">
+            <div class="stat-cell"><div class="stat-label">Parameters</div><div class="stat-val">r ∈ ℤ⁺,  p ∈ (0,1)</div></div>
+            <div class="stat-cell"><div class="stat-label">Support</div><div class="stat-val">k ∈ {r, r+1, …}</div></div>
+            <div class="stat-cell"><div class="stat-label">Mean  E[X]</div><div class="stat-val" style="color:var(--nb)">r/p</div></div>
+            <div class="stat-cell"><div class="stat-label">Variance</div><div class="stat-val" style="color:var(--nb)">r(1−p)/p²</div></div>
+            <div class="stat-cell"><div class="stat-label">Special case</div><div class="stat-val">r=1 → Geometric(p)</div></div>
+            <div class="stat-cell"><div class="stat-label">Sum property</div><div class="stat-val">Sum of r Geometric RVs</div></div>
+          </div>
+        </div>
+        <div class="note">
+          <strong style="color:var(--text)">Alternative parameterization:</strong> Some books define X as number of <em>failures</em> before r-th success (support starts at 0). Then E[X] = r(1−p)/p.
+        </div>
+      </div>
+      <div class="dist-chart">
+        <div class="micro" style="color:var(--nb)">Interactive PMF</div>
+        <div class="chart-controls">
+          <label class="ctrl-label" style="color:var(--nb)">
+            r (target successes)
+            <input type="range" id="nb-r" min="1" max="10" step="1" value="3">
+            <span class="ctrl-val" id="nb-r-val">3</span>
+          </label>
+          <label class="ctrl-label" style="color:var(--nb)">
+            p (success)
+            <input type="range" id="nb-p" min="0.05" max="0.9" step="0.01" value="0.4">
+            <span class="ctrl-val" id="nb-p-val">0.40</span>
+          </label>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chart-nb"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ 5. POISSON ═══════════════════════════════ -->
+  <div class="section-label"><span>05 — Poisson</span></div>
+  <div class="dist-section">
+    <div class="dist-header">
+      <span class="dist-number">Pois(λ)</span>
+      <span class="dist-name" style="color:var(--pois)">Poisson Distribution</span>
+      <span class="dist-tag" style="background:rgba(167,139,250,0.1);color:var(--pois);border:1px solid rgba(167,139,250,0.2)">Events in Time / Space</span>
+    </div>
+    <div class="dist-body">
+      <div class="dist-left">
+        <div>
+          <div class="micro">Simple Intuition</div>
+          <p class="intuition">"Events happen randomly but at a known average rate. How many happen in a fixed window of time or space? That's Poisson."</p>
+        </div>
+        <div>
+          <div class="micro">Technical Definition</div>
+          <p class="usecase">X counts the number of events occurring in a fixed interval, where events occur <strong>independently</strong> at a constant average rate λ (lambda). Derived as the limit of Binomial(n, p) as n→∞ and p→0 with λ = np held constant. The e<sup>−λ</sup> factor is the normalizing constant ensuring the PMF sums to 1.</p>
+        </div>
+        <div>
+          <div class="micro">Conditions (RICE)</div>
+          <ul class="conditions">
+            <li><span class="bullet" style="color:var(--pois)">▸</span><span><strong>R</strong>andomness: events occur at random</span></li>
+            <li><span class="bullet" style="color:var(--pois)">▸</span><span><strong>I</strong>ndependence: non-overlapping intervals independent</span></li>
+            <li><span class="bullet" style="color:var(--pois)">▸</span><span><strong>C</strong>onstant rate λ per unit</span></li>
+            <li><span class="bullet" style="color:var(--pois)">▸</span><span><strong>E</strong>xclusivity: max 1 event per instant (no simultaneous)</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="micro">Real-World Use Cases</div>
+          <p class="usecase">Website hits per minute. Emails received per hour. Earthquakes per year in a region. Typos per page. Calls arriving at a call center. Radioactive decay events per second.</p>
+        </div>
+      </div>
+      <div class="dist-center">
+        <div>
+          <div class="micro">PMF</div>
+          <div class="formula-wrap">
+            <div class="formula-main">
+              P(X=k) = <span class="accent">e<sup>−λ</sup> · λ<sup>k</sup> / k!</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;k ∈ {0, 1, 2, 3, …}
+            </div>
+            <div class="formula-comment">// λ = average rate (events per unit)<br>// e ≈ 2.71828 (Euler's number)</div>
+          </div>
+        </div>
+        <div>
+          <div class="micro">Parameters &amp; Moments</div>
+          <div class="stats-row">
+            <div class="stat-cell"><div class="stat-label">Parameter</div><div class="stat-val">λ &gt; 0  (rate)</div></div>
+            <div class="stat-cell"><div class="stat-label">Support</div><div class="stat-val">k ∈ {0, 1, 2, …}</div></div>
+            <div class="stat-cell"><div class="stat-label">Mean  E[X]</div><div class="stat-val" style="color:var(--pois)">λ</div></div>
+            <div class="stat-cell"><div class="stat-label">Variance</div><div class="stat-val" style="color:var(--pois)">λ  (same!)</div></div>
+            <div class="stat-cell"><div class="stat-label">Additive</div><div class="stat-val">X+Y ~ Pois(λ₁+λ₂)</div></div>
+            <div class="stat-cell"><div class="stat-label">Skewness</div><div class="stat-val">1/√λ</div></div>
+          </div>
+        </div>
+        <div class="note">
+          <strong style="color:var(--text)">Remarkable fact:</strong> Mean = Variance = λ. This is unique to Poisson. If you observe Var ≈ Mean in count data, Poisson is a natural starting model. Overdispersion (Var &gt; Mean) suggests Negative Binomial instead.
+        </div>
+      </div>
+      <div class="dist-chart">
+        <div class="micro" style="color:var(--pois)">Interactive PMF</div>
+        <div class="chart-controls">
+          <label class="ctrl-label" style="color:var(--pois)">
+            λ (average rate)
+            <input type="range" id="pois-l" min="0.5" max="15" step="0.5" value="3">
+            <span class="ctrl-val" id="pois-l-val">3.0</span>
+          </label>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chart-pois"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ 6. HYPERGEOMETRIC ═══════════════════════════════ -->
+  <div class="section-label"><span>06 — Hypergeometric</span></div>
+  <div class="dist-section">
+    <div class="dist-header">
+      <span class="dist-number">HG(N,K,n)</span>
+      <span class="dist-name" style="color:var(--hyper)">Hypergeometric Distribution</span>
+      <span class="dist-tag" style="background:rgba(251,113,133,0.1);color:var(--hyper);border:1px solid rgba(251,113,133,0.2)">Sampling Without Replacement</span>
+    </div>
+    <div class="dist-body">
+      <div class="dist-left">
+        <div>
+          <div class="micro">Simple Intuition</div>
+          <p class="intuition">"You have a bag of N marbles: K are red, the rest are blue. You draw n without putting any back. How many red marbles do you get?"</p>
+        </div>
+        <div>
+          <div class="micro">Technical Definition</div>
+          <p class="usecase">Unlike Binomial (with replacement), Hypergeometric models sampling <strong>without replacement</strong> from a finite population. Each draw changes the composition of the remaining pool, so trials are <em>not</em> independent. The PMF uses combinations to count favorable selections over all possible selections.</p>
+        </div>
+        <div>
+          <div class="micro">Parameters</div>
+          <ul class="conditions">
+            <li><span class="bullet" style="color:var(--hyper)">▸</span><span><strong>N</strong> — total population size</span></li>
+            <li><span class="bullet" style="color:var(--hyper)">▸</span><span><strong>K</strong> — number of "successes" in population</span></li>
+            <li><span class="bullet" style="color:var(--hyper)">▸</span><span><strong>n</strong> — sample size drawn</span></li>
+            <li><span class="bullet" style="color:var(--hyper)">▸</span><span>No replacement between draws</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="micro">Real-World Use Cases</div>
+          <p class="usecase">Lottery: drawing 6 numbers from 49. Acceptance sampling: testing 10 items from batch of 50 (5 defective). Card games: drawing hands from a finite deck. Medical: selecting patients from a group for treatment.</p>
+        </div>
+      </div>
+      <div class="dist-center">
+        <div>
+          <div class="micro">PMF</div>
+          <div class="formula-wrap">
+            <div class="formula-main">
+              P(X=k) = <span class="accent">C(K,k) · C(N−K, n−k)</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="accent">─────────────────────</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="accent">C(N, n)</span>
+            </div>
+            <div class="formula-comment">// max(0, n+K−N) ≤ k ≤ min(n, K)</div>
+          </div>
+        </div>
+        <div>
+          <div class="micro">Parameters &amp; Moments</div>
+          <div class="stats-row">
+            <div class="stat-cell"><div class="stat-label">Mean  E[X]</div><div class="stat-val" style="color:var(--hyper)">nK/N</div></div>
+            <div class="stat-cell"><div class="stat-label">Variance</div><div class="stat-val" style="color:var(--hyper)">n·(K/N)·(1−K/N)·(N−n)/(N−1)</div></div>
+            <div class="stat-cell"><div class="stat-label">Finite pop. correction</div><div class="stat-val">(N−n)/(N−1)</div></div>
+            <div class="stat-cell"><div class="stat-label">Approx. by</div><div class="stat-val">Binomial if n/N &lt; 0.05</div></div>
+          </div>
+        </div>
+        <div class="note">
+          <strong style="color:var(--text)">Key difference from Binomial:</strong> The finite population correction factor (N−n)/(N−1) reduces variance. When n is small relative to N (n/N &lt; 0.05), the Hypergeometric ≈ Binomial(n, K/N).
+        </div>
+      </div>
+      <div class="dist-chart">
+        <div class="micro" style="color:var(--hyper)">Interactive PMF</div>
+        <div class="chart-controls">
+          <label class="ctrl-label" style="color:var(--hyper)">
+            N (population)
+            <input type="range" id="hg-N" min="10" max="60" step="1" value="30">
+            <span class="ctrl-val" id="hg-N-val">30</span>
+          </label>
+          <label class="ctrl-label" style="color:var(--hyper)">
+            K (successes in pop.)
+            <input type="range" id="hg-K" min="1" max="29" step="1" value="10">
+            <span class="ctrl-val" id="hg-K-val">10</span>
+          </label>
+          <label class="ctrl-label" style="color:var(--hyper)">
+            n (sample size)
+            <input type="range" id="hg-n" min="1" max="20" step="1" value="8">
+            <span class="ctrl-val" id="hg-n-val">8</span>
+          </label>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chart-hg"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ 7. DISCRETE UNIFORM ═══════════════════════════════ -->
+  <div class="section-label"><span>07 — Discrete Uniform</span></div>
+  <div class="dist-section">
+    <div class="dist-header">
+      <span class="dist-number">DU(a,b)</span>
+      <span class="dist-name" style="color:var(--unif)">Discrete Uniform Distribution</span>
+      <span class="dist-tag" style="background:rgba(251,191,36,0.1);color:var(--unif);border:1px solid rgba(251,191,36,0.2)">Equally Likely Outcomes</span>
+    </div>
+    <div class="dist-body">
+      <div class="dist-left">
+        <div>
+          <div class="micro">Simple Intuition</div>
+          <p class="intuition">"Roll a fair die. Every face is equally likely. That's Discrete Uniform — all outcomes have identical probability."</p>
+        </div>
+        <div>
+          <div class="micro">Technical Definition</div>
+          <p class="usecase">X takes each integer value in {a, a+1, …, b} with exactly the same probability 1/(b−a+1). It is the discrete analogue of the continuous Uniform distribution, and represents maximum entropy — complete uncertainty about which specific value will occur.</p>
+        </div>
+        <div>
+          <div class="micro">Conditions</div>
+          <ul class="conditions">
+            <li><span class="bullet" style="color:var(--unif)">▸</span><span>Finite number of outcomes</span></li>
+            <li><span class="bullet" style="color:var(--unif)">▸</span><span>Every outcome equally probable</span></li>
+            <li><span class="bullet" style="color:var(--unif)">▸</span><span>Support is a set of consecutive integers</span></li>
+          </ul>
+        </div>
+        <div>
+          <div class="micro">Real-World Use Cases</div>
+          <p class="usecase">Rolling a fair die (a=1, b=6). Drawing a random card rank. Random number generators. Lottery ticket numbers. Randomly selecting a day of the week.</p>
+        </div>
+      </div>
+      <div class="dist-center">
+        <div>
+          <div class="micro">PMF</div>
+          <div class="formula-wrap">
+            <div class="formula-main">
+              P(X=k) = <span class="accent">1 / (b − a + 1)</span><br>
+              &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;k ∈ {a, a+1, …, b}
+            </div>
+            <div class="formula-comment">// n = b−a+1 equally likely values<br>// Every bar in the PMF is the same height</div>
+          </div>
+        </div>
+        <div>
+          <div class="micro">Parameters &amp; Moments</div>
+          <div class="stats-row">
+            <div class="stat-cell"><div class="stat-label">Parameters</div><div class="stat-val">a, b ∈ ℤ, a ≤ b</div></div>
+            <div class="stat-cell"><div class="stat-label">Support</div><div class="stat-val">k ∈ {a, …, b}</div></div>
+            <div class="stat-cell"><div class="stat-label">Mean  E[X]</div><div class="stat-val" style="color:var(--unif)">(a+b)/2</div></div>
+            <div class="stat-cell"><div class="stat-label">Variance</div><div class="stat-val" style="color:var(--unif)">(n²−1)/12, n=b−a+1</div></div>
+            <div class="stat-cell"><div class="stat-label">Entropy</div><div class="stat-val">log(b−a+1)  (maximum)</div></div>
+            <div class="stat-cell"><div class="stat-label">Skewness</div><div class="stat-val">0  (symmetric)</div></div>
+          </div>
+        </div>
+        <div class="note">
+          <strong style="color:var(--text)">Maximum entropy:</strong> Among all distributions on n outcomes, the Discrete Uniform has the highest entropy — it represents the state of maximum uncertainty, encoding zero prior information about which outcome will occur.
+        </div>
+      </div>
+      <div class="dist-chart">
+        <div class="micro" style="color:var(--unif)">Interactive PMF</div>
+        <div class="chart-controls">
+          <label class="ctrl-label" style="color:var(--unif)">
+            a (min)
+            <input type="range" id="unif-a" min="0" max="5" step="1" value="1">
+            <span class="ctrl-val" id="unif-a-val">1</span>
+          </label>
+          <label class="ctrl-label" style="color:var(--unif)">
+            b (max)
+            <input type="range" id="unif-b" min="2" max="20" step="1" value="6">
+            <span class="ctrl-val" id="unif-b-val">6</span>
+          </label>
+        </div>
+        <div class="chart-canvas-wrap"><canvas id="chart-unif"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════ COMPARISON TABLE ═══════════════════════════════ -->
+  <div class="section-label" style="margin-top:1rem"><span>08 — Quick Comparison</span></div>
+  <div style="background:var(--surface);border:1px solid var(--border);overflow-x:auto;margin-bottom:3rem">
+    <table class="cmp-table">
+      <thead>
+        <tr>
+          <th>Distribution</th>
+          <th>Question answered</th>
+          <th>PMF formula</th>
+          <th>E[X]</th>
+          <th>Var(X)</th>
+          <th>Key distinguisher</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="color:var(--bern)">Bernoulli(p)</td>
+          <td>Does this one trial succeed?</td>
+          <td class="formula-col">p<sup>k</sup>(1−p)<sup>1−k</sup></td>
+          <td class="formula-col" style="color:var(--bern)">p</td>
+          <td class="formula-col" style="color:var(--bern)">p(1−p)</td>
+          <td>n=1 trial, binary outcome</td>
+        </tr>
+        <tr>
+          <td style="color:var(--binom)">Binomial(n,p)</td>
+          <td>How many successes in n trials?</td>
+          <td class="formula-col">C(n,k)p<sup>k</sup>(1−p)<sup>n−k</sup></td>
+          <td class="formula-col" style="color:var(--binom)">np</td>
+          <td class="formula-col" style="color:var(--binom)">np(1−p)</td>
+          <td>Fixed n, with replacement</td>
+        </tr>
+        <tr>
+          <td style="color:var(--geo)">Geometric(p)</td>
+          <td>How many trials to 1st success?</td>
+          <td class="formula-col">(1−p)<sup>k−1</sup>p</td>
+          <td class="formula-col" style="color:var(--geo)">1/p</td>
+          <td class="formula-col" style="color:var(--geo)">(1−p)/p²</td>
+          <td>Memoryless; exponential decay</td>
+        </tr>
+        <tr>
+          <td style="color:var(--nb)">Neg. Binom(r,p)</td>
+          <td>How many trials to r-th success?</td>
+          <td class="formula-col">C(k−1,r−1)p<sup>r</sup>(1−p)<sup>k−r</sup></td>
+          <td class="formula-col" style="color:var(--nb)">r/p</td>
+          <td class="formula-col" style="color:var(--nb)">r(1−p)/p²</td>
+          <td>Generalizes Geometric (r=1)</td>
+        </tr>
+        <tr>
+          <td style="color:var(--pois)">Poisson(λ)</td>
+          <td>How many events in fixed interval?</td>
+          <td class="formula-col">e<sup>−λ</sup>λ<sup>k</sup>/k!</td>
+          <td class="formula-col" style="color:var(--pois)">λ</td>
+          <td class="formula-col" style="color:var(--pois)">λ</td>
+          <td>Mean = Variance; infinite support</td>
+        </tr>
+        <tr>
+          <td style="color:var(--hyper)">Hypergeometric</td>
+          <td>Successes in sample without replacement?</td>
+          <td class="formula-col">C(K,k)C(N−K,n−k)/C(N,n)</td>
+          <td class="formula-col" style="color:var(--hyper)">nK/N</td>
+          <td class="formula-col" style="color:var(--hyper)">n·(K/N)·(1−K/N)·(N−n)/(N−1)</td>
+          <td>No replacement; finite pop.</td>
+        </tr>
+        <tr>
+          <td style="color:var(--unif)">Discrete Uniform</td>
+          <td>Which equally-likely value occurs?</td>
+          <td class="formula-col">1/(b−a+1)</td>
+          <td class="formula-col" style="color:var(--unif)">(a+b)/2</td>
+          <td class="formula-col" style="color:var(--unif)">(n²−1)/12</td>
+          <td>All outcomes identical probability</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- end .page -->
+
+<!-- Footer -->
+<div style="border-top:1px solid var(--border);padding:2rem;text-align:center;position:relative;z-index:1">
+  <p style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;letter-spacing:0.15em;color:var(--text-faint);text-transform:uppercase">
+    Discrete Random Variables — PMF Reference · University Statistics
+  </p>
+</div>
+
+<script>
+// ── Chart.js global defaults ──────────────────────────────────────────────────
+Chart.defaults.color = '#7b7f9e';
+Chart.defaults.font.family = 'JetBrains Mono, monospace';
+Chart.defaults.font.size = 10;
+
+const CHART_OPTS = (color) => ({
+  responsive: true, maintainAspectRatio: false,
+  animation: { duration: 250 },
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: '#0f1117',
+      borderColor: '#1f2133', borderWidth: 1,
+      titleColor: color, bodyColor: '#e2e4f0',
+      padding: 8, cornerRadius: 2,
+      callbacks: {
+        title: ctx => `k = ${ctx[0].label}`,
+        label: ctx => `P(X=${ctx[0].label}) = ${ctx[0].raw.toFixed(4)}`
+      }
+    }
+  },
+  scales: {
+    x: {
+      grid: { color: '#1f2133', lineWidth: 1 },
+      ticks: { color: '#3a3d55' }
+    },
+    y: {
+      grid: { color: '#1f2133', lineWidth: 1 },
+      ticks: { color: '#3a3d55', maxTicksLimit: 5 },
+      beginAtZero: true
+    }
+  }
+});
+
+// ── Math helpers ──────────────────────────────────────────────────────────────
+function logFact(n) {
+  // Stirling / tabulated for exact small n
+  if (n <= 1) return 0;
+  let s = 0;
+  for (let i = 2; i <= n; i++) s += Math.log(i);
+  return s;
+}
+function logC(n, k) {
+  if (k < 0 || k > n) return -Infinity;
+  return logFact(n) - logFact(k) - logFact(n - k);
+}
+function comb(n, k) { return Math.exp(logC(n, k)); }
+
+// ── 1. Bernoulli ──────────────────────────────────────────────────────────────
+const bernChart = new Chart(document.getElementById('chart-bern'), {
+  type: 'bar',
+  data: {
+    labels: ['0', '1'],
+    datasets: [{ data: [0.6, 0.4], backgroundColor: ['#f59e0b55', '#f59e0b'],
+      borderColor: ['#f59e0baa', '#f59e0b'], borderWidth: 1, borderRadius: 2 }]
+  },
+  options: { ...CHART_OPTS('#f59e0b') }
+});
+
+function updateBern() {
+  const p = parseFloat(document.getElementById('bern-p').value);
+  document.getElementById('bern-p-val').textContent = p.toFixed(2);
+  bernChart.data.datasets[0].data = [+(1 - p).toFixed(4), +p.toFixed(4)];
+  bernChart.update();
+}
+document.getElementById('bern-p').addEventListener('input', updateBern);
+updateBern();
+
+// ── 2. Binomial ───────────────────────────────────────────────────────────────
+let binomChart = null;
+function makeBinomData(n, p) {
+  const labels = [], data = [];
+  for (let k = 0; k <= n; k++) {
+    labels.push(String(k));
+    data.push(Math.exp(logC(n, k) + k * Math.log(p) + (n - k) * Math.log(1 - p)));
+  }
+  return { labels, data };
+}
+function initBinom() {
+  const n = +document.getElementById('binom-n').value;
+  const p = parseFloat(document.getElementById('binom-p').value);
+  const { labels, data } = makeBinomData(n, p);
+  if (binomChart) binomChart.destroy();
+  binomChart = new Chart(document.getElementById('chart-binom'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data, backgroundColor: '#34d39955', borderColor: '#34d399',
+        borderWidth: 1, borderRadius: 2 }]
+    },
+    options: { ...CHART_OPTS('#34d399') }
+  });
+}
+function updateBinom() {
+  const n = +document.getElementById('binom-n').value;
+  const p = parseFloat(document.getElementById('binom-p').value);
+  document.getElementById('binom-n-val').textContent = n;
+  document.getElementById('binom-p-val').textContent = p.toFixed(2);
+  const { labels, data } = makeBinomData(n, p);
+  binomChart.data.labels = labels;
+  binomChart.data.datasets[0].data = data;
+  binomChart.update();
+}
+initBinom();
+document.getElementById('binom-n').addEventListener('input', updateBinom);
+document.getElementById('binom-p').addEventListener('input', updateBinom);
+
+// ── 3. Geometric ──────────────────────────────────────────────────────────────
+function makeGeoData(p, maxK = 20) {
+  const labels = [], data = [];
+  for (let k = 1; k <= maxK; k++) {
+    const pr = Math.pow(1 - p, k - 1) * p;
+    if (pr < 0.0001 && k > 5) break;
+    labels.push(String(k)); data.push(pr);
+  }
+  return { labels, data };
+}
+const { labels: gl, data: gd } = makeGeoData(0.3);
+const geoChart = new Chart(document.getElementById('chart-geo'), {
+  type: 'bar',
+  data: {
+    labels: gl,
+    datasets: [{ data: gd, backgroundColor: '#60a5fa55', borderColor: '#60a5fa',
+      borderWidth: 1, borderRadius: 2 }]
+  },
+  options: { ...CHART_OPTS('#60a5fa') }
+});
+function updateGeo() {
+  const p = parseFloat(document.getElementById('geo-p').value);
+  document.getElementById('geo-p-val').textContent = p.toFixed(2);
+  const { labels, data } = makeGeoData(p);
+  geoChart.data.labels = labels;
+  geoChart.data.datasets[0].data = data;
+  geoChart.update();
+}
+document.getElementById('geo-p').addEventListener('input', updateGeo);
+
+// ── 4. Negative Binomial ──────────────────────────────────────────────────────
+function makeNBData(r, p) {
+  const labels = [], data = [];
+  for (let k = r; k <= r + 40; k++) {
+    const logPr = logC(k - 1, r - 1) + r * Math.log(p) + (k - r) * Math.log(1 - p);
+    const pr = Math.exp(logPr);
+    if (pr < 0.0001 && k > r + 5) break;
+    labels.push(String(k)); data.push(pr);
+  }
+  return { labels, data };
+}
+const nbInit = makeNBData(3, 0.4);
+const nbChart = new Chart(document.getElementById('chart-nb'), {
+  type: 'bar',
+  data: {
+    labels: nbInit.labels,
+    datasets: [{ data: nbInit.data, backgroundColor: '#f472b655', borderColor: '#f472b6',
+      borderWidth: 1, borderRadius: 2 }]
+  },
+  options: { ...CHART_OPTS('#f472b6') }
+});
+function updateNB() {
+  const r = +document.getElementById('nb-r').value;
+  const p = parseFloat(document.getElementById('nb-p').value);
+  document.getElementById('nb-r-val').textContent = r;
+  document.getElementById('nb-p-val').textContent = p.toFixed(2);
+  const { labels, data } = makeNBData(r, p);
+  nbChart.data.labels = labels;
+  nbChart.data.datasets[0].data = data;
+  nbChart.update();
+}
+document.getElementById('nb-r').addEventListener('input', updateNB);
+document.getElementById('nb-p').addEventListener('input', updateNB);
+
+// ── 5. Poisson ────────────────────────────────────────────────────────────────
+function makePoisData(lambda) {
+  const labels = [], data = [];
+  for (let k = 0; k <= 40; k++) {
+    const logPr = -lambda + k * Math.log(lambda) - logFact(k);
+    const pr = Math.exp(logPr);
+    if (pr < 0.0001 && k > lambda + 5) break;
+    labels.push(String(k)); data.push(pr);
+  }
+  return { labels, data };
+}
+const poisInit = makePoisData(3);
+const poisChart = new Chart(document.getElementById('chart-pois'), {
+  type: 'bar',
+  data: {
+    labels: poisInit.labels,
+    datasets: [{ data: poisInit.data, backgroundColor: '#a78bfa55', borderColor: '#a78bfa',
+      borderWidth: 1, borderRadius: 2 }]
+  },
+  options: { ...CHART_OPTS('#a78bfa') }
+});
+function updatePois() {
+  const lambda = parseFloat(document.getElementById('pois-l').value);
+  document.getElementById('pois-l-val').textContent = lambda.toFixed(1);
+  const { labels, data } = makePoisData(lambda);
+  poisChart.data.labels = labels;
+  poisChart.data.datasets[0].data = data;
+  poisChart.update();
+}
+document.getElementById('pois-l').addEventListener('input', updatePois);
+
+// ── 6. Hypergeometric ─────────────────────────────────────────────────────────
+function makeHGData(N, K, n) {
+  const labels = [], data = [];
+  const kMin = Math.max(0, n + K - N);
+  const kMax = Math.min(n, K);
+  const logDenom = logC(N, n);
+  for (let k = kMin; k <= kMax; k++) {
+    const logNum = logC(K, k) + logC(N - K, n - k);
+    labels.push(String(k));
+    data.push(Math.exp(logNum - logDenom));
+  }
+  return { labels, data };
+}
+const hgInit = makeHGData(30, 10, 8);
+const hgChart = new Chart(document.getElementById('chart-hg'), {
+  type: 'bar',
+  data: {
+    labels: hgInit.labels,
+    datasets: [{ data: hgInit.data, backgroundColor: '#fb718555', borderColor: '#fb7185',
+      borderWidth: 1, borderRadius: 2 }]
+  },
+  options: { ...CHART_OPTS('#fb7185') }
+});
+function updateHG() {
+  let N = +document.getElementById('hg-N').value;
+  let K = +document.getElementById('hg-K').value;
+  let n = +document.getElementById('hg-n').value;
+  // Clamp
+  K = Math.min(K, N - 1);
+  n = Math.min(n, N);
+  document.getElementById('hg-N-val').textContent = N;
+  document.getElementById('hg-K-val').textContent = K;
+  document.getElementById('hg-n-val').textContent = n;
+  const { labels, data } = makeHGData(N, K, n);
+  hgChart.data.labels = labels;
+  hgChart.data.datasets[0].data = data;
+  hgChart.update();
+}
+['hg-N', 'hg-K', 'hg-n'].forEach(id => document.getElementById(id).addEventListener('input', updateHG));
+
+// ── 7. Discrete Uniform ───────────────────────────────────────────────────────
+function makeUnifData(a, b) {
+  if (b < a) b = a + 1;
+  const n = b - a + 1;
+  const prob = 1 / n;
+  const labels = [], data = [];
+  for (let k = a; k <= b; k++) { labels.push(String(k)); data.push(prob); }
+  return { labels, data };
+}
+const unifInit = makeUnifData(1, 6);
+const unifChart = new Chart(document.getElementById('chart-unif'), {
+  type: 'bar',
+  data: {
+    labels: unifInit.labels,
+    datasets: [{ data: unifInit.data, backgroundColor: '#fbbf2455', borderColor: '#fbbf24',
+      borderWidth: 1, borderRadius: 2 }]
+  },
+  options: { ...CHART_OPTS('#fbbf24') }
+});
+function updateUnif() {
+  let a = +document.getElementById('unif-a').value;
+  let b = +document.getElementById('unif-b').value;
+  if (b <= a) b = a + 1;
+  document.getElementById('unif-a-val').textContent = a;
+  document.getElementById('unif-b-val').textContent = b;
+  const { labels, data } = makeUnifData(a, b);
+  unifChart.data.labels = labels;
+  unifChart.data.datasets[0].data = data;
+  unifChart.update();
+}
+['unif-a', 'unif-b'].forEach(id => document.getElementById(id).addEventListener('input', updateUnif));
+</script>
+</body>
+</html>
